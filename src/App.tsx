@@ -32,7 +32,7 @@ import {
   saveCustomCodexSafe,
 } from './utils/storageManager';
 import { LeftSorcererSheet } from './components/LeftSorcererSheet';
-import { CenterNarrativeStage } from './components/CenterNarrativeStage';
+import { ChatNarrativeStage } from './components/ChatNarrativeStage';
 import { RightWorldRadar } from './components/RightWorldRadar';
 
 // Code-splitting: a ficha (com a galeria de retratos) e o painel de sistema
@@ -1230,7 +1230,8 @@ export default function App() {
         </div>
       </header>
 
-      {/* Mobile Sticky Mini-Header (< 1024px) */}
+      {/* Mobile Mini-Header: só nas abas de ficha/radar. A crônica tem header próprio. */}
+      {mobileTab !== 'cronica' && (
       <header className="lg:hidden safe-top flex items-center justify-between gap-2 px-3 py-2 bg-[#110d0b]/95 border-b border-amber-500/25 shrink-0">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
@@ -1290,6 +1291,7 @@ export default function App() {
           </button>
         </div>
       </header>
+      )}
 
       {/* Main Content Area: 3 Columns on Desktop (>=1024px) | Active Tab on Mobile (<1024px) */}
       <div className="flex-1 flex min-h-0 overflow-hidden">
@@ -1323,7 +1325,7 @@ export default function App() {
 
         {/* Desktop Center Column */}
         <div className="hidden lg:block flex-1 min-w-0 h-full">
-          <CenterNarrativeStage
+          <ChatNarrativeStage
             character={campaign.character}
             world={campaign.world}
             turns={campaign.turns}
@@ -1415,7 +1417,7 @@ export default function App() {
         {/* Mobile Full-Screen Active Tab (< 1024px) */}
         <div className="lg:hidden tablet-drawer relative flex-1 w-full h-full overflow-y-auto md:overflow-hidden">
           <div className={mobileTab === 'cronica' ? 'tablet-center h-full' : 'tablet-center hidden md:block h-full'}>
-            <CenterNarrativeStage
+            <ChatNarrativeStage
               character={campaign.character}
               world={campaign.world}
               turns={campaign.turns}

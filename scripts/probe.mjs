@@ -65,6 +65,38 @@ function auditExpr() {
   };
 }
 
+function seedChatExpr() {
+  const key = 'jjk_cursed_chronicles_campaign_v1';
+  const raw = localStorage.getItem(key);
+  if (!raw) return false;
+  const campaign = JSON.parse(raw);
+  const base = campaign.turns[0];
+  if (!base) return false;
+  const now = new Date().toISOString();
+  const second = {
+    ...base,
+    id: 'turn-2-seed',
+    turnNumber: 2,
+    timestamp: now,
+    playerAction: {
+      mode: 'DO',
+      text: 'Avanço para o pátio, mantenho a katana baixa e os olhos no Dedo de Sukuna.',
+      diceRoll: 17,
+      revealedHandVow: true,
+    },
+    gmResponse: {
+      ...base.gmResponse,
+      narrative:
+        '*Narrador*: Você desce os degraus de concreto sem tirar os olhos do fio de energia que atravessa o pátio. O ar fica mais denso a cada passo, e o zumbido do poste falha uma vez, duas, três.\n\n*Megumi Fushiguro*: Ele não se vira, mas as sombras sob os pés dele se adensam. "Boa. Mantenha essa distância. Se ela cortar o ar antes de você sentir, já era."\n\n*Narrador*: A maldição para de se contorcer. Quatro olhos se fixam em você ao mesmo tempo. O que você faz?',
+    },
+  };
+  campaign.turns = [base, second];
+  campaign.updatedAt = now;
+  localStorage.setItem(key, JSON.stringify(campaign));
+  location.reload();
+  return true;
+}
+
 const wsUrl = await getWs();
 const ws = new WebSocket(wsUrl);
 await new Promise((r) => ws.on('open', r));
@@ -90,7 +122,22 @@ await send('Page.enable');
 await send('Emulation.setDeviceMetricsOverride', { width, height, deviceScaleFactor: 1, mobile: width < 768 });
 await send('Page.navigate', { url });
 await sleep(2800);
-if (process.argv[6] && process.argv[6].startsWith('sel:')) {
+if (process.argv[6] === 'seedchat') {
+  await send('Runtime.evaluate', {
+    expression: '(' + seedChatExpr.toString() + ')()',
+    returnByValue: true,
+  });
+  await sleep(2600);
+} else if (process.argv[6] && process.argv[6].startsWith('click:')) {
+  const sel = process.argv[6].slice(6).replace(/"/g, '');
+  const clicked = await send('Runtime.evaluate', {
+    expression: '(() => { const els = Array.from(document.querySelectorAll(' + JSON.stringify(sel) + ')); const el = els.find((e) => e.offsetParent !== null) || els[0]; if (el) el.click(); return Boolean(el); })()',
+    returnByValue: true,
+  });
+  const dialogs = await send('Runtime.evaluate', { expression: 'document.querySelectorAll(\'[role="dialog"]\').length', returnByValue: true });
+  console.log('clicked:' + clicked.result.value + ' dialogs:' + dialogs.result.value);
+  await sleep(700);
+} else if (process.argv[6] && process.argv[6].startsWith('sel:')) {
   const sel = process.argv[6].slice(4).replace(/"/g, '');
   await send('Runtime.evaluate', {
     expression: '(() => { const el = document.querySelector(' + JSON.stringify(sel) + '); if (el) el.scrollIntoView({ block: "center" }); return Boolean(el); })()',
