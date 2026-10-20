@@ -66,6 +66,7 @@ interface CenterNarrativeStageProps {
   }) => void;
   isSubmittingTurn?: boolean;
   isSubmitting?: boolean;
+  streamingNarrative?: string;
   onEditTurnNarrative?: (turnId: string, newText: string) => void;
   onRetryLastTurn: () => void;
   onRewindToTurn?: (turnIdx: number) => void;
@@ -177,6 +178,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
   currentDiceRoll = 15,
   isSubmittingTurn,
   isSubmitting,
+  streamingNarrative = '',
   isGeneratingImageForTurn,
   activeVfx,
   rateLimitNotice,
@@ -368,14 +370,14 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
 
   return (
     <main
-      className={`flex-1 flex flex-col h-full bg-[#09090d] relative overflow-hidden ${
+      className={`flex-1 flex flex-col h-full bg-[#080605] relative overflow-hidden ${
         activeVfx === 'BLACK_FLASH' ? 'vfx-black-flash' : ''
       } ${activeVfx === 'RCT_HEAL' ? 'vfx-rct-heal' : ''}`}
     >
       {renderDomainOverlay()}
 
       {/* Clean Tabletop RPG Top Bar */}
-      <header className="px-3 sm:px-4 py-2.5 bg-[#0f0f15] border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 z-10">
+      <header className="px-3 sm:px-4 py-2.5 bg-[#100c09] border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2 z-10">
         {/* Location & Arc */}
         <div className="flex items-center gap-2 min-w-0">
           <div className="w-7 h-7 rounded-lg bg-amber-950/60 border border-amber-500/40 flex items-center justify-center text-amber-400 shrink-0">
@@ -425,17 +427,17 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
             <select
               value={model}
               onChange={(e) => onChangeModel(e.target.value as GeminiModelOption)}
-              className="bg-[#14141d] border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-purple-500"
+              className="bg-[#16110d] border border-slate-800 rounded-lg px-2 py-1 text-[11px] text-slate-200 focus:outline-none focus:border-amber-500"
               title="Modelo do Mestre IA"
             >
-              <option value="gemini-3.8-flash">Gemini 3.8 Flash (Padrão)</option>
-              <option value="gemini-3.5-flash-lite">Gemini Flash-Lite (Rápido)</option>
-              <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite</option>
+              <option value="gemini-3.8-flash">3.8 Flash (Padrão)</option>
+              <option value="gemini-3.5-flash-lite">Flash-Lite (Rápido)</option>
+              <option value="gemini-3.1-flash-lite">3.1 Flash-Lite</option>
             </select>
           )}
 
           {onChangeFontSize && (
-            <div className="hidden sm:flex items-center bg-[#14141d] border border-slate-800 rounded-lg p-0.5">
+            <div className="hidden sm:flex items-center bg-[#16110d] border border-slate-800 rounded-lg p-0.5">
               {(['small', 'medium', 'large'] as FontSizeOption[]).map((sz) => (
                 <button
                   key={sz}
@@ -443,7 +445,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                   onClick={() => onChangeFontSize(sz)}
                   className={`px-2 py-0.5 text-[10px] rounded transition-colors ${
                     fontSize === sz
-                      ? 'bg-purple-600 text-white font-semibold'
+                      ? 'bg-amber-600 text-white font-semibold'
                       : 'text-slate-400 hover:text-slate-200'
                   }`}
                 >
@@ -461,7 +463,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
               className={`p-1.5 rounded-lg border text-xs transition-colors ${
                 sfxEnabled
                   ? 'bg-cyan-950/50 border-cyan-500/40 text-cyan-300'
-                  : 'bg-[#14141d] border-slate-800 text-slate-500 hover:text-slate-300'
+                  : 'bg-[#16110d] border-slate-800 text-slate-500 hover:text-slate-300'
               }`}
             >
               {sfxEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
@@ -472,9 +474,9 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
             type="button"
             onClick={() => setIsVisualStageCollapsed((p) => !p)}
             title={isVisualStageCollapsed ? 'Mostrar Ilustração da Cena' : 'Ocultar Ilustração da Cena'}
-            className="px-2 py-1 rounded-lg bg-[#14141d] border border-slate-800 text-[11px] text-slate-300 hover:text-white flex items-center gap-1"
+            className="px-2 py-1 rounded-lg bg-[#16110d] border border-slate-800 text-[11px] text-slate-300 hover:text-white flex items-center gap-1"
           >
-            <ImageIcon className="w-3.5 h-3.5 text-purple-400" />
+            <ImageIcon className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden md:inline">Cena</span>
             {isVisualStageCollapsed ? <ChevronDown className="w-3 h-3" /> : <ChevronUp className="w-3 h-3" />}
           </button>
@@ -484,7 +486,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
             onClick={handleUndo}
             disabled={turns.length <= 1 || submitting}
             title="Desfazer último turno"
-            className="p-1.5 rounded-lg bg-[#14141d] border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
+            className="p-1.5 rounded-lg bg-[#16110d] border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
           >
             <Undo2 className="w-3.5 h-3.5" />
           </button>
@@ -494,7 +496,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
             onClick={onRetryLastTurn}
             disabled={turns.length === 0 || submitting}
             title="Re-gerar resposta do Mestre"
-            className="p-1.5 rounded-lg bg-[#14141d] border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
+            className="p-1.5 rounded-lg bg-[#16110d] border border-slate-800 text-slate-300 hover:text-white disabled:opacity-40"
           >
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
@@ -515,12 +517,12 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
 
       {/* Non-Blocking API Key / Continuity Notice Banner */}
       {rateLimitNotice && (
-        <div className="px-3.5 py-2 bg-amber-950/80 border-b border-amber-500/40 flex flex-wrap items-center justify-between gap-2 text-[11px] text-amber-100">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
-            <span className="break-words">{rateLimitNotice}</span>
+        <div className="px-3.5 py-2 bg-amber-950/80 border-b border-amber-500/40 flex flex-col gap-2 text-[11px] text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-2 min-w-0 flex-1">
+            <AlertTriangle className="w-4 h-4 mt-0.5 text-amber-400 shrink-0" />
+            <span className="break-words leading-relaxed">{rateLimitNotice}</span>
           </div>
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
             {onOpenSystemModal && (
               <button
                 type="button"
@@ -528,7 +530,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                 className="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-400/50 text-amber-200 font-semibold flex items-center gap-1 cursor-pointer"
               >
                 <Settings className="w-3 h-3" />
-                <span>Ver Status no Sistema</span>
+                <span>Status do Sistema</span>
               </button>
             )}
             {onDismissRateLimitNotice && (
@@ -576,7 +578,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
             }
             className="w-full h-full object-cover opacity-90 transition-transform duration-700 group-hover:scale-102 cursor-zoom-in"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#09090d] via-[#09090d]/35 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#080605] via-[#080605]/35 to-transparent pointer-events-none" />
 
           {/* Active Barrier Badge */}
           {world.activeBarrierOrDomain && world.activeBarrierOrDomain !== 'Nenhum' && (
@@ -602,11 +604,11 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                   )
                 }
                 disabled={isGeneratingImageForTurn === latestTurn.id}
-                className="px-3 py-1.5 rounded-lg bg-purple-950/90 hover:bg-purple-800 border border-purple-400/50 text-[11px] font-semibold text-purple-100 flex items-center gap-1.5 backdrop-blur-md shadow-lg transition-all cursor-pointer disabled:opacity-50"
+                className="px-3 py-1.5 rounded-lg bg-amber-950/90 hover:bg-amber-800 border border-amber-400/50 text-[11px] font-semibold text-amber-100 flex items-center gap-1.5 backdrop-blur-md shadow-lg transition-all cursor-pointer disabled:opacity-50"
               >
                 {isGeneratingImageForTurn === latestTurn.id ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-300" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-300" />
                     <span>Gerando Cena...</span>
                   </>
                 ) : (
@@ -673,14 +675,23 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
           return (
             <article
               key={turn.id}
-              className="rounded-2xl bg-[#111118] border border-slate-800/90 overflow-hidden shadow-lg transition-all"
+              className="rounded-2xl bg-[#13100d] border border-slate-800/90 overflow-hidden shadow-lg transition-all"
             >
               {/* Turn Header Bar */}
-              <div className="px-3.5 py-2 bg-[#161621] border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+              <div className="px-3.5 py-2 bg-[#191410] border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <span className="px-2 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-[10px] font-mono font-bold text-purple-300">
+                  <span className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-[10px] font-mono font-bold text-amber-300">
                     TURNO #{turn.turnNumber}
                   </span>
+
+                  {turn.gmResponse.assistantMode === 'continuity-engine' && (
+                    <span
+                      className="px-2 py-0.5 rounded bg-slate-900 border border-amber-500/40 text-[10px] font-mono text-amber-300"
+                      title={turn.gmResponse.fallbackReason || 'Turno do motor local de continuidade'}
+                    >
+                      MOTOR LOCAL
+                    </span>
+                  )}
 
                   {turn.playerAction && (
                     <span className="px-2 py-0.5 rounded bg-slate-900 border border-slate-700 text-[10px] font-mono text-slate-300 flex items-center gap-1">
@@ -744,8 +755,8 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
 
               {/* Player Action Banner */}
               {turn.playerAction && (
-                <div className="px-4 py-2.5 bg-purple-950/20 border-b border-purple-500/20 flex items-start gap-2.5">
-                  <div className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-purple-600/30 text-purple-200 border border-purple-500/40 shrink-0 mt-0.5">
+                <div className="px-4 py-2.5 bg-amber-950/20 border-b border-amber-500/20 flex items-start gap-2.5">
+                  <div className="text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded bg-amber-600/30 text-amber-200 border border-amber-500/40 shrink-0 mt-0.5">
                     {turn.playerAction.mode === 'DO'
                       ? 'Ação'
                       : turn.playerAction.mode === 'SAY'
@@ -754,7 +765,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                       ? 'Técnica'
                       : 'Cena'}
                   </div>
-                  <p className="text-xs sm:text-sm text-purple-100 font-medium break-words">
+                  <p className="text-xs sm:text-sm text-amber-100 font-medium break-words">
                     {turn.playerAction.text}
                   </p>
                 </div>
@@ -795,7 +806,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
 
               {/* 2. 📖 [NARRATIVA] (Theatrical Paragraphs with *Narrador*: and *Nome do Personagem*:) */}
               <div className={`p-4 sm:p-5 space-y-4 font-serif ${fontSizeClass}`}>
-                <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-purple-300/90 flex items-center gap-1.5 pb-1 border-b border-slate-800/70">
+                <div className="text-[10px] font-mono font-bold uppercase tracking-wider text-amber-300/90 flex items-center gap-1.5 pb-1 border-b border-slate-800/70">
                   <span>📖 [NARRATIVA]</span>
                 </div>
 
@@ -804,9 +815,9 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                     return (
                       <div
                         key={idx}
-                        className="pl-3.5 border-l-2 border-purple-500/60 text-slate-200 leading-relaxed break-words"
+                        className="pl-3.5 border-l-2 border-amber-500/60 text-slate-200 leading-relaxed break-words"
                       >
-                        <span className="text-[11px] font-mono font-bold text-purple-400 mr-1.5">
+                        <span className="text-[11px] font-mono font-bold text-amber-400 mr-1.5">
                           *Narrador*:
                         </span>
                         {renderFormattedText(p.text)}
@@ -819,7 +830,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                   return (
                     <div
                       key={idx}
-                      className="flex items-start gap-3 p-3.5 rounded-xl bg-[#161622] border border-slate-800/90"
+                      className="flex items-start gap-3 p-3.5 rounded-xl bg-[#181310] border border-slate-800/90"
                     >
                       <img
                         src={avatarUrl}
@@ -871,7 +882,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                 {isHudOpen && (
                   <div className="px-4 pb-3.5 pt-1 border-t border-amber-500/20 space-y-2 text-[11px] font-mono bg-[#080910]">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-slate-300 leading-snug">
-                      <div className="p-2.5 rounded-lg bg-[#11121a] border border-slate-800/80 break-words">
+                      <div className="p-2.5 rounded-lg bg-[#130f0c] border border-slate-800/80 break-words">
                         <span className="text-amber-300 font-bold">• Localização & Regras Ativas: </span>
                         <span>
                           {turnWorld.location} — {turnWorld.activeBarrierOrDomain || 'Sem barreira ativa'} (
@@ -879,7 +890,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                         </span>
                       </div>
 
-                      <div className="p-2.5 rounded-lg bg-[#11121a] border border-slate-800/80 break-words">
+                      <div className="p-2.5 rounded-lg bg-[#130f0c] border border-slate-800/80 break-words">
                         <span className="text-emerald-300 font-bold">• Status do Jogador: </span>
                         <span>
                           HP Física: {turnPlayer.hpPercentage}% ({turnPlayer.physicalCondition}) | Reserva de EA:{' '}
@@ -891,7 +902,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-[#11121a] border border-slate-800/80 break-words text-slate-300 leading-snug">
+                    <div className="p-2.5 rounded-lg bg-[#130f0c] border border-slate-800/80 break-words text-slate-300 leading-snug">
                       <span className="text-rose-300 font-bold">• Inimigos/NPCs Presentes: </span>
                       {turnWorld.npcsInScene && turnWorld.npcsInScene.length > 0 ? (
                         <span>
@@ -909,9 +920,9 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                       )}
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-[#11121a] border border-slate-800/80 break-words text-slate-300 leading-snug space-y-1.5">
+                    <div className="p-2.5 rounded-lg bg-[#130f0c] border border-slate-800/80 break-words text-slate-300 leading-snug space-y-1.5">
                       <div>
-                        <span className="text-purple-300 font-bold">• Card Ativo na Cena: </span>
+                        <span className="text-amber-300 font-bold">• Card Ativo na Cena: </span>
                         <span>{activeCardSummary}</span>
                       </div>
                       {turn.gmResponse.activeStoryCards && turn.gmResponse.activeStoryCards.length > 0 && (
@@ -935,11 +946,19 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
         })}
 
         {submitting && (
-          <div className="rounded-2xl bg-[#111118] border border-purple-500/40 p-5 flex items-center justify-center gap-3 text-purple-300 animate-pulse">
-            <Loader2 className="w-5 h-5 animate-spin text-purple-400" />
-            <span className="text-xs font-mono uppercase tracking-wider">
-              O Mestre está narrando as consequências da sua ação...
-            </span>
+          <div className="rounded-2xl bg-[#13100d] border border-amber-500/40 p-4 space-y-2">
+            <div className="flex items-center gap-3 text-amber-300">
+              <Loader2 className="w-5 h-5 animate-spin text-amber-400" />
+              <span className="text-xs font-mono uppercase tracking-wider">
+                O Mestre está narrando as consequências da sua ação...
+              </span>
+            </div>
+            {streamingNarrative && (
+              <div className="text-sm leading-relaxed text-slate-200 whitespace-pre-wrap font-serif">
+                {streamingNarrative}
+                <span className="inline-block w-1.5 h-4 bg-amber-400 animate-pulse align-text-bottom ml-0.5" />
+              </div>
+            )}
           </div>
         )}
 
@@ -947,11 +966,12 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
       </div>
 
       {/* Bottom Player Action Console */}
-      <div className="p-3 sm:p-3.5 bg-[#0f0f16] border-t border-slate-800/90 space-y-2.5 z-10">
+      <div className="p-3 sm:p-3.5 bg-[#100c09] border-t border-slate-800/90 space-y-2.5 z-10">
         {/* Suggested Actions Chips */}
         {latestTurn?.gmResponse.suggestedActions &&
           latestTurn.gmResponse.suggestedActions.length > 0 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+            <div className="relative">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pr-8 no-scrollbar">
               <span className="text-[10px] font-mono uppercase tracking-wider text-slate-500 shrink-0 flex items-center gap-1">
                 <Sparkles className="w-3 h-3 text-amber-400" /> Sugestões:
               </span>
@@ -960,23 +980,25 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                   key={i}
                   type="button"
                   onClick={() => handleSuggestionClick(sug)}
-                  className="text-[11px] px-2.5 py-1 rounded-lg bg-[#161622] hover:bg-purple-950/60 border border-slate-800 hover:border-purple-500/50 text-slate-300 hover:text-purple-200 transition-all shrink-0 max-w-xs sm:max-w-md truncate"
+                  className="text-[11px] px-2.5 py-1 rounded-lg bg-[#181310] hover:bg-amber-950/60 border border-slate-800 hover:border-amber-500/50 text-slate-300 hover:text-amber-200 transition-all shrink-0 max-w-xs sm:max-w-md truncate"
                 >
                   {sug}
                 </button>
               ))}
+            </div>
+            <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-[#100c09] to-transparent" />
             </div>
           )}
 
         {/* Mode Selector + Quick Ability Triggers */}
         <div className="flex flex-wrap items-center justify-between gap-2">
           {/* 4 Action Modes */}
-          <div className="flex items-center gap-1 bg-[#14141d] p-1 rounded-xl border border-slate-800">
+          <div className="flex items-center gap-1 bg-[#16110d] p-1 rounded-xl border border-slate-800">
             {(
               [
                 { id: 'DO', label: 'Agir', icon: Swords, activeBg: 'bg-red-600 text-white' },
                 { id: 'SAY', label: 'Dialogar', icon: MessageSquare, activeBg: 'bg-amber-600 text-white' },
-                { id: 'TECHNIQUE', label: 'Técnica', icon: Flame, activeBg: 'bg-purple-600 text-white' },
+                { id: 'TECHNIQUE', label: 'Técnica', icon: Flame, activeBg: 'bg-amber-600 text-white' },
                 { id: 'STORY', label: 'Cena', icon: Clapperboard, activeBg: 'bg-cyan-600 text-white' },
               ] as const
             ).map((m) => {
@@ -1013,7 +1035,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
               <button
                 type="button"
                 onClick={() => handleQuickAbility('DOMAIN')}
-                className="px-2 py-1 rounded-lg bg-purple-950/60 hover:bg-purple-900/80 border border-purple-500/50 text-purple-200 text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 transition-all"
+                className="px-2 py-1 rounded-lg bg-amber-950/60 hover:bg-amber-900/80 border border-amber-500/50 text-amber-200 text-[10px] font-mono uppercase tracking-wider flex items-center gap-1 transition-all"
                 title={`Expandir Domínio: ${character.technique.domainExpansion}`}
               >
                 <Flame className="w-3 h-3 text-amber-400" /> Domínio
@@ -1038,7 +1060,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                 className={`px-2 py-1 rounded-lg border text-[10px] font-mono transition-all flex items-center gap-1 ${
                   revealedHandVow
                     ? 'bg-amber-600/20 border-amber-500 text-amber-300 font-bold'
-                    : 'bg-[#14141d] border-slate-800 text-slate-400 hover:text-slate-200'
+                    : 'bg-[#16110d] border-slate-800 text-slate-400 hover:text-slate-200'
                 }`}
                 title="Voto Vinculativo: Explicar sua técnica ao inimigo concede +20% Output de EA"
               >
@@ -1048,7 +1070,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
             )}
 
             {onManualRollDice && (
-              <div className="flex items-center gap-1 bg-[#14141d] px-2 py-1 rounded-lg border border-slate-800">
+              <div className="flex items-center gap-1 bg-[#16110d] px-2 py-1 rounded-lg border border-slate-800">
                 <button
                   type="button"
                   onClick={onManualRollDice}
@@ -1064,7 +1086,7 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                       type="checkbox"
                       checked={autoRollDice}
                       onChange={onToggleAutoRoll}
-                      className="accent-purple-600 rounded"
+                      className="accent-amber-600 rounded"
                     />
                     <span>Auto</span>
                   </label>
@@ -1096,12 +1118,12 @@ export const CenterNarrativeStage: React.FC<CenterNarrativeStageProps> = ({
                 ? `Descreva como você canaliza ${character.technique.name}...`
                 : 'Descreva um rumo ou acontecimento dramático para a cena...'
             }
-            className="flex-1 bg-[#14141d] border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-500 resize-none"
+            className="flex-1 bg-[#16110d] border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 resize-none"
           />
           <button
             type="submit"
             disabled={!actionText.trim() || submitting}
-            className="px-4 sm:px-5 rounded-xl bg-gradient-to-r from-purple-600 to-red-600 hover:from-purple-500 hover:to-red-500 disabled:opacity-40 text-white font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-purple-950/50 transition-all cursor-pointer shrink-0"
+            className="px-4 sm:px-5 rounded-xl bg-gradient-to-r from-amber-600 to-red-600 hover:from-amber-500 hover:to-red-500 disabled:opacity-40 text-white font-display font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-amber-950/50 transition-all cursor-pointer shrink-0"
           >
             {submitting ? (
               <Loader2 className="w-4 h-4 animate-spin" />

@@ -165,9 +165,37 @@ export interface WorldStateUpdate {
   arc: string;
   activeBarrierOrDomain: string;
   npcsInScene: NpcInScene[];
+  /** Âncora de missão/objetivo imediato do arco (Plot Essentials) — mantém a IA no escopo. */
+  missionObjective?: string;
+  /** Momento cronológico do arco (ex: "31/10/2018, 19h15 — Incidente de Shibuya"). */
+  timelineAnchor?: string;
+  /**
+   * Era da campanha: `sequel` = continuação pós-desfecho do mangá (padrão do
+   * projeto); `canon` = linha do mangá de 2018.
+   */
+  era?: 'sequel' | 'canon';
+  /** Fatos imutáveis do mundo no início da campanha (contrato de lore do Mestre). */
+  worldFacts?: string[];
+  /** Limites duros do Mestre: o que ele NÃO pode fazer nesta campanha. */
+  forbiddenEvents?: string[];
+  /** Cena de abertura original (guardada para retomada/regeneração da cena 1). */
+  openingScene?: string;
+  /** Título legível do arco inicial (exibido no HUD e reenviado ao Mestre). */
+  startingArcTitle?: string;
+  /** Premissa dramática da campanha: o que mudou no mundo e a pergunta central. */
+  campaignPremise?: string;
+  /** Papel do jogador no arco (posição, autonomia e expectativa). */
+  playerRole?: string;
+  /** Diretrizes de tom que o Mestre deve sustentar. */
+  tone?: string[];
+  /** Batidas obrigatórias do Turno #1. */
+  mustEstablish?: string[];
 }
 
 export interface GmTurnResponse {
+  /** Origem do turno: GM Gemini ou motor local de continuidade. */
+  assistantMode?: 'gm' | 'continuity-engine';
+  fallbackReason?: string;
   engineLog: string;
   activeStoryCards: string[];
   activeCardRuleSummary?: string;
@@ -239,6 +267,16 @@ export interface BindingVowItem {
   active: boolean;
 }
 
+export type HeavenlyRestrictionType = 'nenhuma' | 'fisica' | 'espiritual' | 'parcial';
+
+export interface HeavenlyRestriction {
+  type: HeavenlyRestrictionType;
+  /** O preço/custo da restrição (ex: "0% de Energia Amaldiçoada", "corpo paralisado"). */
+  price: string;
+  /** O benefício em troca (ex: "corpo sobre-humano", "alcance quilométrico de EA"). */
+  benefit: string;
+}
+
 export interface CharacterSheet {
   name: string;
   appearance: string;
@@ -252,8 +290,15 @@ export interface CharacterSheet {
   avatarUrl: string;
   faction: string;
   clan: string;
+  /** Traço genético amaldiçoado da linhagem (clã próprio). */
+  clanTrait?: string;
+  /** Tradição, história e reputação do clã. */
+  clanTradition?: string;
+  /** Status do clã: Três Grandes Famílias, menor, exilado, sobrevivente, etc. */
+  clanStatus?: string;
   grade: string;
   isHeavenlyRestriction: boolean;
+  heavenlyRestriction?: HeavenlyRestriction;
   hpPercentage: number;
   cursedEnergyPercentage: number;
   outputPercentage: number;
@@ -271,6 +316,8 @@ export interface CharacterSheet {
   evolutionHistory?: EvolutionHistoryEntry[];
 }
 
+export type StoryEra = 'canon' | 'sequel' | 'both';
+
 export interface StoryCard {
   id: string;
   title: string;
@@ -278,6 +325,12 @@ export interface StoryCard {
   type: 'character' | 'technique' | 'domain' | 'lore' | 'location' | 'faction' | 'tool';
   value: string;
   source?: 'codex_md' | 'story_json' | 'initial' | 'custom';
+  /**
+   * Era do card para o filtro de RAG. `canon` = evento/arco de 2018 que não
+   * deve ser injetado em campanhas de seguimento; `sequel` = material novo;
+   * `both` = personagem/técnica/local reutilizável (padrão).
+   */
+  era?: StoryEra;
 }
 
 export interface TurnSnapshot {

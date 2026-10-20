@@ -184,114 +184,12 @@ export const CANONICAL_TECHNIQUES: CursedTechniqueDetails[] = [
   },
 ];
 
-export const STARTING_ARCS = [
-  {
-    id: 'sendai-2018',
-    title: 'Opção 1 (Padrão Canônico): Sendai, Julho de 2018 — O Primeiro Dedo',
-    arcLabel: 'Arco de Introdução — Julho de 2018',
-    location: 'Escola Secundária Municipal Sugisawa, Sendai (23h30)',
-    description: 'A noite em que o selo do objeto amaldiçoado de Grau Especial é rompido na Escola Sugisawa, ao lado de Megumi Fushiguro e Yuji Itadori.',
-    initialNpcs: [
-      {
-        name: 'Megumi Fushiguro',
-        grade: 'Grau 2',
-        hpPercentage: 100,
-        status: 'Em guarda, sombras tremulando sob os pés',
-        attitude: 'Aliado' as const,
-        visualDescription: 'Detailed anime character portrait in Jujutsu Kaisen MAPPA style of Megumi Fushiguro with spiky black hair and dark blue uniform forming shadow hand signs',
-      },
-      {
-        name: 'Espírito Amaldiçoado do Pátio',
-        grade: 'Grau 2',
-        hpPercentage: 100,
-        status: 'Faminto pela energia do Dedo de Sukuna',
-        attitude: 'Hostil' as const,
-        visualDescription: 'Grotesque multi-eyed cursed spirit in Jujutsu Kaisen MAPPA anime style, glowing purple and crimson cursed aura',
-      },
-    ],
-  },
-  {
-    id: 'tokyo-high',
-    title: 'Opção 2: Ingresso na Escola Técnica de Tóquio',
-    arcLabel: 'Escola Técnica de Feitiçaria de Tóquio — Agosto de 2018',
-    location: 'Pátio de Treinamento da Escola Técnica de Tóquio',
-    description: 'Seu primeiro dia oficial sob a tutela imprevisível de Satoru Gojo e a avaliação prática do Diretor Masamichi Yaga.',
-    initialNpcs: [
-      {
-        name: 'Satoru Gojo',
-        grade: 'Grau Especial',
-        hpPercentage: 100,
-        status: 'Relaxado, mãos nos bolsos, observando através dos Seis Olhos',
-        attitude: 'Aliado' as const,
-        visualDescription: 'Detailed anime character portrait in Jujutsu Kaisen MAPPA style of Satoru Gojo with white spiky hair and black blindfold',
-      },
-    ],
-  },
-  {
-    id: 'goodwill-event',
-    title: 'Opção 3: Festival de Intercâmbio das Escolas Irmãs (Tóquio vs. Kyoto)',
-    arcLabel: 'Arco do Festival de Intercâmbio — Setembro de 2018',
-    location: 'Floresta do Santuário da Escola de Tóquio',
-    description: 'A competição em equipe entre as escolas de Tóquio e Kyoto começa, mas uma Cortina misteriosa está prestes a descer sobre o campo.',
-    initialNpcs: [
-      {
-        name: 'Aoi Todo',
-        grade: 'Grau 1',
-        hpPercentage: 100,
-        status: 'Postura de combate empolgada, pronto para perguntar seu tipo',
-        attitude: 'Neutro' as const,
-        visualDescription: 'Detailed anime character portrait in Jujutsu Kaisen MAPPA style of Aoi Todo, muscular sorcerer with topknot and facial scar',
-      },
-    ],
-  },
-  {
-    id: 'shibuya-incident',
-    title: 'Opção 4: Incidente de Shibuya (31 de Outubro de 2018, 19h00)',
-    arcLabel: 'Arco do Incidente de Shibuya — 31/10/2018, 19h15',
-    location: 'Entrada da Estação de Shibuya — Subsolo B2',
-    description: 'As Cortinas foram fechadas prendendo milhares de civis clamando por Satoru Gojo. Você avança para o subsolo infestado de humanos transfigurados.',
-    initialNpcs: [
-      {
-        name: 'Kento Nanami',
-        grade: 'Grau 1',
-        hpPercentage: 100,
-        status: 'Em Hora Extra (Overtime 120%), cutelo cego envolto em pano pontilhado em punho',
-        attitude: 'Aliado' as const,
-        visualDescription: 'Detailed anime character portrait in Jujutsu Kaisen MAPPA style of Kento Nanami in a tan suit and green goggles holding his wrapped blunt sword',
-      },
-      {
-        name: 'Enxame de Humanos Transfigurados',
-        grade: 'Grau 3 (Múltiplos)',
-        hpPercentage: 100,
-        status: 'Avançando descontroladamente pelos corredores do metrô',
-        attitude: 'Hostil' as const,
-        visualDescription: 'Distorted transfigured humans in Jujutsu Kaisen MAPPA anime style inside dark Shibuya subway station',
-      },
-    ],
-  },
-  {
-    id: 'culling-game',
-    title: 'Opção 5: Jogo do Abate (Culling Game — Entrada na Colônia)',
-    arcLabel: 'Arco do Jogo do Abate — Novembro de 2018',
-    location: 'Colônia Tóquio Nº 1 — Céu Aberto sob a Barreira',
-    description: 'Kogane anuncia sua entrada na barreira da Colônia. Feiticeiros reencarnados de eras passadas e novos despertos disputam pontos até a morte.',
-    initialNpcs: [
-      {
-        name: 'Feiticeiro Reencarnado da Era Heian',
-        grade: 'Grau 1',
-        hpPercentage: 100,
-        status: 'Avaliando sua reserva de Energia Amaldiçoada do topo de um prédio',
-        attitude: 'Hostil' as const,
-        visualDescription: 'Ancient reincarnated Heian era jujutsu sorcerer in Jujutsu Kaisen MAPPA style with glowing cursed energy',
-      },
-    ],
-  },
-  {
-    id: 'custom-arc',
-    title: 'Opção 6: Início Personalizado',
-    arcLabel: 'Crônica Personalizada',
-    location: 'Tóquio — Distrito Amaldiçoado',
-    description: 'Defina livremente a cena inicial, o momento cronológico e os personagens presentes.',
-    initialNpcs: [],
-  },
-];
+
+// A definição dos arcos de abertura vive em `src/data/startingArcs.ts`
+export {
+  STARTING_ARCS,
+  DEFAULT_STARTING_ARC,
+  STARTING_ARC_ERAS,
+} from './startingArcs';
+export type { OpeningArc, ArcEra } from './startingArcs';
+

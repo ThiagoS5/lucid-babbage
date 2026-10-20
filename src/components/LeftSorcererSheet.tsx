@@ -68,8 +68,8 @@ const DEFAULT_PORTAL_CONFIG: DomainPortalConfig = {
   sureHitEffect: 'Injeção infinita de informações sensoriais que paralisa o alvo instantaneamente.',
   portalEnvironment: 'Horizonte cósmico infinito repleto de nebulosas, singularidades e estrelas.',
   primaryColor: '#38bdf8',
-  secondaryColor: '#a855f7',
-  coreColor: '#020617',
+  secondaryColor: '#f59e0b',
+  coreColor: '#080605',
   overlayIntensity: 'medium',
 };
 
@@ -234,7 +234,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
       DomainPortalStyle,
       { primaryColor: string; secondaryColor: string; coreColor: string }
     > = {
-      infinite_void: { primaryColor: '#38bdf8', secondaryColor: '#a855f7', coreColor: '#020617' },
+      infinite_void: { primaryColor: '#38bdf8', secondaryColor: '#f59e0b', coreColor: '#080605' },
       malevolent_shrine: { primaryColor: '#f43f5e', secondaryColor: '#991b1b', coreColor: '#090204' },
       chimera_shadow: { primaryColor: '#6366f1', secondaryColor: '#1e1b4b', coreColor: '#020207' },
       judgeman_court: { primaryColor: '#f59e0b', secondaryColor: '#b45309', coreColor: '#090602' },
@@ -255,12 +255,12 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
       ? 'bg-emerald-500'
       : character.hpPercentage > 30
       ? 'bg-amber-500'
-      : 'bg-rose-600';
+      : 'bg-amber-600';
 
   const portraitBorderClass = character.inBlackFlashZone
-    ? 'border-rose-500 kokusen-zone-glow'
+    ? 'border-amber-500 kokusen-zone-glow'
     : character.hpPercentage <= 30
-    ? 'border-rose-600 shadow-[0_0_15px_rgba(225,29,72,0.5)]'
+    ? 'border-amber-600 shadow-[0_0_15px_rgba(217,119,6,0.5)]'
     : 'border-sky-500/60 shadow-[0_0_15px_rgba(56,189,248,0.2)]';
 
   const handleAddTool = (e: React.FormEvent) => {
@@ -358,14 +358,14 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
   return (
     <aside
       aria-label="Ficha do Feiticeiro"
-      className="h-full flex flex-col bg-[#0f0f14]/95 border-r border-slate-800/80 overflow-y-auto select-none"
+      className="h-full flex flex-col bg-[#0d0b09]/95 border-r border-slate-800/80 overflow-y-auto select-none"
     >
       {/* 1. Character Header */}
       <div className="p-4 border-b border-slate-800/80 space-y-3">
         <div className="flex items-start gap-3.5">
           <div className="relative group shrink-0">
             <div
-              className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all bg-[#07070a] ${portraitBorderClass}`}
+              className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all bg-[#080605] ${portraitBorderClass}`}
             >
               <img
                 src={character.avatarUrl}
@@ -406,12 +406,12 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               <h2 className="font-display text-base font-bold text-white break-words leading-snug">
                 {character.name}
               </h2>
-              <span className="px-2 py-0.5 rounded bg-purple-950/80 border border-purple-500/50 text-[10px] font-bold text-purple-300 shrink-0">
+              <span className="px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/50 text-[10px] font-bold text-amber-300 shrink-0">
                 Nv. {progression.totalCharacterLevel}
               </span>
             </div>
             <div className="text-xs text-slate-400 flex flex-wrap items-center gap-1.5">
-              <span className="text-purple-400 font-semibold">{character.grade}</span>
+              <span className="text-amber-400 font-semibold">{character.grade}</span>
               <span aria-hidden="true">·</span>
               <span className="break-words">{character.clan}</span>
             </div>
@@ -419,8 +419,8 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
 
             {character.inBlackFlashZone && (
               <div className="pt-1">
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase text-rose-400 bg-black/90 border border-rose-500/70 px-2 py-0.5 rounded">
-                  <Flame className="w-3 h-3 text-rose-500" />
+                <span className="inline-flex items-center gap-1 text-[10px] font-bold tracking-wider uppercase text-amber-400 bg-black/90 border border-amber-500/70 px-2 py-0.5 rounded">
+                  <Flame className="w-3 h-3 text-amber-500" />
                   ZONA DE KOKUSEN (120% POTENCIAL)
                 </span>
               </div>
@@ -429,10 +429,10 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
         </div>
 
         {/* Grade & Level Progression Card (Semantic <progress class="jjk-progress">) */}
-        <div className="p-2.5 rounded-xl bg-[#07070a] border border-purple-500/35 space-y-2">
+        <div className="p-2.5 rounded-xl bg-[#080605] border border-amber-500/35 space-y-2">
           <div className="flex items-center justify-between text-[11px]">
-            <span className="font-semibold text-purple-300 flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-purple-400" />
+            <span className="font-semibold text-amber-300 flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-amber-400" />
               <span>
                 {character.grade} → {progression.nextGrade || 'Ápice'}
               </span>
@@ -456,7 +456,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               type="button"
               onClick={handleQuickLevelUp}
               title="Conceder +100 XP (+1 Nível na Categoria atual)"
-              className="px-2 py-0.5 rounded bg-purple-950/70 hover:bg-purple-900 border border-purple-500/50 text-purple-200 font-semibold transition-colors cursor-pointer"
+              className="px-2 py-0.5 rounded bg-amber-950/70 hover:bg-amber-900 border border-amber-500/50 text-amber-200 font-semibold transition-colors cursor-pointer"
             >
               +1 Nível (+100 XP)
             </button>
@@ -472,7 +472,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
         {/* 2. Animated Resource Bars & Clinical Status */}
         <div className="space-y-3 pt-1">
           {/* HP Bar */}
-          <div className={`space-y-1 rounded-lg p-2 bg-[#07070a] border border-slate-800/90 ${isRctHeal ? 'vfx-rct-heal border-emerald-400' : ''}`}>
+          <div className={`space-y-1 rounded-lg p-2 bg-[#080605] border border-slate-800/90 ${isRctHeal ? 'vfx-rct-heal border-emerald-400' : ''}`}>
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-slate-300 flex items-center gap-1.5">
                 <Heart className="w-3.5 h-3.5 text-emerald-400" />
@@ -497,7 +497,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
           </div>
 
           {/* Cursed Energy Bar */}
-          <div className="space-y-1 rounded-lg p-2 bg-[#07070a] border border-slate-800/90">
+          <div className="space-y-1 rounded-lg p-2 bg-[#080605] border border-slate-800/90">
             <div className="flex items-center justify-between text-xs">
               <span className="font-medium text-slate-300 flex items-center gap-1.5">
                 <Zap className="w-3.5 h-3.5 text-sky-400" />
@@ -523,19 +523,19 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-400 pt-0.5">
               <span>Output Máximo:</span>
-              <span className={`font-mono-tabular font-semibold ${character.outputPercentage > 100 ? 'text-rose-400' : 'text-sky-300'}`}>
+              <span className={`font-mono-tabular font-semibold ${character.outputPercentage > 100 ? 'text-amber-400' : 'text-sky-300'}`}>
                 {character.outputPercentage}% {character.inBlackFlashZone ? '[Zona Kokusen]' : ''}
               </span>
             </div>
           </div>
 
           {/* Technique State */}
-          <div className="flex items-center justify-between px-2.5 py-2 rounded-lg bg-[#07070a] border border-slate-800/90 text-xs">
+          <div className="flex items-center justify-between px-2.5 py-2 rounded-lg bg-[#080605] border border-slate-800/90 text-xs">
             <span className="text-slate-400">Estado da Técnica:</span>
             <span
               className={`font-semibold ${
                 isBurnout
-                  ? 'text-rose-400'
+                  ? 'text-amber-400'
                   : character.techniqueState === 'Sob Voto Vinculativo'
                   ? 'text-amber-400'
                   : 'text-emerald-400'
@@ -548,13 +548,13 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
       </div>
 
       {/* 3. Internal Sheet Tabs (Responsive Flex Bar with Touch Targets) */}
-      <div className="flex items-center gap-1 p-1.5 bg-[#07070a] border-b border-slate-800/80 overflow-x-auto no-scrollbar">
+      <div className="grid grid-cols-3 gap-1 p-1.5 bg-[#080605] border-b border-slate-800/80">
         <button
           type="button"
           onClick={() => setActiveTab('techniques')}
           className={`py-2 px-2.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap cursor-pointer touch-target-min ${
             activeTab === 'techniques'
-              ? 'bg-slate-800 text-white font-semibold'
+              ? 'bg-amber-950/70 text-amber-200 border border-amber-500/40 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -566,7 +566,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
           className={`py-2 px-2.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer flex items-center justify-center gap-1 touch-target-min ${
             activeTab === 'sheet'
               ? 'bg-amber-950/70 text-amber-200 border border-amber-500/40'
-              : 'text-amber-300/90 hover:text-amber-200'
+              : 'text-slate-400 hover:text-amber-200'
           }`}
           title="Ficha Exclusiva do Personagem (Consultada e Alterada pela História)"
         >
@@ -582,8 +582,8 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
           onClick={() => setActiveTab('skills')}
           className={`py-2 px-2.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer flex items-center justify-center gap-1 touch-target-min ${
             activeTab === 'skills'
-              ? 'bg-sky-950/70 text-sky-200 border border-sky-500/40'
-              : 'text-sky-400/90 hover:text-sky-200'
+              ? 'bg-amber-950/70 text-amber-200 border border-amber-500/40'
+              : 'text-slate-400 hover:text-amber-200'
           }`}
           title="Perícias & Afinidades Narrativas (100% Narrativo, Sem Math)"
         >
@@ -595,8 +595,8 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
           onClick={() => setActiveTab('portal')}
           className={`py-2 px-2.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap cursor-pointer flex items-center justify-center gap-1 touch-target-min ${
             activeTab === 'portal'
-              ? 'bg-purple-950/70 text-purple-200 border border-purple-500/40 font-semibold'
-              : 'text-purple-400/80 hover:text-purple-200'
+              ? 'bg-amber-950/70 text-amber-200 border border-amber-500/40 font-semibold'
+              : 'text-slate-400 hover:text-amber-200'
           }`}
         >
           <Orbit className="w-3.5 h-3.5" />
@@ -607,7 +607,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
           onClick={() => setActiveTab('arsenal')}
           className={`py-2 px-2.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap cursor-pointer touch-target-min ${
             activeTab === 'arsenal'
-              ? 'bg-slate-800 text-white font-semibold'
+              ? 'bg-amber-950/70 text-amber-200 border border-amber-500/40 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -618,7 +618,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
           onClick={() => setActiveTab('vows')}
           className={`py-2 px-2.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap cursor-pointer touch-target-min ${
             activeTab === 'vows'
-              ? 'bg-slate-800 text-white font-semibold'
+              ? 'bg-amber-950/70 text-amber-200 border border-amber-500/40 font-semibold'
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
@@ -635,12 +635,12 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
             <div
               className={`relative p-3.5 rounded-xl border space-y-2.5 transition-all ${
                 isBurnout
-                  ? 'bg-slate-900/70 border-rose-500/60 burnout-cracked-overlay grayscale-[40%]'
-                  : 'bg-[#07070a] border-slate-800/90'
+                  ? 'bg-slate-900/70 border-amber-500/60 burnout-cracked-overlay grayscale-[40%]'
+                  : 'bg-[#080605] border-slate-800/90'
               }`}
             >
               {isBurnout && (
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-rose-400 bg-rose-950/70 border border-rose-500/50 px-2.5 py-1 rounded">
+                <div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-400 bg-amber-950/70 border border-amber-500/50 px-2.5 py-1 rounded">
                   <ShieldAlert className="w-3.5 h-3.5 shrink-0" />
                   <span>EXAUSTÃO PÓS-DOMÍNIO (BURNOUT): Técnica Instável</span>
                 </div>
@@ -672,7 +672,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                   </span>
                 </div>
                 <div>
-                  <span className="text-rose-400 font-semibold">Reversão (Vermelho): </span>
+                  <span className="text-amber-400 font-semibold">Reversão (Vermelho): </span>
                   <span
                     className={
                       isSectionUndeveloped(character.technique.reversal)
@@ -697,7 +697,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                 </div>
                 {character.technique.activationConditions && (
                   <div>
-                    <span className="text-purple-400 font-semibold">Condições de Ativação: </span>
+                    <span className="text-amber-400 font-semibold">Condições de Ativação: </span>
                     <span className="text-slate-300">{character.technique.activationConditions}</span>
                   </div>
                 )}
@@ -705,9 +705,9 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
             </div>
 
             {/* Domain Expansion Summary & Quick Portal Shortcut */}
-            <div className="p-3.5 rounded-xl bg-[#07070a] border border-purple-500/30 space-y-2.5">
+            <div className="p-3.5 rounded-xl bg-[#080605] border border-amber-500/30 space-y-2.5">
               <div className="flex items-center justify-between">
-                <div className="text-[10px] uppercase tracking-wider text-purple-400 font-semibold flex items-center gap-1">
+                <div className="text-[10px] uppercase tracking-wider text-amber-400 font-semibold flex items-center gap-1">
                   <Orbit className="w-3.5 h-3.5" />
                   <span>Expansão de Domínio (Ryōiki Tenkai)</span>
                 </div>
@@ -743,13 +743,13 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     }
                     className={`w-full py-1.5 px-2.5 rounded-lg font-semibold text-[11px] flex items-center justify-center gap-1.5 transition-all cursor-pointer border ${
                       isDomainActiveInWorld
-                        ? 'bg-rose-950/70 border-rose-500 text-rose-200'
-                        : 'bg-purple-950/60 hover:bg-purple-900/70 border-purple-500/50 text-purple-200'
+                        ? 'bg-amber-950/70 border-amber-500 text-amber-200'
+                        : 'bg-amber-950/60 hover:bg-amber-900/70 border-amber-500/50 text-amber-200'
                     }`}
                   >
                     <Orbit
                       className={`w-3.5 h-3.5 ${
-                        isDomainActiveInWorld ? 'animate-spin text-rose-400' : 'text-purple-400'
+                        isDomainActiveInWorld ? 'animate-spin text-amber-400' : 'text-amber-400'
                       }`}
                     />
                     <span>
@@ -809,7 +809,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
 
             {/* Original Character Backstory & Combat Style Card */}
             {(character.backstory || character.combatStyle) && (
-              <div className="p-3.5 rounded-xl bg-[#07070a] border border-slate-800/90 space-y-2">
+              <div className="p-3.5 rounded-xl bg-[#080605] border border-slate-800/90 space-y-2">
                 <div className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold flex items-center gap-1">
                   <UserCheck className="w-3.5 h-3.5" />
                   <span>Identidade Original & Estilo Marcial</span>
@@ -836,7 +836,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
         {/* Exclusive Living Character Sheet Tab ("📜 Ficha Viva") */}
         {activeTab === 'sheet' && (
           <div className="space-y-3">
-            <div className="p-3.5 rounded-xl bg-[#07070a] border border-amber-500/40 space-y-3">
+            <div className="p-3.5 rounded-xl bg-[#080605] border border-amber-500/40 space-y-3">
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="text-[10px] uppercase tracking-wider font-bold text-amber-300 flex items-center gap-1.5">
@@ -875,7 +875,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                       className={`p-2.5 rounded-lg border space-y-1.5 transition-all ${
                         sec.isUndeveloped
                           ? 'bg-amber-950/15 border-amber-500/40'
-                          : 'bg-[#0f0f14] border-slate-800/90'
+                          : 'bg-[#0d0b09] border-slate-800/90'
                       }`}
                     >
                       <div className="flex items-center justify-between gap-2">
@@ -931,7 +931,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                             value={editingSectionValue}
                             onChange={(e) => setEditingSectionValue(e.target.value)}
                             placeholder={`Descreva o despertar ou evolução de "${sec.label}"...`}
-                            className="w-full px-2 py-1.5 rounded bg-[#07070a] border border-sky-500/60 text-white text-[11px]"
+                            className="w-full px-2 py-1.5 rounded bg-[#080605] border border-sky-500/60 text-white text-[11px]"
                           />
                           <button
                             type="button"
@@ -959,8 +959,8 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
 
               {/* Evolution History Log */}
               <div className="pt-2 border-t border-slate-800/80 space-y-2">
-                <div className="text-[10px] uppercase tracking-wider font-bold text-purple-300 flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-purple-400" />
+                <div className="text-[10px] uppercase tracking-wider font-bold text-amber-300 flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-400" />
                   <span>Histórico de Modificações na História ({character.evolutionHistory?.length || 0})</span>
                 </div>
                 <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
@@ -972,9 +972,9 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     [...(character.evolutionHistory || [])].reverse().map((ev) => (
                       <div
                         key={ev.id}
-                        className="p-2 rounded bg-[#0f0f14] border border-slate-800/80 text-[10px] space-y-0.5"
+                        className="p-2 rounded bg-[#0d0b09] border border-slate-800/80 text-[10px] space-y-0.5"
                       >
-                        <div className="flex items-center justify-between text-purple-300 font-semibold">
+                        <div className="flex items-center justify-between text-amber-300 font-semibold">
                           <span>{ev.gradeAtTime}</span>
                           <span>Nível {ev.levelAtTime}</span>
                         </div>
@@ -1010,13 +1010,13 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               </div>
               <p className="text-[10px] text-slate-300 leading-tight">
                 <strong className="text-amber-300">100% Narrativo · Sem matemática.</strong> Afinidades ajudam no narrar da história e o sistema garante obrigatoriamente pelo menos{' '}
-                <span className="text-rose-300 font-semibold">1 Pilar em Fragilidade (▼)</span> ({limitationsCheck.fragilePillarCount} ativo) e{' '}
-                <span className="text-rose-300 font-semibold">1 Perícia em Inaptidão (▼)</span> ({limitationsCheck.fragileSkillCount} ativa).
+                <span className="text-amber-300 font-semibold">1 Pilar em Fragilidade (▼)</span> ({limitationsCheck.fragilePillarCount} ativo) e{' '}
+                <span className="text-amber-300 font-semibold">1 Perícia em Inaptidão (▼)</span> ({limitationsCheck.fragileSkillCount} ativa).
               </p>
             </div>
 
             {/* Os 6 Pilares de Aptidão */}
-            <div className="p-3 rounded-xl bg-[#07070a] border border-slate-800 space-y-2.5">
+            <div className="p-3 rounded-xl bg-[#080605] border border-slate-800 space-y-2.5">
               <div className="text-[10px] uppercase tracking-wider font-bold text-amber-400 font-display flex flex-wrap items-center justify-between gap-1">
                 <span>Os 6 Pilares de Aptidão (Mín. 1 Fragilidade)</span>
                 <span className="text-[9px] text-slate-400 font-sans font-normal">Toque para alternar</span>
@@ -1031,8 +1031,8 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                       onClick={() => handleTogglePillar(pillar.id)}
                       className={`p-2.5 rounded-lg border text-left transition-colors cursor-pointer w-full min-w-0 ${
                         pillar.tier === 'Fraco'
-                          ? 'bg-rose-950/25 border-rose-500/70'
-                          : 'bg-[#0f0f14] hover:bg-[#14141e] border-slate-800'
+                          ? 'bg-amber-950/25 border-amber-500/70'
+                          : 'bg-[#0d0b09] hover:bg-[#16110d] border-slate-800'
                       }`}
                     >
                       <div className="flex flex-wrap items-start justify-between text-[11px] font-bold gap-1.5">
@@ -1052,14 +1052,14 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
 
             {/* Add Custom Skill Form */}
             {isAddingSkill && (
-              <form onSubmit={handleAddCustomSkill} className="p-3 rounded-xl bg-[#07070a] border border-amber-500/50 space-y-2 text-xs">
+              <form onSubmit={handleAddCustomSkill} className="p-3 rounded-xl bg-[#080605] border border-amber-500/50 space-y-2 text-xs">
                 <div className="font-bold text-amber-300">Nova Perícia Narrativa</div>
                 <input
                   type="text"
                   value={newSkillName}
                   onChange={(e) => setNewSkillName(e.target.value)}
                   placeholder="Nome da Perícia..."
-                  className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-white text-xs"
+                  className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-white text-xs"
                 />
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <select
@@ -1067,7 +1067,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     onChange={(e) =>
                       setNewSkillCategory(e.target.value as typeof newSkillCategory)
                     }
-                    className="px-2 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-slate-200 text-xs"
+                    className="px-2 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-200 text-xs"
                   >
                     <option value="Combate & Corpo">Combate & Corpo</option>
                     <option value="Jujutsu & Barreiras">Jujutsu & Barreiras</option>
@@ -1079,7 +1079,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     onChange={(e) =>
                       setNewSkillAffinity(e.target.value as NarrativeAffinityLevel)
                     }
-                    className="px-2 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-slate-200 text-xs font-bold"
+                    className="px-2 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-200 text-xs font-bold"
                   >
                     <option value="maestria">★ Maestria (Ajuda Muito)</option>
                     <option value="afinidade">● Afinidade (Ajuda)</option>
@@ -1093,7 +1093,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                   value={newSkillDesc}
                   onChange={(e) => setNewSkillDesc(e.target.value)}
                   placeholder="Descrição da ação narrativa..."
-                  className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-slate-300 text-xs leading-relaxed"
+                  className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-300 text-xs leading-relaxed"
                 />
                 <div className="flex items-center justify-end gap-2 pt-1">
                   <button
@@ -1114,7 +1114,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
             )}
 
             {/* Narrative Skills List */}
-            <div className="p-3 rounded-xl bg-[#07070a] border border-slate-800 space-y-2.5">
+            <div className="p-3 rounded-xl bg-[#080605] border border-slate-800 space-y-2.5">
               <div className="text-[10px] uppercase tracking-wider font-bold text-slate-400 flex flex-wrap items-center justify-between gap-1">
                 <span>Perícias Cadastradas ({skills.length})</span>
                 <span className="text-[9px] text-slate-400">Clique para alternar afinidade</span>
@@ -1126,7 +1126,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     <div
                       key={skill.id}
                       onClick={() => handleCycleSkillAffinity(skill.id)}
-                      className="p-2.5 rounded-lg bg-[#0f0f14] hover:bg-[#14141e] border border-slate-800/80 space-y-1.5 cursor-pointer transition-colors min-w-0"
+                      className="p-2.5 rounded-lg bg-[#0d0b09] hover:bg-[#16110d] border border-slate-800/80 space-y-1.5 cursor-pointer transition-colors min-w-0"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="text-xs font-semibold text-slate-100 leading-snug break-words min-w-0 flex-1">
@@ -1147,11 +1147,11 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               </div>
             </div>
 
-            {/* D&D 5e Roleplay Quad summary */}
+            {/* Roleplay Quad summary */}
             {(character.personalityTraits || character.ideals || character.bonds || character.flaws) && (
-              <div className="p-3 rounded-xl bg-[#07070a] border border-slate-800 space-y-2 text-[11px]">
-                <div className="text-[10px] uppercase tracking-wider font-bold text-purple-300">
-                  Interpretação & Filosofia (D&D 5e)
+              <div className="p-3 rounded-xl bg-[#080605] border border-slate-800 space-y-2 text-[11px]">
+                <div className="text-[10px] uppercase tracking-wider font-bold text-amber-300">
+                  Interpretação & Filosofia
                 </div>
                 {character.alignmentPhilosophy && (
                   <div>
@@ -1179,7 +1179,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                 )}
                 {character.flaws && (
                   <div>
-                    <span className="text-rose-400 font-semibold">Defeitos: </span>
+                    <span className="text-amber-400 font-semibold">Defeitos: </span>
                     <span className="text-slate-200">{character.flaws}</span>
                   </div>
                 )}
@@ -1191,9 +1191,9 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
         {/* Dedicated Domain Portal Configurator Tab */}
         {activeTab === 'portal' && (
           <div className="space-y-3">
-            <div className="p-3.5 rounded-xl bg-[#07070a] border border-purple-500/40 space-y-3">
+            <div className="p-3.5 rounded-xl bg-[#080605] border border-amber-500/40 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] uppercase tracking-wider font-bold text-purple-400 flex items-center gap-1.5">
+                <span className="text-[10px] uppercase tracking-wider font-bold text-amber-400 flex items-center gap-1.5">
                   <Orbit className="w-3.5 h-3.5" />
                   Configuração de Portal de Domínio
                 </span>
@@ -1203,7 +1203,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               </div>
 
               {/* Live Mini Radial Preview */}
-              <div className="relative h-28 rounded-xl overflow-hidden border border-purple-500/40 bg-[#050508] flex items-center justify-center">
+              <div className="relative h-28 rounded-xl overflow-hidden border border-amber-500/40 bg-[#050508] flex items-center justify-center">
                 <div
                   className="domain-expansion-portal-overlay"
                   style={
@@ -1245,8 +1245,8 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                   }
                   className={`w-full py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer border transition-all ${
                     isDomainActiveInWorld
-                      ? 'bg-rose-600/30 border-rose-500 text-rose-200'
-                      : 'bg-gradient-to-r from-purple-600 to-sky-600 border-purple-400/50 text-white'
+                      ? 'bg-amber-600/30 border-amber-500 text-amber-200'
+                      : 'bg-gradient-to-r from-amber-600 to-sky-600 border-amber-400/50 text-white'
                   }`}
                 >
                   <Orbit className={`w-3.5 h-3.5 ${isDomainActiveInWorld ? 'animate-spin' : ''}`} />
@@ -1267,7 +1267,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     type="text"
                     value={portalConfig.domainName}
                     onChange={(e) => handleUpdatePortalConfig({ domainName: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs"
                   />
                 </div>
 
@@ -1279,7 +1279,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     type="text"
                     value={portalConfig.handSeal}
                     onChange={(e) => handleUpdatePortalConfig({ handSeal: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs"
                   />
                 </div>
 
@@ -1292,7 +1292,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     onChange={(e) =>
                       handleUpdatePortalConfig({ barrierType: e.target.value as DomainBarrierType })
                     }
-                    className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-slate-200 text-xs"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-slate-200 text-xs"
                   >
                     <option value="Barreira Fechada Padrão (Esfera Isolada)">
                       Barreira Fechada Padrão (Esfera Isolada)
@@ -1318,7 +1318,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     onChange={(e) =>
                       handlePresetStyleChange(e.target.value as DomainPortalStyle)
                     }
-                    className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-slate-200 text-xs"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-slate-200 text-xs"
                   >
                     <option value="infinite_void">Vazio Ilimitado (Singularidade Cósmica)</option>
                     <option value="malevolent_shrine">Santuário Malevolente (Abismo Carmesim)</option>
@@ -1340,7 +1340,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                           primaryColor: e.target.value,
                         })
                       }
-                      className="w-full h-7 rounded bg-[#0f0f14] border border-slate-700 cursor-pointer"
+                      className="w-full h-7 rounded bg-[#0d0b09] border border-slate-700 cursor-pointer"
                     />
                   </div>
                   <div>
@@ -1354,7 +1354,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                           secondaryColor: e.target.value,
                         })
                       }
-                      className="w-full h-7 rounded bg-[#0f0f14] border border-slate-700 cursor-pointer"
+                      className="w-full h-7 rounded bg-[#0d0b09] border border-slate-700 cursor-pointer"
                     />
                   </div>
                   <div>
@@ -1368,7 +1368,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                           coreColor: e.target.value,
                         })
                       }
-                      className="w-full h-7 rounded bg-[#0f0f14] border border-slate-700 cursor-pointer"
+                      className="w-full h-7 rounded bg-[#0d0b09] border border-slate-700 cursor-pointer"
                     />
                   </div>
                 </div>
@@ -1384,7 +1384,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                         overlayIntensity: e.target.value as 'subtle' | 'medium' | 'intense',
                       })
                     }
-                    className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-slate-200 text-xs"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-slate-200 text-xs"
                   >
                     <option value="subtle">Sutil (68% Opacidade)</option>
                     <option value="medium">Equilibrada (84% Opacidade)</option>
@@ -1400,7 +1400,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     rows={2}
                     value={portalConfig.sureHitEffect}
                     onChange={(e) => handleUpdatePortalConfig({ sureHitEffect: e.target.value })}
-                    className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs resize-y"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs resize-y"
                   />
                 </div>
 
@@ -1414,7 +1414,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                     onChange={(e) =>
                       handleUpdatePortalConfig({ portalEnvironment: e.target.value })
                     }
-                    className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs resize-y"
+                    className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs resize-y"
                   />
                 </div>
               </div>
@@ -1428,11 +1428,11 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               {character.inventory.map((item) => (
                 <div
                   key={item.id}
-                  className="p-3 rounded-xl bg-[#07070a] border border-slate-800/90 space-y-1"
+                  className="p-3 rounded-xl bg-[#080605] border border-slate-800/90 space-y-1"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <span className="font-semibold text-white flex items-center gap-1.5">
-                      <Sword className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                      <Sword className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                       {item.name}
                     </span>
                     <span className="text-[11px] text-amber-400 shrink-0">{item.grade}</span>
@@ -1442,7 +1442,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               ))}
             </div>
 
-            <form onSubmit={handleAddTool} className="p-3 rounded-xl bg-[#07070a] border border-slate-800/80 space-y-2">
+            <form onSubmit={handleAddTool} className="p-3 rounded-xl bg-[#080605] border border-slate-800/80 space-y-2">
               <div className="text-[11px] font-semibold text-slate-300">
                 Adicionar Ferramenta / Objeto Amaldiçoado
               </div>
@@ -1451,13 +1451,13 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                 value={newToolName}
                 onChange={(e) => setNewToolName(e.target.value)}
                 placeholder="Nome (ex: Dedo de Sukuna, Inverted Spear...)"
-                className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs"
+                className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs"
               />
               <div className="flex gap-2">
                 <select
                   value={newToolGrade}
                   onChange={(e) => setNewToolGrade(e.target.value)}
-                  className="px-2 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-slate-200 text-xs"
+                  className="px-2 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-slate-200 text-xs"
                 >
                   <option>Grau Especial</option>
                   <option>Grau 1</option>
@@ -1470,7 +1470,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                   value={newToolEffect}
                   onChange={(e) => setNewToolEffect(e.target.value)}
                   placeholder="Efeito mecânico..."
-                  className="flex-1 px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs"
+                  className="flex-1 px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs"
                 />
               </div>
               <button
@@ -1494,7 +1494,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                   className={`p-3 rounded-xl border transition-all cursor-pointer space-y-1 ${
                     vow.active
                       ? 'bg-amber-950/25 border-amber-500/60'
-                      : 'bg-[#07070a] border-slate-800/90 opacity-80'
+                      : 'bg-[#080605] border-slate-800/90 opacity-80'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -1513,7 +1513,7 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
               ))}
             </div>
 
-            <form onSubmit={handleAddVow} className="p-3 rounded-xl bg-[#07070a] border border-slate-800/80 space-y-2">
+            <form onSubmit={handleAddVow} className="p-3 rounded-xl bg-[#080605] border border-slate-800/80 space-y-2">
               <div className="text-[11px] font-semibold text-amber-300">
                 Pactuar Novo Voto Vinculativo
               </div>
@@ -1522,14 +1522,14 @@ export const LeftSorcererSheet: React.FC<LeftSorcererSheetProps> = ({
                 value={newVowName}
                 onChange={(e) => setNewVowName(e.target.value)}
                 placeholder="Nome do Voto (ex: Hora Extra / Overtime)"
-                className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs"
+                className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs"
               />
               <input
                 type="text"
                 value={newVowBonus}
                 onChange={(e) => setNewVowBonus(e.target.value)}
                 placeholder="Restrição e Bônus (ex: 80% antes das 18h -> 120% à noite)"
-                className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-800 text-white text-xs"
+                className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-800 text-white text-xs"
               />
               <button
                 type="submit"

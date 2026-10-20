@@ -16,6 +16,7 @@ import {
   GeminiConnectionReport,
   validateGeminiConnection,
 } from '../services/geminiService';
+import { getAccessCode, setAccessCode } from '../services/accessGuard';
 import {
   Cloud,
   Download,
@@ -90,6 +91,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
   );
   const [isValidatingKey, setIsValidatingKey] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState(customApiKey || '');
+  const [accessCodeInput, setAccessCodeInput] = useState(() => getAccessCode());
   const [showKeySecret, setShowKeySecret] = useState(false);
   const [keyActionFeedback, setKeyActionFeedback] = useState<string | null>(null);
 
@@ -165,6 +167,24 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
       setIsValidatingKey(false);
       setTimeout(() => setKeyActionFeedback(null), 5000);
     }
+  };
+
+  const handleSaveAccessCode = () => {
+    const clean = accessCodeInput.trim();
+    setAccessCode(clean);
+    setKeyActionFeedback(
+      clean
+        ? 'Código de acesso do servidor salvo neste navegador.'
+        : 'Código de acesso removido.'
+    );
+    setTimeout(() => setKeyActionFeedback(null), 5000);
+  };
+
+  const handleClearAccessCode = () => {
+    setAccessCodeInput('');
+    setAccessCode('');
+    setKeyActionFeedback('Código de acesso removido.');
+    setTimeout(() => setKeyActionFeedback(null), 5000);
   };
 
   const fetchCloudSaves = async () => {
@@ -246,7 +266,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
             ? 'bg-slate-900/60 border-slate-700'
             : currentState === 'QUOTA_EXCEEDED'
             ? 'bg-amber-950/25 border-amber-500/40'
-            : 'bg-rose-950/25 border-rose-500/40'
+            : 'bg-amber-950/25 border-amber-500/40'
         }`}
       >
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -255,7 +275,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
               {currentState === 'VALID' ? (
                 <Wifi className="w-4 h-4 text-emerald-400 shrink-0" />
               ) : currentState === 'CHECKING' ? (
-                <RefreshCw className="w-4 h-4 text-purple-400 animate-spin shrink-0" />
+                <RefreshCw className="w-4 h-4 text-amber-400 animate-spin shrink-0" />
               ) : (
                 <WifiOff className="w-4 h-4 text-amber-400 shrink-0" />
               )}
@@ -274,7 +294,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
                 </span>
               )}
               {currentState === 'INVALID' && (
-                <span className="px-2.5 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/40 text-rose-300 font-mono text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-300 font-mono text-[10px] font-bold uppercase tracking-wider">
                   ⚠ Chave Inválida / Não Autorizada
                 </span>
               )}
@@ -284,7 +304,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
                 </span>
               )}
               {currentState === 'CHECKING' && (
-                <span className="px-2.5 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/40 text-purple-200 font-mono text-[10px] font-bold uppercase tracking-wider">
+                <span className="px-2.5 py-0.5 rounded-md bg-amber-500/20 border border-amber-500/40 text-amber-200 font-mono text-[10px] font-bold uppercase tracking-wider">
                   Verificando...
                 </span>
               )}
@@ -302,7 +322,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
             type="button"
             onClick={() => handleValidateNow()}
             disabled={isValidatingKey}
-            className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
+            className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isValidatingKey ? 'animate-spin' : ''}`} />
             <span>{isValidatingKey ? 'Validando...' : 'Testar Conexão Agora'}</span>
@@ -313,7 +333,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
         <div className="pt-3 border-t border-slate-800/80 space-y-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
             <span className="font-semibold text-slate-200 flex items-center gap-1.5">
-              <Key className="w-3.5 h-3.5 text-purple-400" />
+              <Key className="w-3.5 h-3.5 text-amber-400" />
               Chave de API do Gemini (Google AI Studio)
             </span>
             <span className="text-[10px] font-mono text-slate-400">
@@ -330,7 +350,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
                 placeholder="Insira sua chave AIzaSy... ou deixe em branco para usar a chave padrão"
-                className="w-full bg-[#14141d] border border-slate-700 focus:border-purple-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 font-mono pr-9 focus:outline-none"
+                className="w-full bg-[#16110d] border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 font-mono pr-9 focus:outline-none"
               />
               <button
                 type="button"
@@ -347,7 +367,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
                 type="button"
                 onClick={handleSaveAndTestKey}
                 disabled={isValidatingKey}
-                className="px-3.5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors"
+                className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 disabled:opacity-50 text-white font-semibold text-xs flex items-center gap-1 cursor-pointer transition-colors"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>Salvar & Validar</span>
@@ -382,12 +402,55 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-purple-400 hover:text-purple-300 flex items-center gap-1 transition-colors underline"
+              className="text-amber-400 hover:text-amber-300 flex items-center gap-1 transition-colors underline"
             >
               <span>Obter chave no Google AI Studio</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           </div>
+        </div>
+
+        {/* Código de acesso do servidor (opcional) */}
+        <div className="pt-3 border-t border-slate-800/80 space-y-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+            <span className="font-semibold text-slate-200 flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              Código de acesso do servidor
+            </span>
+            <span className="text-[10px] font-mono text-slate-400">opcional · APP_ACCESS_CODE</span>
+          </div>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <input
+              type="password"
+              value={accessCodeInput}
+              onChange={(e) => setAccessCodeInput(e.target.value)}
+              placeholder="Deixe vazio se o servidor não exigir código"
+              className="flex-1 bg-[#16110d] border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-500 font-mono focus:outline-none"
+            />
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={handleSaveAccessCode}
+                className="px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs cursor-pointer transition-colors"
+              >
+                Salvar
+              </button>
+              {accessCodeInput && (
+                <button
+                  type="button"
+                  onClick={handleClearAccessCode}
+                  className="px-2.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs cursor-pointer transition-colors"
+                >
+                  Limpar
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="text-[10px] text-slate-500 leading-snug">
+            Só é necessário se o administrador definir{' '}
+            <code className="text-amber-300">APP_ACCESS_CODE</code> no <code>.env</code> do
+            servidor. O código fica salvo apenas neste navegador.
+          </p>
         </div>
 
         {/* Diagnostic Metadata Bar */}
@@ -412,7 +475,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
         )}
 
         {/* Continuity Assurance Note */}
-        <div className="p-2.5 rounded-xl bg-[#09090e]/90 border border-slate-800 flex items-start gap-2.5">
+        <div className="p-2.5 rounded-xl bg-[#0a0807]/90 border border-slate-800 flex items-start gap-2.5">
           {currentState === 'VALID' ? (
             <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
           ) : (
@@ -428,7 +491,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
       </div>
 
       {/* 2. Cloud Progress Manager (Firebase Firestore) */}
-      <div className="p-4 rounded-2xl bg-[#07070a] border border-sky-500/30 space-y-4">
+      <div className="p-4 rounded-2xl bg-[#080605] border border-sky-500/30 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="space-y-1">
             <div className="font-display font-bold text-sm text-sky-400 flex items-center gap-2">
@@ -513,7 +576,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
                 {cloudList.map((item) => (
                   <div
                     key={item.id}
-                    className="p-3 rounded-xl bg-[#0f0f14] border border-slate-800 flex items-center justify-between gap-3"
+                    className="p-3 rounded-xl bg-[#0d0b09] border border-slate-800 flex items-center justify-between gap-3"
                   >
                     <div className="min-w-0">
                       <div className="font-semibold text-white truncate">{item.title}</div>
@@ -541,7 +604,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
                         type="button"
                         onClick={() => handleDeleteCloudSave(item.id)}
                         aria-label={`Excluir campanha ${item.title}`}
-                        className="p-1.5 rounded-lg bg-rose-950/50 hover:bg-rose-900/60 text-rose-400 cursor-pointer"
+                        className="p-1.5 rounded-lg bg-amber-950/50 hover:bg-amber-900/60 text-amber-400 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -560,7 +623,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
           type="button"
           onClick={onExportJson}
           disabled={!campaign}
-          className="p-3.5 rounded-xl bg-[#07070a] hover:bg-slate-900 border border-slate-800 text-left space-y-1 disabled:opacity-40 cursor-pointer"
+          className="p-3.5 rounded-xl bg-[#080605] hover:bg-slate-900 border border-slate-800 text-left space-y-1 disabled:opacity-40 cursor-pointer"
         >
           <div className="font-semibold text-emerald-400 flex items-center gap-1.5">
             <Download className="w-4 h-4" />
@@ -571,7 +634,7 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
           </p>
         </button>
 
-        <label className="p-3.5 rounded-xl bg-[#07070a] hover:bg-slate-900 border border-slate-800 text-left space-y-1 cursor-pointer block">
+        <label className="p-3.5 rounded-xl bg-[#080605] hover:bg-slate-900 border border-slate-800 text-left space-y-1 cursor-pointer block">
           <div className="font-semibold text-amber-400 flex items-center gap-1.5">
             <FolderOpen className="w-4 h-4" />
             Importar Campanha (.json)
@@ -599,9 +662,9 @@ export const SystemAndCloudPanel: React.FC<SystemAndCloudPanelProps> = ({
             onStartNewCampaign();
             if (onCloseModal) onCloseModal();
           }}
-          className="p-3.5 rounded-xl bg-rose-950/25 hover:bg-rose-950/40 border border-rose-500/40 text-left space-y-1 cursor-pointer"
+          className="p-3.5 rounded-xl bg-amber-950/25 hover:bg-amber-950/40 border border-amber-500/40 text-left space-y-1 cursor-pointer"
         >
-          <div className="font-semibold text-rose-400 flex items-center gap-1.5">
+          <div className="font-semibold text-amber-400 flex items-center gap-1.5">
             <PlusCircle className="w-4 h-4" />
             Nova Campanha (Wizard)
           </div>

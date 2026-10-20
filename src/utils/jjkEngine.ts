@@ -12,6 +12,7 @@ import {
   type NarrativePillarTier,
   type NarrativeSkillItem,
 } from '../types/jjk';
+import { inferStoryCardEra, isStoryCardAllowedForEra } from './storyCardEra';
 
 export interface ParsedNarrativeBlock {
   id: string;
@@ -165,8 +166,9 @@ export function getDiceOutcomeInfo(roll: number, modifier = 0): DiceOutcomeInfo 
       roll: 20,
       modifiedTotal,
       tier: 'BLACK_FLASH',
-      title: `20 Natural (Total ${modifiedTotal}) — FAÍSCA NEGRA (KOKUSEN!)`,
-      description: 'Aplicação de EA em 0,000001s! Dano elevado à potência 2.5 e entrada na Zona de 120%!',
+      title: `20 Natural (Total ${modifiedTotal}) — Momento de Clímax`,
+      description:
+        'Sorte máxima: um instante raro em que a cena pode coroar a ação — o Mestre decide se é um Kokusen (Zona de 120%) ou apenas uma virada espetacular.',
       colorClass: 'text-rose-400 border-rose-500 bg-black shadow-[0_0_20px_rgba(225,29,72,0.5)]',
     };
   }
@@ -207,12 +209,18 @@ export function getDiceOutcomeInfo(roll: number, modifier = 0): DiceOutcomeInfo 
 export function selectActiveStoryCardsForTurn(
   cards: StoryCard[],
   contextText: string,
-  maxCards = 10
+  maxCards = 10,
+  era?: 'canon' | 'sequel'
 ): StoryCard[] {
   if (!cards || cards.length === 0) return [];
+
+  // Em campanha de seguimento, cards de evento de 2018 (Jogo do Abate,
+  // Incidente de Shibuya, etc.) não entram: eles fariam o Mestre narrar o
+  // passado como se fosse o presente. Personagens, técnicas e locais seguem.
+  const pool = era ? cards.filter((card) => isStoryCardAllowedForEra(card, era)) : cards;
   const normalizedContext = contextText.toLowerCase();
 
-  const scored = cards.map((card, index) => {
+  const scored = pool.map((card, index) => {
     let score = 0;
     const titleLower = card.title.toLowerCase();
     if (normalizedContext.includes(titleLower)) {
@@ -229,6 +237,9 @@ export function selectActiveStoryCardsForTurn(
     if (card.type === 'technique' || card.type === 'domain' || card.type === 'lore') {
       score += 1;
     }
+    if (era === 'sequel' && inferStoryCardEra(card) === 'sequel') {
+      score += 2;
+    }
 
     return { card, score, index };
   });
@@ -239,7 +250,13 @@ export function selectActiveStoryCardsForTurn(
   if (matched.length > 0) {
     return matched.map((m) => m.card);
   }
-  return cards.slice(0, Math.min(8, maxCards));
+
+  // Sem match textual: prefere lore/técnica reutilizável, nunca um evento
+  // canônico que a campanha de seguimento não está vivendo.
+  const fallbackPool = pool.filter((card) =>
+    ['lore', 'technique', 'domain', 'faction'].includes(card.type)
+  );
+  return (fallbackPool.length > 0 ? fallbackPool : pool).slice(0, Math.min(8, maxCards));
 }
 
 /**
@@ -852,14 +869,14 @@ export const DEFAULT_NARRATIVE_PILLARS: NarrativePillarItem[] = [
   {
     id: 'pillar-vigor',
     name: 'Vigor & Corpo',
-    abbr: 'FOR / CON',
+    abbr: 'Corpo',
     tier: 'Forte',
     narrativeNote: 'Potência muscular bruta, resistência a impactos e tolerância à dor em combate.',
   },
   {
     id: 'pillar-agility',
     name: 'Agilidade & Reflexo',
-    abbr: 'DES',
+    abbr: 'Reflexo',
     tier: 'Forte',
     narrativeNote: 'Velocidade de esquiva, reação no milionésimo de segundo e mobilidade acrobática.',
   },
@@ -873,23 +890,23 @@ export const DEFAULT_NARRATIVE_PILLARS: NarrativePillarItem[] = [
   {
     id: 'pillar-intellect',
     name: 'Intelecto Tático',
-    abbr: 'INT',
+    abbr: 'Mente',
     tier: 'Padrao',
     narrativeNote: 'Dedução rápida das regras da técnica inimiga e formulação de contra-medidas.',
   },
   {
     id: 'pillar-instinct',
     name: 'Instinto & Percepção',
-    abbr: 'SAB',
+    abbr: 'Instinto',
     tier: 'Padrao',
     narrativeNote: 'Sexto sentido para intenção assassina, leitura de resíduos e emboscadas.',
   },
   {
     id: 'pillar-presence',
     name: 'Presença & Compostura',
-    abbr: 'CAR',
+    abbr: 'Presença',
     tier: 'Fraco',
-    narrativeNote: 'Fragilidade Obrigatória: Dificuldade em conter impulsos emocionais ou lidar com a política do Alto Escalão Jujutsu.',
+    narrativeNote: 'Tendência a agir pelo impulso ou atrito com a política do Alto Escalão Jujutsu.',
   },
 ];
 
@@ -1023,52 +1040,37 @@ export function validateNarrativeLimitations(
 
   const fragileSkillCount = skills.filter((s) => s.level === 'inaptidao').length;
   const masterySkillCount = skills.filter((s) => s.level === 'maestria').length;
-  const maxMasterySkills = 2;
-
-  const hasFragilePillar = fragilePillarCount >= 1;
-  const hasFragileSkill = fragileSkillCount >= 1;
+  const maxMasterySkills = 3;
 
   const warnings: string[] = [];
-  if (!hasFragilePillar) {
-    warnings.push(
-      'Regra Obrigatória de Mesa: Pelo menos 1 dos 6 Pilares de Aptidão DEVE ser marcado como "▼ Fragilidade".'
-    );
-  }
   if (apexPillarCount > maxApexPillars) {
     warnings.push(
-      `Limite de Equilíbrio: No máximo ${maxApexPillars} Pilar pode ser "★ Ápice Sobre-Humano" (atualmente ${apexPillarCount}).`
+      `Sugestão de Equilíbrio: No máximo ${maxApexPillars} Pilar deve ser "★ Ápice Sobre-Humano" (atualmente ${apexPillarCount}).`
     );
   }
   if (strongOrApexPillarCount > maxStrongOrApexPillars) {
     warnings.push(
-      `Limite de Equilíbrio: No máximo ${maxStrongOrApexPillars} Pilares podem ser Ponto Forte / Ápice (atualmente ${strongOrApexPillarCount}).`
-    );
-  }
-  if (!hasFragileSkill) {
-    warnings.push(
-      'Regra Obrigatória de Mesa: Pelo menos 1 Perícia Narrativa DEVE ser marcada como "▼ Inaptidão / Prejudica".'
+      `Sugestão de Equilíbrio: No máximo ${maxStrongOrApexPillars} Pilares devem ser Ponto Forte / Ápice (atualmente ${strongOrApexPillarCount}).`
     );
   }
   if (masterySkillCount > maxMasterySkills) {
     warnings.push(
-      `Limite de Equilíbrio: No máximo ${maxMasterySkills} Perícias podem começar com "★ Maestria" (atualmente ${masterySkillCount}).`
+      `Sugestão de Equilíbrio: No máximo ${maxMasterySkills} Perícias devem começar com "★ Maestria" (atualmente ${masterySkillCount}).`
     );
   }
 
   return {
-    hasFragilePillar,
+    hasFragilePillar: fragilePillarCount >= 1,
     fragilePillarCount,
     strongOrApexPillarCount,
     apexPillarCount,
     maxStrongOrApexPillars,
     maxApexPillars,
-    hasFragileSkill,
+    hasFragileSkill: fragileSkillCount >= 1,
     fragileSkillCount,
     masterySkillCount,
     maxMasterySkills,
     isValid:
-      hasFragilePillar &&
-      hasFragileSkill &&
       apexPillarCount <= maxApexPillars &&
       strongOrApexPillarCount <= maxStrongOrApexPillars &&
       masterySkillCount <= maxMasterySkills,
@@ -1102,25 +1104,6 @@ export function enforceMandatoryLimitationsOnPillars(
     }
   }
 
-  // 2. Guarantee at least 1 Fragilidade ('Fraco')
-  const hasFragile = source.some((p) => p.tier === 'Fraco');
-  if (!hasFragile && source.length > 0) {
-    const presenceIdx = source.findIndex(
-      (p) => p.id.includes('presence') && p.tier !== 'Apice' && p.tier !== 'Forte'
-    );
-    const padraoIdx = source.findIndex((p) => p.tier === 'Padrao');
-    const targetIdx =
-      presenceIdx !== -1
-        ? presenceIdx
-        : padraoIdx !== -1
-        ? padraoIdx
-        : source.length - 1;
-    source[targetIdx] = {
-      ...source[targetIdx],
-      tier: 'Fraco',
-    };
-  }
-
   return source;
 }
 
@@ -1132,26 +1115,15 @@ export function enforceMandatoryLimitationsOnSkills(
       ? skills.map((s) => ({ ...s }))
       : DEFAULT_NARRATIVE_SKILLS.map((s) => ({ ...s }));
 
-  // 1. Cap Maestria at 2
+  // 1. Cap Maestria at 3
   let masterySeen = 0;
   for (let i = 0; i < source.length; i++) {
     if (source[i].level === 'maestria') {
       masterySeen++;
-      if (masterySeen > 2) {
+      if (masterySeen > 3) {
         source[i].level = 'afinidade';
       }
     }
-  }
-
-  // 2. Guarantee at least 1 Inaptidão ('inaptidao')
-  const hasInaptidao = source.some((s) => s.level === 'inaptidao');
-  if (!hasInaptidao && source.length > 0) {
-    const neutralIdx = source.findIndex((s) => s.level === 'neutro');
-    const targetIdx = neutralIdx !== -1 ? neutralIdx : source.length - 1;
-    source[targetIdx] = {
-      ...source[targetIdx],
-      level: 'inaptidao',
-    };
   }
 
   return source;
@@ -1297,16 +1269,22 @@ export function buildExclusiveCharacterSheetMarkdown(character: CharacterSheet):
   const latentSkills = skills.filter((s) => s.level === 'nao_desenvolvido');
   const history = character.evolutionHistory || [];
 
-  return `# 📜 FICHA EXCLUSIVA VIVA DO PERSONAGEM (ESTILO RPG DE MESA / D&D 5e): ${character.name.toUpperCase()}
+  const hr = character.heavenlyRestriction;
+  const hrLine = hr && hr.type !== 'nenhuma'
+    ? `SIM — ${hr.type === 'fisica' ? 'Física Absoluta (Zero EA)' : hr.type === 'espiritual' ? 'Espiritual Extrema (Corpo Frágil / EA Ampliada)' : 'Parcial (Troca Intermediária)'}`
+    : 'Não';
+
+  return `# 📜 FICHA EXCLUSIVA VIVA DO PERSONAGEM (RPG NARRATIVO JUJUTSU): ${character.name.toUpperCase()}
 - **Gatilhos (Keys):** ${character.name.toLowerCase()}, ficha exclusiva, perícias, afinidades, ${character.clan.toLowerCase()}, ${character.technique.name.toLowerCase()}, evolução, nível, grau
 - **Grau Designado Atual:** ${character.grade} (Modificador de Grau: ${calculateGradeModifier(character).label})
 - **Progressão na Categoria (${prog.currentGrade}):** Nível **${prog.levelInCurrentGrade} / ${prog.levelsRequiredForNextGrade}** na categoria para promoção a **${prog.nextGrade || 'Ápice do Grau Especial'}** (Nível Total de Feiticeiro: ${prog.totalCharacterLevel} · XP Atual: ${prog.currentXp}/${prog.xpToNextLevel})
-- **Facção / Classe:** ${character.faction} · **Clã / Antecedente:** ${character.clan}
+- **Facção / Origem:** ${character.faction} · **Clã / Antecedente:** ${character.clan}
+- **Clã (Linhagem):** ${character.clanStatus || 'Independente'} — ${character.clanTrait || 'Sem traço genético definido'} | ${character.clanTradition || 'Tradição a definir na campanha.'}
 - **Filosofia / Alinhamento Jujutsu:** ${character.alignmentPhilosophy || 'Pragmático / Leal aos Aliados'}
-- **Restrição Celestial:** ${character.isHeavenlyRestriction ? 'SIM (0% EA / Corpo Sobre-Humano)' : 'Não'}
+- **Restrição Celestial (Tenshin Jubaku):** ${hrLine}${hr && hr.type !== 'nenhuma' ? ` — Preço: ${hr.price || 'a definir'} | Benefício: ${hr.benefit || 'a definir'}` : ''}
 - **Estado Vital e Clínico:** HP ${Math.round(character.hpPercentage)}% (${character.physicalCondition}) | Reserva de EA: ${Math.round(character.cursedEnergyPercentage)}% | Output: ${Math.round(character.outputPercentage)}%
 
-## 1. Identidade, Psicologia (Traços D&D 5e) e Estilo Marcial
+## 1. Identidade, Psicologia e Estilo Marcial
 - **Aparência Física e Aura:** ${character.appearance || UNDEVELOPED_MARKER}
 - **Traços de Personalidade:** ${character.personalityTraits || 'Determinado sob pressão, atento aos companheiros.'}
 - **Ideais & Motivação:** ${character.ideals || 'Proteger os seus e superar os limites do próprio Jujutsu.'}

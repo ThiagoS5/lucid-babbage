@@ -4,6 +4,11 @@ import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import {
+  inferStoryCardEra,
+  isStoryCardAllowedForEra,
+  storyCardEraTag,
+} from './src/utils/storyCardEra';
 
 dotenv.config();
 
@@ -151,67 +156,352 @@ function loadServerSideLore() {
 
 loadServerSideLore();
 
+function cosineSimilarity(a: number[], b: number[]): number {
+  if (!a || !b || a.length !== b.length || a.length === 0) return 0;
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    dot += a[i] * b[i];
+    na += a[i] * a[i];
+    nb += b[i] * b[i];
+  }
+  if (na === 0 || nb === 0) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
 /**
- * Searches both the 283 Story Cards and the 1.1MB Encyclopedic Markdown Codex on the server
- * to enrich every turn with zero-hallucination canonical knowledge.
+ * Híbrido: pré-filtra por keyword (rápido) e, quando há cliente Gemini válido,
+ * re-ordena os candidatos por similaridade de cosseno via embeddings
+ * (gemini-embedding-001). Se o embedding falhar, mantém o resultado por keyword.
  */
-function buildServerSideDeepRag(searchQuery: string, existingTitles: string[] = []): {
-  extraRagText: string;
-  matchedTitles: string[];
-} {
-  const q = (searchQuery || '').toLowerCase();
-  if (!q.trim()) return { extraRagText: '', matchedTitles: [] };
+async function buildServerSideDeepRag(
+  searchQuery: string,
+  existingTitles: string[] = [],
+  ai: GoogleGenAI | null = null,
+  campaignEra?: 'canon' | 'sequel'
+): Promise<{ extraRagText: string; matchedTitles: string[] }> {
+  const rawQuery = (searchQuery || '').trim();
+  const q = rawQuery.toLowerCase();
+  if (!q) return { extraRagText: '', matchedTitles: [] };
 
   const matchedTitles = new Set<string>(existingTitles);
-  const chunks: string[] = [];
 
-  // 1. Search the 1.1MB Portuguese Encyclopedic Codex sections
+  interface Candidate {
+    title: string;
+    text: string;
+    source: 'md' | 'card';
+    /** Ex.: " · Cânone 2018" — ajuda o Mestre a não tratar o passado como presente. */
+    eraTag?: string;
+  }
+
+  const candidates: Candidate[] = [];
+
+  // 1. Keyword pré-filtro sobre as seções do Códice
   if (SERVER_MD_SECTIONS.length > 0) {
     const scoredMd = SERVER_MD_SECTIONS.map((sec) => {
       let score = 0;
       for (const k of sec.keys) {
-        if (k.length >= 3 && q.includes(k)) {
-          score += k.length >= 5 ? 8 : 4;
-        }
+        if (k.length >= 3 && q.includes(k)) score += k.length >= 5 ? 8 : 4;
       }
       return { sec, score };
     })
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 4);
-
+      .slice(0, 20);
     for (const item of scoredMd) {
-      matchedTitles.add(item.sec.title);
-      chunks.push(item.sec.content);
+      candidates.push({
+        title: item.sec.title,
+        text: item.sec.content.slice(0, 900),
+        source: 'md',
+      });
     }
   }
 
-  // 2. Search the 283 Story Cards for additional context
+  // 2. Keyword pré-filtro sobre os Story Cards
   if (SERVER_STORY_CARDS.length > 0) {
-    const scoredCards = SERVER_STORY_CARDS.map((card) => {
+    // Filtro de era: um card do Jogo do Abate não deve cair numa cena de 2020.
+    const eraPool = campaignEra
+      ? SERVER_STORY_CARDS.filter((card) => isStoryCardAllowedForEra(card, campaignEra))
+      : SERVER_STORY_CARDS;
+    const scoredCards = eraPool.map((card) => {
       let score = 0;
       if (q.includes(card.title.toLowerCase())) score += 10;
       for (const k of card.keys) {
         if (k.length >= 3 && q.includes(k)) score += 5;
       }
+      if (campaignEra === 'sequel' && inferStoryCardEra(card) === 'sequel') score += 2;
       return { card, score };
     })
       .filter((x) => x.score > 0)
       .sort((a, b) => b.score - a.score)
-      .slice(0, 6);
-
+      .slice(0, 20);
     for (const item of scoredCards) {
-      if (!matchedTitles.has(item.card.title)) {
-        matchedTitles.add(item.card.title);
-        chunks.push(`### [Story Card] ${item.card.title}\n${item.card.value}`);
-      }
+      candidates.push({
+        title: item.card.title,
+        text: `${item.card.title}. ${item.card.value}`.slice(0, 900),
+        source: 'card',
+        eraTag: storyCardEraTag(item.card),
+      });
     }
+  }
+
+  if (candidates.length === 0) {
+    return { extraRagText: '', matchedTitles: Array.from(matchedTitles) };
+  }
+
+  // 3. Re-ranking por embeddings (similaridade de cosseno)
+  let ranked: Candidate[] = candidates;
+  if (ai) {
+    try {
+      const embedModel = 'gemini-embedding-001';
+      const contents = [
+        { parts: [{ text: rawQuery.slice(0, 1500) }] },
+        ...candidates.map((c) => ({ parts: [{ text: c.text }] })),
+      ];
+      const resp = await ai.models.embedContent({ model: embedModel, contents });
+      const embs = resp.embeddings || [];
+      const queryVec = embs[0]?.values;
+      if (queryVec && queryVec.length > 0) {
+        const scored = candidates
+          .map((c, i) => ({
+            c,
+            sim: cosineSimilarity(queryVec, embs[i + 1]?.values || []),
+          }))
+          .sort((a, b) => b.sim - a.sim);
+        ranked = scored.map((s) => s.c);
+      }
+    } catch (err) {
+      console.warn(
+        '[JJK RAG] Falha no re-ranking por embeddings; mantendo keyword:',
+        err instanceof Error ? err.message.slice(0, 120) : err
+      );
+    }
+  }
+
+  // 4. Seleciona top-k (máx. 4 verbetes + 4 cards) para controlar o tamanho do prompt
+  const topMd = ranked.filter((c) => c.source === 'md').slice(0, 4);
+  const topCards = ranked.filter((c) => c.source === 'card').slice(0, 4);
+  const selected = [...topMd, ...topCards];
+
+  const chunks: string[] = [];
+  for (const c of selected) {
+    if (matchedTitles.has(c.title)) continue;
+    matchedTitles.add(c.title);
+    chunks.push(
+      c.source === 'card'
+        ? `### [Story Card${c.eraTag || ''}] ${c.title}\n${c.text}`
+        : `### [Códice] ${c.title}\n${c.text}`
+    );
   }
 
   return {
     extraRagText: chunks.join('\n\n---\n\n'),
     matchedTitles: Array.from(matchedTitles).slice(0, 12),
   };
+}
+
+interface TurnPromptParams {
+  character: unknown;
+  world: unknown;
+  actionMode: string;
+  actionText: string;
+  diceRoll: number;
+  revealedHandVow: boolean;
+  modBreakdown: string;
+  combinedRagContext: string;
+  isOpening: boolean;
+  startingArcTitle: string;
+  customOpeningPrompt: string;
+  memoryContext: string;
+  recentHistory: string;
+}
+
+interface ArcContractWorld {
+  arc?: string;
+  era?: 'sequel' | 'canon';
+  timelineAnchor?: string;
+  missionObjective?: string;
+  campaignPremise?: string;
+  playerRole?: string;
+  tone?: string[];
+  mustEstablish?: string[];
+  worldFacts?: string[];
+  forbiddenEvents?: string[];
+  openingScene?: string;
+  startingArcTitle?: string;
+}
+
+/** Remove chaves já enviadas em bloco separado, para não inflar o prompt. */
+function withoutKeys<T extends Record<string, unknown>>(obj: T, keys: string[]): T {
+  if (!obj || typeof obj !== 'object') return obj;
+  const clone: Record<string, unknown> = { ...obj };
+  for (const key of keys) delete clone[key];
+  return clone as T;
+}
+
+/**
+ * Bloco de contrato da campanha enviado em TODOS os turnos (abertura e
+ * continuidade). É o que impede a IA de "esquecer" a campanha: premissa, papel
+ * do jogador, era, cronologia, objetivo, batidas de abertura, tom, fatos
+ * imutáveis e limites duros do Mestre.
+ */
+function renderArcContract(
+  world: unknown,
+  startingArcTitle: string,
+  openingScene: string,
+  isOpening: boolean
+): string {
+  const w = (world || {}) as ArcContractWorld;
+  const eraLabel =
+    w.era === 'canon'
+      ? 'LINHA CANÔNICA do mangá (2018) — não avance além do ponto cronológico deste arco'
+      : 'SEGUIMENTO — a história acontece DEPOIS do desfecho do mangá (Sukuna e Kenjaku são passado)';
+  const facts = (w.worldFacts || []).map((f) => `  - ${f}`).join('\n');
+  const limits = (w.forbiddenEvents || []).map((f) => `  - ${f}`).join('\n');
+  const tone = (w.tone || []).map((t) => `  - ${t}`).join('\n');
+  const beats = (w.mustEstablish || []).map((b) => `  - ${b}`).join('\n');
+  const scene = (openingScene || w.openingScene || '').trim();
+
+  return [
+    '=== CONTRATO DA CAMPANHA (IMUTÁVEL — VALE PARA TODOS OS TURNOS) ===',
+    `- Arco: ${w.arc || startingArcTitle || w.startingArcTitle || 'Crônica Jujutsu'}`,
+    `- Era: ${eraLabel}`,
+    w.campaignPremise ? `- Premissa da campanha: ${w.campaignPremise}` : '',
+    w.playerRole ? `- Papel do jogador: ${w.playerRole}` : '',
+    `- Cronologia: ${w.timelineAnchor || startingArcTitle || 'Indefinida'}`,
+    `- Objetivo imediato (Plot Essentials): ${w.missionObjective || 'Manter o progresso da missão atual.'}`,
+    tone ? `- Tom obrigatório:\n${tone}` : '',
+    beats ? `- Batidas que o Turno #1 precisa estabelecer:\n${beats}` : '',
+    scene
+      ? `- Cena de abertura (frame canônico: mesmo local, horário e elenco — referência de tom, geografia e diálogo; não repita literalmente):\n${scene}`
+      : '',
+    facts ? `- Fatos imutáveis do mundo:\n${facts}` : '',
+    limits ? `- Limites duros (NUNCA faça):\n${limits}` : '',
+    isOpening
+      ? '- Este é o primeiro turno: o jogador ainda não agiu. Narre a cena, não responda a uma ação.'
+      : '- Continuidade: continue exatamente de onde o turno anterior parou; não reinicie a cena, não troque de local sem transição e não ignore NPCs já apresentados.',
+    '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+/** Primeira frase/parágrafo de uma cena longa, para fallbacks curtos. */
+function firstSceneLine(text: string, maxLen = 420): string {
+  const clean = (text || '').replace(/\s+/g, ' ').trim();
+  if (clean.length <= maxLen) return clean;
+  const cut = clean.slice(0, maxLen);
+  const stop = Math.max(cut.lastIndexOf('. '), cut.lastIndexOf('! '), cut.lastIndexOf('? '));
+  return stop > 120 ? cut.slice(0, stop + 1) : `${cut.trimEnd()}…`;
+}
+
+function buildTurnPrompt(p: TurnPromptParams): string {
+  const {
+    character,
+    world,
+    actionMode,
+    actionText,
+    diceRoll,
+    revealedHandVow,
+    modBreakdown,
+    combinedRagContext,
+    isOpening,
+    startingArcTitle,
+    customOpeningPrompt,
+    memoryContext,
+    recentHistory,
+  } = p;
+
+  // Evita duplicar no prompt o que já é enviado em bloco próprio.
+  const characterForPrompt = withoutKeys(character as Record<string, unknown>, ['exclusiveSheetMarkdown']);
+  const worldForPrompt = withoutKeys(world as Record<string, unknown>, ['openingScene']);
+  const ragEraNote =
+    (world as { era?: string })?.era === 'sequel'
+      ? 'Nota de era: cards marcados [Story Card · Cânone 2018] descrevem o passado do mangá. Use-os como memória/história, nunca como evento acontecendo agora.'
+      : '';
+
+  return isOpening
+    ? `
+=== ABERTURA DE NOVA CAMPANHA (TURNO #1) ===
+Personagem do Jogador: ${JSON.stringify(characterForPrompt, null, 2)}
+=== FICHA EXCLUSIVA VIVA DO PERSONAGEM (CONSULTE SEMPRE) ===
+${(character as { exclusiveSheetMarkdown?: string })?.exclusiveSheetMarkdown || 'Ficha Exclusiva ativa.'}
+Estado Inicial do Mundo e NPCs: ${JSON.stringify(worldForPrompt, null, 2)}
+${renderArcContract(world, startingArcTitle, customOpeningPrompt, true)}
+
+=== STORY CARDS E ENCICLOPÉDIA CANÔNICA ATIVADOS (RAG) ===
+${ragEraNote}
+${combinedRagContext || 'Conhecimento canônico geral de Jujutsu Kaisen.'}
+
+=== DIRETRIZES OBRIGATÓRIAS DO TURNO #1 (ABERTURA) ===
+O jogador ainda não agiu: você está abrindo a campanha.
+1. Comece in media res na cena de abertura do contrato — mesmo local, mesmo horário, mesmos NPCs. Sem resumo, prólogo ou flashback.
+2. Em 4 a 6 parágrafos (mínimo 350 palavras), separados por uma linha em branco, estabeleça: (a) o lugar e o clima sensorial; (b) ao menos um NPC nomeado em cena, com fala e objetivo próprio; (c) o detalhe concreto que revela a ameaça.
+3. Cumpra TODAS as batidas obrigatórias do Turno #1 listadas no contrato, transformando cada uma em ação, imagem ou diálogo — nunca em exposição. Se qualquer batida faltar, a abertura está inválida.
+4. Não escreva falas, pensamentos, sentimentos nem decisões do personagem do jogador; narre apenas o que ele vê, ouve e sente.
+5. Não mencione "arco", "campanha", "contrato", "IA", "sistema" ou "prompt" dentro da narração.
+6. Termine com uma pergunta direta ou uma ameaça iminente que exija uma escolha imediata.
+7. Responda no formato *Narrador*: / *Nome do Personagem*:, com cada bloco em seu próprio parágrafo separado por uma linha em branco. Nunca coloque fala de NPC no mesmo parágrafo da narração. Preencha engineLog, suggestedActions, imagePrompt e playerStateUpdate. xpGained inicial entre 15 e 40.
+`
+    : `
+=== ESTADO ATUAL DO PERSONAGEM DO JOGADOR ===
+${JSON.stringify(characterForPrompt, null, 2)}
+
+=== FICHA EXCLUSIVA VIVA DO PERSONAGEM (CONSULTE E ATUALIZE VIA sheetEvolution SE HOUVER DESPERTAR DE SEÇÃO "Não desenvolvido ainda" OU MUDANÇA NA HISTÓRIA!) ===
+${(character as { exclusiveSheetMarkdown?: string })?.exclusiveSheetMarkdown || 'Ficha Exclusiva do personagem.'}
+
+${renderArcContract(world, startingArcTitle, '', false)}
+
+=== ESTADO ATUAL DO MUNDO E NPCS EM CENA (ATUALIZE O hpPercentage DOS NPCS QUANDO SOFREREM DANO!) ===
+${JSON.stringify(worldForPrompt, null, 2)}
+
+=== MEMÓRIA CONSOLIDADA DA CAMPANHA ===
+${memoryContext || 'Início da campanha.'}
+
+=== HISTÓRICO RECENTE DE TURNOS ===
+${recentHistory || 'Primeiro turno da sessão.'}
+
+=== STORY CARDS E ENCICLOPÉDIA CANÔNICA ATIVADOS NESTE TURNO (RAG) ===
+${ragEraNote}
+${combinedRagContext || 'Nenhum card específico acionado; use o cânone oficial de Jujutsu Kaisen.'}
+
+=== AÇÃO DO JOGADOR NESTE TURNO ===
+- Modo de Ação: ${actionMode} (${
+        actionMode === 'DO'
+          ? 'Ação Física / Combate'
+          : actionMode === 'SAY'
+          ? 'Diálogo Direto'
+          : actionMode === 'TECHNIQUE'
+          ? 'Execução de Técnica Amaldiçoada / Domínio / RCT'
+          : 'Direcionamento Narrativo de Cena'
+      })
+- Rolagem (referência de tensão): ${diceRoll} — valor ALTO sugere sorte/momento favorável; valor BAIXO sugere contratempo. É apenas um guia: o resultado final deve seguir a lógica da cena, a ficha e o Grau, NUNCA um Black Flash automático por rolagem.
+- Modificador Tático de Contexto: ${modBreakdown}
+- Voto Vinculativo "Revelar a Própria Mão" ativado neste turno: ${
+        revealedHandVow ? 'SIM (+20% Output de EA concedido!)' : 'NÃO'
+      }
+- Texto do Jogador: "${actionText}"
+
+Gere a resposta estruturada em JSON seguindo o schema e o formato teatral (*Narrador*: e *Nome do Personagem*:). Consulte as Perícias & Afinidades Narrativas e Pilares do jogador na Ficha Exclusiva: faça as perícias de ★ Maestria e ● Afinidade AJUDAREM organicamente na cena, e as de ▼ Inaptidão PREJUDICAREM gerando complicações dramáticas (sem cálculos matemáticos!). Conceda xpGained (15 a 120 XP, conforme o peso narrativo do turno)!
+`;
+}
+
+function unescapeJsonString(s: string): string {
+  return s
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, '\\')
+    .replace(/\\u([0-9a-fA-F]{4})/g, (_m, hex) => String.fromCharCode(parseInt(hex, 16)));
+}
+
+/** Extrai o valor do campo "narrative" de um JSON ainda incompleto (para streaming). */
+function extractNarrativeFromJson(rawJson: string): string {
+  const m = rawJson.match(/"narrative"\s*:\s*"((?:[^"\\]|\\.)*)"/);
+  if (!m) return '';
+  return unescapeJsonString(m[1]);
 }
 
 function getGradeModifier(grade?: string, inBlackFlashZone?: boolean, revealedHandVow?: boolean): {
@@ -440,15 +730,8 @@ const JJK_RESPONSE_JSON_SCHEMA = {
     },
   },
   required: [
-    'engineLog',
-    'activeStoryCards',
-    'activeCardRuleSummary',
-    'visualEffectTrigger',
     'narrative',
     'imagePrompt',
-    'isCombatScene',
-    'combatSceneImageQuestion',
-    'nanoBananaAnimePrompt',
     'playerStateUpdate',
     'worldStateUpdate',
     'suggestedActions',
@@ -476,27 +759,27 @@ function getGeminiClient(customKey?: string): GoogleGenAI | null {
 
 function normalizeModelName(candidateModel?: string): string {
   const m = (candidateModel || '').trim();
-  if (
-    m === 'gemini-3.8-flash' ||
-    m === 'gemini-flash-latest' ||
-    m === 'gemini-3-flash-preview' ||
-    m === 'gemini-2.5-flash'
-  ) {
-    return 'gemini-3-flash-preview';
+  // IDs reais da Gemini API (ai.google.dev/gemini-api/docs/models).
+  if (m === 'gemini-3.8-flash' || m === 'gemini-flash-latest') {
+    return 'gemini-3.8-flash';
   }
-  if (
-    m === 'gemini-3.5-flash-lite' ||
-    m === 'gemini-3.1-flash-lite-preview' ||
-    m === 'gemini-3.1-flash-lite' ||
-    m === 'gemini-flash-lite-latest' ||
-    m === 'gemini-2.5-flash-lite'
-  ) {
-    return 'gemini-3.1-flash-lite-preview';
+  if (m === 'gemini-3.5-flash-lite' || m === 'gemini-flash-lite-latest') {
+    return 'gemini-3.5-flash-lite';
+  }
+  if (m === 'gemini-3.1-flash-lite') {
+    return 'gemini-3.1-flash-lite';
   }
   if (m === 'gemini-4-argon' || m === 'gemini-pro-latest') {
     return 'gemini-4-argon';
   }
-  return 'gemini-3-flash-preview';
+  // Aliases legados/inexistentes -> modelo real mais próximo.
+  if (m === 'gemini-3-flash-preview' || m === 'gemini-2.5-flash') {
+    return 'gemini-3.8-flash';
+  }
+  if (m === 'gemini-3.1-flash-lite-preview' || m === 'gemini-2.5-flash-lite') {
+    return 'gemini-3.1-flash-lite';
+  }
+  return 'gemini-3.8-flash';
 }
 
 async function callGeminiStructured(
@@ -542,6 +825,8 @@ Sempre que estiver descrevendo o ambiente, a passagem do tempo, sons, cheiros, a
 ### Falas e Reações de Personagens (NPCs)
 Sempre que um personagem do mundo (NPC, aliado ou inimigo) falar ou realizar uma ação direta acompanhada de diálogo, utilize o nome exato daquele personagem entre asteriscos seguido de dois-pontos:
 *Nome do Personagem*: [Ação breve ou tom de voz] "Fala do personagem."
+
+> **Separação obrigatória:** cada bloco (narração ou fala) é um parágrafo próprio, separado por uma linha em branco. Jamais misture a fala de um NPC no mesmo parágrafo da narração.
 
 > **Nota Crítica:** Nunca use o rótulo genérico \`*Personagem*:\` se o NPC tiver um nome conhecido (ex.: use \`*Satoru Gojo*:\`, \`*Yuji Itadori*:\`, \`*Megumi Fushiguro*:\`, \`*Ryomen Sukuna*:\`, \`*Maldição de Grau Especial*:\`). Use uma identificação descritiva (como \`*Feiticeiro Desconhecido*:\` ou \`*Transeunte Assustado*:\`) apenas quando a identidade do NPC ainda não tiver sido revelada ao jogador.
 
@@ -624,17 +909,135 @@ Antes de narrar qualquer cena ou combate, você deve processar a lógica da roda
 
 ---
 
-## 7. REGRAS DO CENÁRIO (ENTRE SHIBUYA E SHINJUKU / CULLING GAME), PILARES E FICHA VIVA
-- Nas colônias do **Jogo do Abate (Culling Game)**, cada jogador possui uma **Kogane** (interface amaldiçoada que anuncia regras, pontuação e localização). Feiticeiros valem **5 pontos** ao morrerem; Não-feiticeiros valem **1 ponto**; com **100 pontos**, um jogador pode adicionar uma nova regra geral.
-- **Pilares de Aptidão e Perícias Narrativas (100% Narrativo, Sem Cálculos Matemáticos):** Respeite os Pilares de Aptidão do jogador (incluindo sua **▼ Fragilidade Obrigatória**) e suas Perícias Narrativas (★ Maestria, ● Afinidade, ▼ Inaptidão), sem nunca exibir somas matemáticas de perícias no texto.
-- **Ficha Exclusiva Viva:** Se alguma seção estiver como "Não desenvolvido ainda" e o jogador treinar, atingir Kokusen (20 natural) ou despertar em situação extrema, preencha \`playerStateUpdate.sheetEvolution\`.
-- **Saída Estruturada em Três Partes:** Preencha sempre \`engineLog\` (para o bloco ⚙️ \`[LOG DO MOTOR JUJUTSU]\`), \`narrative\` (para o bloco 📖 \`[NARRATIVA]\`) e \`worldStateUpdate\` / \`playerStateUpdate\` / \`activeStoryCards\` / \`activeCardRuleSummary\` (para o bloco 📊 \`[HUD & REGISTRO DE CARDS]\`).`;
+## 7. REGRAS DO CENÁRIO (MANGÁ 2018 → ERA DE SEGUIMENTO), PILARES E FICHA VIVA
+- **Era da campanha:** leia o campo "era" do mundo. Se for "sequel", a história acontece DEPOIS do desfecho do mangá (Sukuna destruído, Kenjaku derrotado, Gojo morto, política jujutsu em reconstrução) e a seção 9 se aplica. Se for "canon", a história roda dentro do mangá de 2018 e não pode ultrapassar o ponto cronológico do arco.
+- Nas colônias do **Jogo do Abate (Culling Game)** — apenas em campanhas canônicas daquele arco —, cada jogador possui uma **Kogane** (interface amaldiçoada que anuncia regras, pontuação e localização). Feiticeiros valem **5 pontos** ao morrerem; Não-feiticeiros valem **1 ponto**; com **100 pontos**, um jogador pode adicionar uma nova regra geral.
+- **Pilares de Aptidão e Perícias Narrativas (100% Narrativo, Sem Cálculos Matemáticos):** Respeite os Pilares de Aptidão do jogador e suas Perícias Narrativas (★ Maestria, ● Afinidade, ▼ Inaptidão), sem nunca exibir somas matemáticas de perícias no texto.
+- **Ficha Exclusiva Viva:** Se alguma seção estiver como "Não desenvolvido ainda" e o jogador treinar, despertar em situação extrema ou em um momento de clímax digno, preencha \`playerStateUpdate.sheetEvolution\` com parcimônia.
+
+---
+
+## 8. ÂNCORA DO ARCO (PLOT ESSENTIALS) E ANTI-DERIVA — OBRIGATÓRIO
+
+O bloco "PLOT ESSENTIALS" do turno informa o **objetivo imediato do arco** e a **cronologia**. Siga-o como a bússola da cena:
+
+1. **Não deriva de cenário:** mantenha o jogador progredindo em direção ao \`missionObjective\`. Cenas de exploração ou combate devem **sempre empurrar a trama na direção desse objetivo** (ou apresentar um obstáculo que o bloqueie). Não crie missões paralelas aleatórias nem faça o jogador "perder" o rumo.
+2. **Não resolva o futuro do mangá:** a não ser que o jogador esteja exatamente naquele ponto cronológico, **não antecipe nem conclua** eventos canônicos posteriores (mortes, revelações, o desfecho do mangá). O mundo evolui pelas escolhas do jogador, mas sem pular arcos.
+3. **Fidelidade de NPCs e limites de conhecimento (Anti-Alucinação):** cada NPC só sabe aquilo que **viu, sentiu ou foi informado**. Um NPC não pode saber que o jogador carrega o Dedo de Sukuna, uma técnica oculta ou uma Restrição Celestial, a menos que isso tenha sido revelado em cena. Aplique a mesma regra a informações de lore: o NPC conhece apenas o que sua posição no mundo permite.
+4. **Elenco do arco:** use preferencialmente os NPCs listados no estado do mundo. Ao introduzir um personagem canônico, respeite sua ficha técnica (seção 6) e seu papel cronológico. Não spawnar personagens canônicos de arcos futuros fora de época.
+5. **Rolagem como guia, não como árbitro:** o valor de dado informado é apenas uma **referência de tensão narrativa** (sorte/azar da cena). **Nunca** trate um "20" como Black Flash automático nem um "1" como punição obrigatória: o Kokusen e as consequências críticas devem ser decididos pela **lógica da cena + ficha + Grau**, como um Mestre de mesa faria. Preserve a agência do jogador e a verossimilhança.
+
+---
+
+## 9. MODO SEGUIMENTO (PÓS-CÂNONE) — QUANDO A ERA É "sequel"
+
+1. **O desfecho do mangá é passado imutável.** Sukuna foi destruído, Kenjaku foi derrotado e Gojo morreu em Shinjuku. Não ressuscite nenhum deles, não recrie Dedos de Sukuna, não refaça o Jogo do Abate nem a Fusão de Tengen.
+2. **Novo protagonismo.** O jogador é a nova geração. Yuji, Megumi, Nobara, Maki, Yuta, Hakari e Kusakabe existem, mas são veteranos com deveres próprios: podem orientar, cobrar ou aparecer em cena — nunca resolver o problema no lugar do jogador.
+3. **A ameaça é consequência, não nostalgia.** Use o que o desfecho deixou: resíduos de energia amaldiçoada, maldições que imitam técnicas de feiticeiros mortos, barreiras órfãs, colônias esquecidas, clãs oportunistas e um Conselho extinto. Nada de reviver o passado do mangá como se fosse novidade.
+4. **Escala coerente.** Sem Sukuna e Gojo, Grau Especial continua raro e aterrorizante. Um Grau 4 sobrevive por inteligência, aliados, terreno e barreiras — nunca por força bruta.`;
 
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json({ limit: '15mb' }));
+
+  // ---------------------------------------------------------------------------
+  // Segurança e limite de uso dos endpoints de IA
+  // ---------------------------------------------------------------------------
+  app.disable('x-powered-by');
+
+  const ACCESS_CODE = (process.env.APP_ACCESS_CODE || '').trim();
+  const RATE_WINDOW_MS = 60_000;
+  const ROUTE_LIMITS: Record<string, number> = {
+    '/api/gemini/turn': 20,
+    '/api/gemini/turn/stream': 20,
+    '/api/gemini/image': 6,
+    '/api/gemini/technique': 10,
+    '/api/gemini/session-zero': 15,
+    '/api/gemini/validate': 10,
+    '/api/gemini/memory': 10,
+  };
+  const rateBuckets = new Map<string, { count: number; resetAt: number }>();
+
+  // 1. Porta de entrada: mesma origem (bloqueia sites de terceiros chamando o
+  //    localhost) e, opcionalmente, código de acesso do servidor.
+  app.use('/api', (req, res, next) => {
+    if (req.path === '/health') return next();
+
+    const origin = req.headers.origin;
+    if (origin) {
+      try {
+        const parsed = new URL(origin);
+        if (req.headers.host && parsed.host !== req.headers.host) {
+          return res.status(403).json({
+            ok: false,
+            reason: 'ORIGIN_NOT_ALLOWED',
+            message: 'Origem não autorizada para chamadas de IA.',
+          });
+        }
+      } catch {
+        return res.status(403).json({
+          ok: false,
+          reason: 'ORIGIN_NOT_ALLOWED',
+          message: 'Cabeçalho Origin inválido.',
+        });
+      }
+    }
+
+    if (ACCESS_CODE) {
+      const provided = String(req.headers['x-access-code'] || '');
+      if (provided !== ACCESS_CODE) {
+        return res.status(401).json({
+          ok: false,
+          reason: 'ACCESS_CODE_REQUIRED',
+          message:
+            'Este servidor exige um código de acesso. Informe-o em Sistema & Nuvem → Código de acesso do servidor.',
+        });
+      }
+    }
+
+    return next();
+  });
+
+  // 2. Rate limit por rota e por IP (janela fixa de 60 s). Sem dependências.
+  app.use('/api/gemini', (req, res, next) => {
+    const routePath = req.originalUrl.split('?')[0];
+    const limit = ROUTE_LIMITS[routePath];
+    if (!limit) return next();
+
+    const now = Date.now();
+    const key = `${routePath}:${req.ip || req.socket.remoteAddress || 'unknown'}`;
+    let bucket = rateBuckets.get(key);
+    if (!bucket || bucket.resetAt <= now) {
+      bucket = { count: 0, resetAt: now + RATE_WINDOW_MS };
+      rateBuckets.set(key, bucket);
+    }
+    bucket.count += 1;
+
+    res.setHeader('X-RateLimit-Limit', String(limit));
+    res.setHeader('X-RateLimit-Remaining', String(Math.max(0, limit - bucket.count)));
+
+    if (bucket.count > limit) {
+      const retryAfter = Math.max(1, Math.ceil((bucket.resetAt - now) / 1000));
+      res.setHeader('Retry-After', String(retryAfter));
+      return res.status(429).json({
+        ok: false,
+        reason: 'RATE_LIMITED',
+        message: `Limite de ${limit} chamadas por minuto atingido. Tente novamente em ${retryAfter}s.`,
+        retryAfterSeconds: retryAfter,
+      });
+    }
+
+    // Limpeza oportunista para o mapa não crescer sem limite.
+    if (rateBuckets.size > 5000) {
+      for (const [k, v] of rateBuckets) {
+        if (v.resetAt <= now) rateBuckets.delete(k);
+      }
+    }
+
+    return next();
+  });
 
   function classifyGeminiError(rawMsg: string): {
     state: 'INVALID' | 'QUOTA_EXCEEDED' | 'MISSING';
@@ -964,131 +1367,12 @@ async function startServer() {
     const ai = getGeminiClient(customApiKey || headerKey);
 
     const buildSessionZeroFallback = () => {
-      const name = String(characterDraft.name || 'Thiago Soares').trim();
-      const clan = String(characterDraft.clan || 'Clã Marqueti / Gojo').trim();
-      const backstory = String(characterDraft.backstory || '').trim();
+      const name = String(characterDraft.name || 'Feiticeiro').trim();
+      const clan = String(characterDraft.clan || 'Sem Clã').trim();
       const concept = String(
         characterDraft.customConcept || characterDraft.technique?.description || ''
       ).trim();
-      const combinedText = `${name} ${clan} ${backstory} ${concept} ${playerReply}`.toLowerCase();
-
-      const isMarquetiOrGojoExample =
-        combinedText.includes('marqueti') ||
-        combinedText.includes('thiago') ||
-        (combinedText.includes('gojo') && combinedText.includes('realidade')) ||
-        combinedText.includes('ambas as restrições') ||
-        combinedText.includes('duas restrições');
-
       const hasPlayerNegotiated = Boolean(playerReply && playerReply.trim().length > 10);
-
-      if (isMarquetiOrGojoExample) {
-        if (!hasPlayerNegotiated) {
-          return {
-            gmMessage: `*Mestre (Sessão Zero)*: Uau. Vamos parar um segundo para apreciar a ambição desse conceito para **${name}**! Um híbrido humano-maldição adotado por Satoru Gojo, sobrevivente do extinto **Clã Marqueti** (manipulação da realidade via Energia Amaldiçoada), querendo acumular o **Ilimitado** e **ambas as Restrições Celestiais anulando os pontos fracos**, além da **Foice da Morte** forjada da mãe!\n\nPorém, como seu Mestre de Jujutsu Kaisen, preciso aplicar as **Leis Absolutas de Gege Akutami** para que a campanha tenha tensão real, evolução e risco de morte:\n1. **O Paradoxo das Duas Restrições Celestiais**: No cânone, ter 0 de Energia Amaldiçoada (Toji/Maki) e ter Energia Amaldiçoada massiva (Mechamaru/Seis Olhos) são opostos mutuamente exclusivos. Se você começasse no Dia 1 manipulando a realidade livremente + Ilimitado + Corpo de Toji sem fraquezas, você seria mais forte que Sukuna no Turno 1 e não haveria desafio.\n2. **Como Nivelamos Isso de Forma Épica (Grau Inicial Designado: Grau 4)**:\n   - Seu poder do **Clã Marqueti (Reescrita da Realidade)** funciona através de um **Voto Vinculativo Ancestral**: no início (Grau 4), você só consegue reescrever a realidade do **seu próprio corpo** (anulando a fragilidade física da Restrição Celestial em troca de gastar Energia Amaldiçoada contínua) e fazer **micro-alterações de curtíssimo alcance**.\n   - Como você não tem o sangue biológico de Satoru Gojo, o **Olho / Ilimitado transplantado ou herdado por vínculo** drena uma quantidade brutal de Energia Amaldiçoada e causa dor ocular severa se forçado.\n   - Habilidades divinas como **Reversão (Vermelho / Reescrita Externa)**, **Técnica Máxima**, **RCT** e **Expansão de Domínio** começam marcadas como **"Não desenvolvido ainda"** na sua Ficha Exclusiva, sendo despertadas conforme você sobe os **10 níveis do Grau 4 → Grau 3**, depois **15 níveis do Grau 3 → Grau 2**, até o Grau Especial!`,
-            balanceStatus: 'NEEDS_BALANCING' as const,
-            designatedInitialGrade: 'Grau 4',
-            powerScaleWarning:
-              'Conceito de Nível Divino detectado (Manipulação de Realidade + Ilimitado + Dupla Restrição Celestial). O Mestre propôs selos iniciais, Voto Vinculativo e progressão por Graus/Níveis.',
-            questionsForPlayer: [
-              '1. Você concorda que a Manipulação da Realidade do Clã Marqueti comece focada em reescrever apenas seu próprio corpo (para sustentar sua força física sem quebrar) e pequenas regras de curto alcance no Grau 4?',
-              '2. Aceita que o Olho de Gojo / Ilimitado consuma muita Energia Amaldiçoada inicialmente por você não ter o sangue biológico do Clã Gojo, deixando Reversão, Técnica Máxima e Expansão de Domínio como "Não desenvolvido ainda" para despertar na campanha?',
-              '3. Sobre a Foice da Morte (Alma da Mãe): ela pode começar selada em 10% do poder (Grau 4/3) e evoluir junto com seu Grau conforme você conversa com o espírito dela?',
-            ],
-            proposedAdjustmentsSummary: [
-              'Grau Inicial Designado: Grau 4 (necessário subir 10 níveis para Grau 3; depois 15 níveis para Grau 2) — imposto pela Cúpula Jujutsu que teme sua anomalia.',
-              'Técnica Inata Nivelada: "Édito de Marqueti & Olho Emprestado do Infinito" — usa um Voto Vinculativo para manter o corpo sobre-humano ativo e aplicar micro-distorções espaciais com alto custo de EA.',
-              'Seções marcadas como "Não desenvolvido ainda": Reversão da Técnica, Técnica Máxima, RCT e Expansão de Domínio (serão desbloqueadas na sua Ficha Exclusiva durante a história).',
-              'Ferramenta Inicial: "Foice da Morte — Lâmina Materna (Selada - Grau 3)" que evolui junto com os níveis do personagem.',
-            ],
-            proposedCharacterPatch: {
-              name: name || 'Thiago Soares',
-              clan: 'Clã Marqueti (Sobrevivente) · Tutelado de Satoru Gojo',
-              grade: 'Grau 4',
-              appearance:
-                'Jovem de 15 anos (1º ano da Escola Técnica de Tóquio), uniforme escuro personalizado, olhar intenso oculto por óculos escuros/bandagem que sela o olho herdado de Gojo, carregando a Foice da Morte envolta em faixas amaldiçoadas.',
-              backstory:
-                'Filho de um feiticeiro do extinto Clã Marqueti com um Espírito Amaldiçoado que o protegeu com a própria alma. Adotado e treinado por Satoru Gojo após o massacre de seu clã. Sarcástico e brincalhão com amigos para esconder seus traumas, mas implacável contra inimigos que ameaçam seus companheiros.',
-              combatStyle:
-                'Esgrima acrobática e brutal com a Foice da Morte combinada a Taijutsu pesado, usando o Voto Vinculativo do Clã Marqueti para reforçar o próprio corpo e criar brechas com pulsos curtos do Ilimitado.',
-              isHeavenlyRestriction: false,
-              vowName: 'Voto Ancestral do Clã Marqueti (Corpo & Realidade)',
-              vowCondition:
-                'Drenar Energia Amaldiçoada constantemente para anular o colapso físico da anomalia híbrida e suportar o desgaste do Olho de Gojo sem sangue Gojo.',
-              vowBonus:
-                'Permite manter atributos físicos sobre-humanos junto com Energia Amaldiçoada e reescrever micro-regras de impacto ao redor do próprio corpo (+20% Output ao revelar o Voto).',
-              toolName: 'Foice da Morte (Ecos da Mãe — Selada)',
-              toolGrade: 'Grau 3 (Evolutiva até Grau Especial)',
-              toolEffect:
-                'Foice forjada a partir do núcleo amaldiçoado materno. Possui consciência protetora latente e canaliza cortes de Energia Amaldiçoada que evoluem conforme o Grau de Thiago.',
-              technique: {
-                name: 'Édito de Marqueti & Infinito Imperfeito',
-                isCanon: false,
-                description:
-                  'Técnica híbrida do Clã Marqueti que altera temporariamente as propriedades físicas do próprio corpo e do espaço de curtíssimo alcance. O uso do Ilimitado através do olho herdado consome alta quantidade de EA por falta da genética Gojo.',
-                lapse:
-                  'Lapso: Reescrita Corporal & Desaceleração Curta — altera a densidade do próprio corpo para velocidade/força explosiva e desacelera ataques a até 1 metro por 1 segundo.',
-                reversal: 'Não desenvolvido ainda',
-                maximum: 'Não desenvolvido ainda',
-                domainExpansion: 'Não desenvolvido ainda',
-                antiDomain: 'Não desenvolvido ainda',
-                hasRct: false,
-                rctStatus: 'Não desenvolvido ainda',
-                activationConditions:
-                  'O Ilimitado exige retirar a venda/óculos e consome +25% de EA por turno devido à ausência do sangue biológico do Clã Gojo.',
-              },
-            },
-          };
-        }
-
-        // Player already replied/negotiated (like in the second message of the user's example!)
-        return {
-          gmMessage: `*Mestre (Sessão Zero — Acordo Selado!)*: **GENIAL!** Essa sua explicação resolveu 100% do balanceamento dentro das leis de Gege Akutami:\n- Transformar a manipulação de realidade do **Clã Marqueti** em um **Voto Vinculativo de Auto-Reescrita Corporal** explica perfeitamente como você sustenta o físico sobre-humano junto com sua Energia Amaldiçoada!\n- E o fato de você **não ter o sangue biológico de Satoru Gojo** fazendo o olho/Ilimitado drenar muito mais Energia Amaldiçoada cria um limite tático incrível para o início da campanha!\n- Sua **Foice da Morte** com a alma da sua mãe começará sincronizada ao seu **Grau 4 Inicial** (precisando de **10 níveis para subir ao Grau 3**, e depois **15 níveis para o Grau 2**), enquanto a Reversão, Técnica Máxima, RCT e Expansão de Domínio ficam marcadas como **"Não desenvolvido ainda"** na sua **Ficha Exclusiva Viva** para você despertar em momentos épicos da história!\n\nClique em **"✨ Aplicar Proposta Nivelada na Ficha"** abaixo ou inicie a campanha imediatamente!`,
-          balanceStatus: 'BALANCED_READY' as const,
-          designatedInitialGrade: 'Grau 4',
-          powerScaleWarning:
-            'Ficha 100% Nivelada e Aprovada pelo Mestre! As limitações de Voto Vinculativo, custo de EA do Olho de Gojo e seções "Não desenvolvido ainda" estão prontas.',
-          questionsForPlayer: [
-            'Sua Ficha Exclusiva foi nivelada com sucesso! Deseja aplicar os ajustes e iniciar o Turno #1 da campanha?',
-          ],
-          proposedAdjustmentsSummary: [
-            'Grau Inicial Designado: Grau 4 (0/10 Níveis para promoção ao Grau 3).',
-            'Voto Vinculativo do Clã Marqueti selado conforme sua explicação: reescreve o próprio corpo primeiro, com alto custo de EA para usar o Olho de Gojo.',
-            'Reversão, Técnica Máxima, RCT, Anti-Domínio e Expansão de Domínio definidos como "Não desenvolvido ainda" para evolução orgânica na Ficha Exclusiva.',
-          ],
-          proposedCharacterPatch: {
-            name: name || 'Thiago Soares',
-            clan: 'Clã Marqueti (Sobrevivente) · Tutelado de Satoru Gojo',
-            grade: 'Grau 4',
-            backstory: `${backstory}\n\n[Acordo de Sessão Zero]: ${playerReply}`.trim(),
-            isHeavenlyRestriction: false,
-            vowName: 'Voto Vinculativo de Marqueti (Auto-Reescrita & Sangue Estranho)',
-            vowCondition:
-              'Por não possuir o sangue biológico de Gojo, ativar o olho drena muita EA; a manipulação da realidade começa restrita ao próprio corpo e micro-regras.',
-            vowBonus:
-              'Sustenta força física sobre-humana sem zerar a Energia Amaldiçoada e permite evoluir a reescrita conforme sobe de Grau.',
-            toolName: 'Foice da Morte (Alma Materna — Grau Evolutivo)',
-            toolGrade: 'Grau 3 (Evolutiva)',
-            toolEffect:
-              'Forjada da maldição materna; abriga a alma protetora da mãe e libera novas habilidades a cada promoção de Grau.',
-            technique: {
-              name: 'Édito de Marqueti & Olho Emprestado do Infinito',
-              isCanon: false,
-              description:
-                'Manipulação de realidade via Voto Vinculativo focada inicialmente no próprio corpo (força/velocidade anômalas) combinada ao uso de alto custo do Ilimitado herdado sem sangue Gojo.',
-              lapse:
-                'Lapso: Auto-Reescrita Vetorial & Infinito Curto — reforça a estrutura corporal além do limite humano e cria breves distorções espaciais ao custo elevado de EA.',
-              reversal: 'Não desenvolvido ainda',
-              maximum: 'Não desenvolvido ainda',
-              domainExpansion: 'Não desenvolvido ainda',
-              antiDomain: 'Não desenvolvido ainda',
-              hasRct: false,
-              rctStatus: 'Não desenvolvido ainda',
-              activationConditions:
-                'Alto consumo de EA ao abrir o Olho de Gojo devido à ausência de linhagem biológica Gojo.',
-            },
-          },
-        };
-      }
 
       // Generic intelligent Session Zero evaluation for any custom character
       return {
@@ -1309,9 +1593,11 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       .filter(Boolean)
       .join(' ');
 
-    const { extraRagText, matchedTitles } = buildServerSideDeepRag(
+    const { extraRagText, matchedTitles } = await buildServerSideDeepRag(
       searchContextForServerRag,
-      activeCards
+      activeCards,
+      ai,
+      world?.era
     );
 
     const combinedRagContext = [ragContext, extraRagText].filter(Boolean).join('\n\n---\n\n');
@@ -1329,9 +1615,17 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         actionText.toLowerCase().includes('ryoiki tenkai') ||
         actionText.toLowerCase().includes('ryōiki tenkai');
 
+      // O motor local também lê o contrato do arco: sem isso o fallback
+      // virava uma cena genérica de "feiticeiro contra maldição".
+      const contractWorld = (world || {}) as ArcContractWorld;
+      const premise = (contractWorld.campaignPremise || '').trim();
+      const playerRole = (contractWorld.playerRole || '').trim();
+      const objective = (contractWorld.missionObjective || '').trim();
+      const openingScene = (contractWorld.openingScene || customOpeningPrompt || '').trim();
+      const beats = contractWorld.mustEstablish || [];
+
       let vfx: string = 'NONE';
-      if (isCrit20) vfx = 'BLACK_FLASH';
-      else if (isDomain) {
+      if (isDomain) {
         const techName = (character?.technique?.name || '').toLowerCase();
         if (techName.includes('ilimitado') || techName.includes('gojo')) vfx = 'DOMAIN_GOJO';
         else if (techName.includes('santuário') || techName.includes('sukuna')) vfx = 'DOMAIN_SUKUNA';
@@ -1572,19 +1866,22 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       const narrativeLines = isOpening
         ? [
             `*Narrador*: ${
-              customOpeningPrompt || 'O ar noturno pesa com resíduos densos de Energia Amaldiçoada.'
+              firstSceneLine(openingScene, 700) || 'O ar noturno pesa com resíduos densos de Energia Amaldiçoada.'
             } Você está em **${world?.location || 'Tóquio'}** no início de **${
               world?.arc || startingArcTitle || 'sua Crônica Jujutsu'
             }**. Como feiticeiro de **${character?.grade || 'Grau 4'}** portador de **${
               character?.technique?.name || 'Técnica Amaldiçoada'
             }**, cada sentido seu capta a pressão espiritual ao redor.`,
+            premise ? `*Narrador*: ${premise}` : '',
             `*${firstNpc.name}*: Observando sua presença no local (${firstNpc.status}), toma a iniciativa. "${
               firstNpc.attitude === 'Aliado'
                 ? `Você chegou na hora exata, ${character?.name || 'Feiticeiro'}. A Cortina já foi lançada — prepare sua técnica.`
                 : `Então enviaram ${character?.name || 'um feiticeiro'} até aqui... Mostre-me a força da sua maldição!`
             }"`,
-            `*Narrador*: A cena inicial está estabelecida. O que você faz?`,
-          ]
+            objective
+              ? `*Narrador*: Objetivo imediato: ${objective} A cena inicial está estabelecida. O que você faz?`
+              : `*Narrador*: A cena inicial está estabelecida. O que você faz?`,
+          ].filter(Boolean)
         : buildContextualActionNarrative();
 
       const hasHostileNpc = updatedNpcs.some((n: { attitude: string }) => n.attitude === 'Hostil');
@@ -1605,7 +1902,10 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       }. Faíscas densas de Energia Amaldiçoada azul e carmesim, traços dinâmicos de ação, sem texto.`;
 
       return {
+        assistantMode: 'continuity-engine',
+        fallbackReason: reason,
         engineLog: [
+          `0. MOTOR LOCAL DE CONTINUIDADE — ${reason}. Sem narração generativa: a cena segue o contrato do arco (era, objetivo, fatos e limites).${objective ? ` Objetivo: ${objective}` : ''}`,
           `1. Checagem de Escala de Poder: ${character?.name || 'Jogador'} (${character?.grade || 'Grau 4'}) vs. ${firstNpc.name} (${firstNpc.grade || 'Grau 1'}) | Rolagem 1d20: ${diceRoll} (${modBreakdown} => Total ${modifiedRoll}) — ${Number(diceRoll) >= 12 ? 'Vantagem tática de iniciativa do Jogador' : 'Pressão de velocidade e território do NPC'}.`,
           `2. Checagem de Técnica (Lore Check): ${character?.technique?.name || 'Reforço de EA'} ativa (Output: ${newOutput}% | Custo de EA no turno: -${ceCost}% -> Reserva: ${newCe}%)${weakPillar ? ` | Fragilidade monitorada: ${weakPillar.name}` : ''}.`,
           `3. Psicologia & Estratégia Oculta do NPC: ${firstNpc.name} (${firstNpc.attitude}) atua conforme sua natureza canônica, buscando explorar brechas de alcance e desgaste de Energia Amaldiçoada.`,
@@ -1623,7 +1923,7 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         }`,
         visualEffectTrigger: vfx,
         narrative: narrativeLines.join('\n\n'),
-        imagePrompt: `Official Jujutsu Kaisen Season 2 anime screenshot by MAPPA studio, key visual quality, dynamic cel-shaded linework, glowing cursed energy sparks, depicting ${
+        imagePrompt: `Official Jujutsu Kaisen anime keyframe by MAPPA studio, key visual quality, dynamic cel-shaded linework, glowing cursed energy sparks, depicting ${
           character?.name || 'a jujutsu sorcerer'
         } (${character?.appearance || 'dark Jujutsu High uniform'}) performing ${
           actionText || startingArcTitle
@@ -1666,9 +1966,13 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
           npcsInScene: updatedNpcs,
         },
         suggestedActions: [
-          `Pressionar ${firstNpc.name} usando ${character?.technique?.name || 'minha Técnica Inata'}`,
+          objective
+            ? `Avançar no objetivo do arco: ${objective}`
+            : `Pressionar ${firstNpc.name} usando ${character?.technique?.name || 'minha Técnica Inata'}`,
           `Dialogar com ${firstNpc.name} para explorar informações sobre a anomalia em ${world?.location || 'Tóquio'}`,
-          'Concentrar Energia Amaldiçoada nos punhos buscando um Kokusen decisivo',
+          beats.length > 0
+            ? `Reagir à cena: ${beats[0]}`
+            : 'Concentrar Energia Amaldiçoada nos punhos buscando um Kokusen decisivo',
         ],
       };
     };
@@ -1684,72 +1988,28 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       });
     }
 
-    const turnPrompt = isOpening
-      ? `
-=== ABERTURA DE NOVA CAMPANHA (TURNO #1) ===
-Personagem do Jogador: ${JSON.stringify(character, null, 2)}
-=== FICHA EXCLUSIVA VIVA DO PERSONAGEM (CONSULTE SEMPRE) ===
-${character?.exclusiveSheetMarkdown || 'Ficha Exclusiva ativa.'}
-Estado Inicial do Mundo e NPCs: ${JSON.stringify(world, null, 2)}
-Arco Escolhido: ${startingArcTitle}
-Cena de Abertura Base: ${customOpeningPrompt}
-
-=== STORY CARDS E ENCICLOPÉDIA CANÔNICA ATIVADOS (RAG) ===
-${combinedRagContext || 'Conhecimento canônico geral de Jujutsu Kaisen.'}
-
-Gere o Turno #1 de abertura desta campanha com imersão cinematográfica digna do estúdio MAPPA, apresentando a atmosfera visceral do local, a presença dos NPCs em cena com suas personalidades e falas canônicas (*Nome*: Ação "Fala") e passando a iniciativa ao jogador!
-`
-      : `
-=== ESTADO ATUAL DO PERSONAGEM DO JOGADOR ===
-${JSON.stringify(character, null, 2)}
-
-=== FICHA EXCLUSIVA VIVA DO PERSONAGEM (CONSULTE E ATUALIZE VIA sheetEvolution SE HOUVER DESPERTAR DE SEÇÃO "Não desenvolvido ainda" OU MUDANÇA NA HISTÓRIA!) ===
-${character?.exclusiveSheetMarkdown || 'Ficha Exclusiva do personagem.'}
-
-=== ESTADO ATUAL DO MUNDO E NPCS EM CENA (ATUALIZE O hpPercentage DOS NPCS QUANDO SOFREREM DANO!) ===
-${JSON.stringify(world, null, 2)}
-
-=== MEMÓRIA CONSOLIDADA DA CAMPANHA ===
-${memoryContext || 'Início da campanha.'}
-
-=== HISTÓRICO RECENTE DE TURNOS ===
-${recentHistory || 'Primeiro turno da sessão.'}
-
-=== STORY CARDS E ENCICLOPÉDIA CANÔNICA ATIVADOS NESTE TURNO (RAG) ===
-${combinedRagContext || 'Nenhum card específico acionado; use o cânone oficial de Jujutsu Kaisen.'}
-
-=== AÇÃO DO JOGADOR NESTE TURNO ===
-- Modo de Ação: ${actionMode} (${
-          actionMode === 'DO'
-            ? 'Ação Física / Combate'
-            : actionMode === 'SAY'
-            ? 'Diálogo Direto'
-            : actionMode === 'TECHNIQUE'
-            ? 'Execução de Técnica Amaldiçoada / Domínio / RCT'
-            : 'Direcionamento Narrativo de Cena'
-        })
-- Rolagem 1d20 Natural: ${diceRoll} ${
-          Number(diceRoll) === 20
-            ? '(CRÍTICO NATURAL 20 — ATIVE BLACK FLASH / KOKUSEN OBRIGATORIAMENTE E CONCEDA ALTO XP E POSSÍVEL DESPERTAR NA FICHA EXCLUSIVA!)'
-            : Number(diceRoll) === 1
-            ? '(FALHA CRÍTICA 1 — APLIQUE CONSEQUÊNCIA SEVERA!)'
-            : ''
-        }
-- Modificador Tático Aplicado: ${modBreakdown} => Total Modificado = ${modifiedRoll}
-- Voto Vinculativo "Revelar a Própria Mão" ativado neste turno: ${
-          revealedHandVow ? 'SIM (+20% Output de EA concedido!)' : 'NÃO'
-        }
-- Texto do Jogador: "${actionText}"
-
-Gere a resposta estruturada em JSON seguindo rigorosamente o schema e o formato teatral (*Narrador*: e *Nome do Personagem*:). Consulte as Perícias & Afinidades Narrativas e Pilares do jogador na Ficha Exclusiva: faça as perícias de ★ Maestria e ● Afinidade AJUDAREM organicamente na cena, e as de ▼ Inaptidão / Fragilidade PREJUDICAREM gerando complicações dramáticas (sem cálculos matemáticos!). Conceda xpGained (25 a 220 XP)!
-`;
+    const turnPrompt = buildTurnPrompt({
+      character,
+      world,
+      actionMode,
+      actionText,
+      diceRoll: Number(diceRoll),
+      revealedHandVow,
+      modBreakdown,
+      combinedRagContext,
+      isOpening,
+      startingArcTitle,
+      customOpeningPrompt,
+      memoryContext,
+      recentHistory,
+    });
 
     const modelChain = Array.from(
       new Set([
         normalizeModelName(model),
-        'gemini-3-flash-preview',
-        'gemini-3.1-flash-lite-preview',
         'gemini-3.8-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-3.5-flash-lite',
       ])
     );
 
@@ -1796,6 +2056,146 @@ Gere a resposta estruturada em JSON seguindo rigorosamente o schema e o formato 
     });
   });
 
+  // Streaming GM Turn Endpoint (SSE) — narração progressiva + estado estruturado ao final
+  app.post('/api/gemini/turn/stream', async (req, res) => {
+    const {
+      model = 'gemini-3.8-flash',
+      character,
+      world,
+      actionMode = 'DO',
+      actionText = '',
+      diceRoll = 12,
+      revealedHandVow = false,
+      ragContext = '',
+      activeCards = [],
+      memoryContext = '',
+      recentHistory = '',
+      isOpening = false,
+      startingArcTitle = '',
+      customOpeningPrompt = '',
+      customApiKey = '',
+    } = req.body;
+
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    const send = (event: string, data: unknown) => {
+      res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    };
+    const done = () => res.end();
+
+    const headerKey = req.headers['x-custom-api-key'] as string | undefined;
+    const ai = getGeminiClient(customApiKey || headerKey);
+
+    if (!ai) {
+      send('error', { reason: 'NO_API_KEY', message: 'Chave GEMINI_API_KEY ausente.' });
+      return done();
+    }
+
+    const { mod: totalDiceMod, breakdown: modBreakdown } = getGradeModifier(
+      character?.grade,
+      character?.inBlackFlashZone,
+      revealedHandVow
+    );
+
+    const searchContextForServerRag = [
+      actionText,
+      startingArcTitle,
+      customOpeningPrompt,
+      world?.location,
+      world?.arc,
+      character?.technique?.name,
+      ...(world?.npcsInScene || []).map((n: { name: string }) => n.name),
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const { extraRagText } = await buildServerSideDeepRag(
+      searchContextForServerRag,
+      activeCards,
+      ai,
+      world?.era
+    );
+    const combinedRagContext = [ragContext, extraRagText].filter(Boolean).join('\n\n---\n\n');
+
+    const turnPrompt = buildTurnPrompt({
+      character,
+      world,
+      actionMode,
+      actionText,
+      diceRoll: Number(diceRoll),
+      revealedHandVow,
+      modBreakdown,
+      combinedRagContext,
+      isOpening,
+      startingArcTitle,
+      customOpeningPrompt,
+      memoryContext,
+      recentHistory,
+    });
+
+    const modelChain = Array.from(
+      new Set([
+        normalizeModelName(model),
+        'gemini-3.8-flash',
+        'gemini-3.1-flash-lite',
+        'gemini-3.5-flash-lite',
+      ])
+    );
+
+    let lastError = 'Erro desconhecido';
+    for (const candidateModel of modelChain) {
+      let buffer = '';
+      let lastNarrativeLen = 0;
+      try {
+        const stream = await ai.models.generateContentStream({
+          model: candidateModel,
+          contents: turnPrompt,
+          config: {
+            systemInstruction: SYSTEM_INSTRUCTION_GM,
+            responseMimeType: 'application/json',
+            responseSchema: JJK_RESPONSE_JSON_SCHEMA,
+            temperature: 0.75,
+          },
+        });
+
+        for await (const chunk of stream) {
+          buffer += chunk.text ?? '';
+          const narrative = extractNarrativeFromJson(buffer);
+          if (narrative.length > lastNarrativeLen) {
+            const delta = narrative.slice(lastNarrativeLen);
+            lastNarrativeLen = narrative.length;
+            send('delta', { text: delta });
+          }
+        }
+
+        const parsed = JSON.parse(buffer);
+        send('done', {
+          ok: true,
+          usedFallback: false,
+          apiKeyState: 'VALID',
+          usedModel: candidateModel,
+          switchedFromPrimary: candidateModel !== normalizeModelName(model),
+          data: parsed,
+        });
+        return done();
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
+        console.warn(`[JJK Stream] Modelo ${candidateModel} indisponível (${lastError.slice(0, 120)}). Tentando próximo...`);
+      }
+    }
+
+    send('error', {
+      reason: 'MODEL_FAILED',
+      message: 'Falha ao gerar o turno em streaming. Use o endpoint não-streaming como fallback.',
+      errorMessage: lastError,
+    });
+    return done();
+  });
+
   // Memory Summarizer Endpoint
   app.post('/api/gemini/memory', async (req, res) => {
     const { turnsText = '', turnRange = 'Turnos Recentes', customApiKey = '' } = req.body;
@@ -1826,7 +2226,7 @@ Gere a resposta estruturada em JSON seguindo rigorosamente o schema e o formato 
       });
     }
 
-    const memChain = ['gemini-3-flash-preview', 'gemini-3.1-flash-lite-preview', 'gemini-3.8-flash'];
+    const memChain = ['gemini-3.8-flash', 'gemini-3.1-flash-lite'];
     for (const candidateModel of memChain) {
       try {
         const response = await ai.models.generateContent({
@@ -1858,85 +2258,106 @@ Gere a resposta estruturada em JSON seguindo rigorosamente o schema e o formato 
       location = '',
       aspectRatio = '16:9',
       customApiKey = '',
+      referenceImages = [],
+      charactersInScene = [],
     } = req.body;
     const headerKey = req.headers['x-custom-api-key'] as string | undefined;
     const ai = getGeminiClient(customApiKey || headerKey);
 
-    const aiCraftedDescriptionPt =
-      nanoBananaAnimePrompt ||
-      `Cena em cel-shading estilo Jujutsu Kaisen (Estúdio MAPPA) em ${
-        location || 'Tóquio'
-      } (${prompt}).`;
+    // Monta as imagens de referência (retratos locais ou base64) para consistência.
+    const refParts: { inlineData: { mimeType: string; data: string } }[] = [];
+    for (const ref of (Array.isArray(referenceImages) ? referenceImages : []).slice(0, 6)) {
+      if (typeof ref !== 'string' || !ref.trim()) continue;
+      try {
+        if (ref.startsWith('data:')) {
+          const m = ref.match(/^data:([^;]+);base64,(.+)$/);
+          if (m) refParts.push({ inlineData: { mimeType: m[1] || 'image/png', data: m[2] } });
+        } else if (ref.startsWith('/portraits/')) {
+          const localPath = path.join(process.cwd(), 'public', ref.replace(/^\/+/, ''));
+          if (fs.existsSync(localPath)) {
+            const ext = path.extname(localPath).toLowerCase();
+            const mime = ext === '.jpg' || ext === '.jpeg' ? 'image/jpeg' : ext === '.webp' ? 'image/webp' : 'image/png';
+            refParts.push({ inlineData: { mimeType: mime, data: fs.readFileSync(localPath).toString('base64') } });
+          }
+        }
+      } catch {
+        // Ignora referência inválida e segue com as demais.
+      }
+    }
 
-    const finalEnglishAnimePrompt = `${prompt}. Official Jujutsu Kaisen Season 2 (Shibuya Incident) anime screenshot by MAPPA studio, authentic anime cel-shading, thick dynamic action linework, glowing blue and crimson cursed energy lighting, kinematic camera composition, sharp character facial features, 8k anime keyframe, no text, no watermark.`;
+    const sceneText =
+      (nanoBananaAnimePrompt && nanoBananaAnimePrompt.trim()) ||
+      `Cena de ${location || 'Tóquio'}: ${prompt}`;
+
+    const charBlock =
+      Array.isArray(charactersInScene) && charactersInScene.length > 0
+        ? ` Characters in the scene (keep their canonical appearances and outfits): ${charactersInScene.join('; ')}.`
+        : '';
+
+    const finalEnglishAnimePrompt = `${sceneText}.${charBlock} Official Jujutsu Kaisen anime keyframe style (MAPPA studio), authentic anime cel-shading, thick dynamic action linework, glowing blue and crimson cursed energy lighting, cinematic camera composition, sharp character facial features, high detail, no text, no watermark.`;
+
+    const nanoBananaPromptLog = sceneText;
 
     if (!ai) {
       return res.json({
         ok: false,
         reason: 'NO_API_KEY',
-        nanoBananaPromptLog: aiCraftedDescriptionPt,
+        message: 'Chave GEMINI_API_KEY ausente. Configure uma chave válida para gerar imagens.',
+        nanoBananaPromptLog,
       });
     }
 
-    // 1. Try gemini-3.1-flash-lite-image via generateContent
-    try {
+    const generateWithImageModel = async (model: string, useRefs: boolean) => {
+      const parts: { text?: string; inlineData?: { mimeType: string; data: string } }[] = [
+        { text: finalEnglishAnimePrompt },
+      ];
+      if (useRefs) parts.push(...refParts);
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-flash-lite-image',
-        contents: {
-          parts: [{ text: finalEnglishAnimePrompt }],
-        },
+        model,
+        contents: { parts },
         config: {
-          imageConfig: {
-            aspectRatio: aspectRatio === '1:1' ? '1:1' : '16:9',
-          },
+          imageConfig: { aspectRatio: aspectRatio === '1:1' ? '1:1' : '16:9' },
         },
       });
-
-      const parts = response.candidates?.[0]?.content?.parts || [];
-      for (const part of parts) {
+      const outParts = response.candidates?.[0]?.content?.parts || [];
+      for (const part of outParts) {
         if (part.inlineData?.data) {
           const mime = part.inlineData.mimeType || 'image/png';
-          return res.json({
-            ok: true,
-            modelUsed: 'gemini-3.1-flash-lite-image',
-            nanoBananaPromptLog: aiCraftedDescriptionPt,
-            imageUrl: `data:${mime};base64,${part.inlineData.data}`,
-          });
+          return { imageUrl: `data:${mime};base64,${part.inlineData.data}`, modelUsed: model };
         }
       }
-    } catch {
-      // Fallback to Imagen 3
-    }
+      return null;
+    };
 
-    // 2. Fallback to Imagen 3
-    try {
-      const response = await ai.models.generateImages({
-        model: 'imagen-3.0-generate-002',
-        prompt: finalEnglishAnimePrompt,
-        config: {
-          numberOfImages: 1,
-          outputMimeType: 'image/jpeg',
-          aspectRatio: aspectRatio === '1:1' ? '1:1' : '16:9',
-        },
-      });
-
-      const base64 = response.generatedImages?.[0]?.image?.imageBytes;
-      if (base64) {
-        return res.json({
-          ok: true,
-          modelUsed: 'imagen-3.0-generate-002',
-          nanoBananaPromptLog: aiCraftedDescriptionPt,
-          imageUrl: `data:image/jpeg;base64,${base64}`,
-        });
+    let lastImageError = '';
+    // 1. Nano Banana 2 / Pro (multi-referência, consistência de personagens)
+    for (const model of ['gemini-3.1-flash-image', 'gemini-3-pro-image']) {
+      try {
+        const result = await generateWithImageModel(model, true);
+        if (result) return res.json({ ok: true, ...result, nanoBananaPromptLog });
+      } catch (err) {
+        lastImageError = err instanceof Error ? err.message : String(err);
+        console.warn(`[JJK Image] ${model} indisponível:`, lastImageError.slice(0, 120));
       }
-    } catch {
-      // Fallback to client-side anime SVG art generator
     }
 
+    // 2. Nano Banana legado (text-to-image, sem referência)
+    try {
+      const result = await generateWithImageModel('gemini-2.5-flash-image', false);
+      if (result) return res.json({ ok: true, ...result, nanoBananaPromptLog });
+    } catch (err) {
+      lastImageError = err instanceof Error ? err.message : String(err);
+      console.warn('[JJK Image] gemini-2.5-flash-image indisponível:', lastImageError.slice(0, 120));
+    }
+
+    const quotaExceeded = /429|quota|billing/i.test(lastImageError);
     return res.json({
       ok: false,
-      reason: 'IMAGE_MODEL_UNAVAILABLE',
-      nanoBananaPromptLog: aiCraftedDescriptionPt,
+      reason: quotaExceeded ? 'IMAGE_QUOTA_EXCEEDED' : 'IMAGE_MODEL_UNAVAILABLE',
+      message: quotaExceeded
+        ? 'Cota de geração de imagens excedida na sua conta Google. Verifique o plano/faturamento (ai.google.dev) para liberar os modelos de imagem (Nano Banana).'
+        : 'Nenhum modelo de imagem respondeu. Verifique a chave e a cota da API Gemini.',
+      nanoBananaPromptLog,
     });
   });
 

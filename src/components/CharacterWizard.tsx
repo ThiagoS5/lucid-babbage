@@ -13,7 +13,12 @@ import {
   UNDEVELOPED_MARKER,
   WorldStateUpdate,
 } from '../types/jjk';
-import { CANONICAL_TECHNIQUES, STARTING_ARCS } from '../data/initialCodex';
+import { CANONICAL_TECHNIQUES } from '../data/initialCodex';
+import {
+  DEFAULT_STARTING_ARC,
+  STARTING_ARC_ERAS,
+  STARTING_ARCS,
+} from '../data/startingArcs';
 import {
   DEFAULT_NARRATIVE_PILLARS,
   DEFAULT_NARRATIVE_SKILLS,
@@ -69,6 +74,15 @@ import {
   User,
   Info,
 } from 'lucide-react';
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label className="block text-[10px] font-bold uppercase tracking-wide text-slate-400">{label}</label>
+      {children}
+    </div>
+  );
+}
 
 interface CharacterWizardProps {
   onStartCampaign: (
@@ -126,6 +140,21 @@ const FACTIONS = [
     id: 'Portador de Restrição Celestial Física (Zero EA — Estilo Toji/Maki)',
     clan: 'Restrição Celestial',
     isHr: true,
+  },
+  {
+    id: 'Feiticeiro Despertado pelo Jogo do Abate (Estilo Higuruma/Takaba)',
+    clan: 'Desperto Moderno',
+    isHr: false,
+  },
+  {
+    id: 'Feiticeiro Reencarnado do Período Heian/Edo (Estilo Kashimo/Ryu/Uro)',
+    clan: 'Reencarnado',
+    isHr: false,
+  },
+  {
+    id: 'Cadáver Amaldiçoado Mutante (Estilo Panda)',
+    clan: 'Cadáver Amaldiçoado',
+    isHr: false,
   },
 ];
 
@@ -192,9 +221,9 @@ const INITIAL_TOOLS: CursedToolItem[] = [
   },
   {
     id: 'tool-scythe-mother',
-    name: 'Foice da Morte (Ecos da Mãe — Selada)',
+    name: 'Lâmina Herdada (Selada — Evolutiva)',
     grade: 'Grau 3 (Evolutiva até Grau Especial)',
-    effect: 'Foice forjada a partir do espírito amaldiçoado materno. Possui consciência protetora latente e libera novos poderes a cada promoção de Grau.',
+    effect: 'Ferramenta amaldiçoada de linhagem com poder selado. Libera novas habilidades a cada promoção de Grau do portador.',
     equipped: true,
   },
   {
@@ -292,7 +321,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     'Dificuldade extrema em recuar mesmo quando superado numericamente; desprezo visceral por politicagem e pelo Alto Escalão Jujutsu.'
   );
 
-  // Binding Vow
+  // Binding Vow (Voto principal) + votos livres
   const [customVowName, setCustomVowName] = useState('Revelar a Própria Mão');
   const [customVowCondition, setCustomVowCondition] = useState(
     'Explicar abertamente o funcionamento da Técnica Inata ao inimigo em combate.'
@@ -300,6 +329,22 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   const [customVowBonus, setCustomVowBonus] = useState(
     '+20% de Output imediato de Energia Amaldiçoada e eficácia da técnica.'
   );
+  const [extraVows, setExtraVows] = useState<{ name: string; condition: string; bonus: string }[]>([]);
+  const [newVowName, setNewVowName] = useState('');
+  const [newVowCondition, setNewVowCondition] = useState('');
+  const [newVowBonus, setNewVowBonus] = useState('');
+
+  // Restrição Celestial (Tenshin Jubaku) modular
+  const [heavenlyRestriction, setHeavenlyRestriction] = useState<{
+    type: 'nenhuma' | 'fisica' | 'espiritual' | 'parcial';
+    price: string;
+    benefit: string;
+  }>({ type: 'nenhuma', price: '', benefit: '' });
+
+  // Criação de Clã / Linhagem
+  const [clanTrait, setClanTrait] = useState('');
+  const [clanTradition, setClanTradition] = useState('');
+  const [clanStatus, setClanStatus] = useState('Clã Independente');
 
   // 6 Narrative Pillars (D&D 5e Ability Shields)
   const [pillars, setPillars] = useState<NarrativePillarItem[]>(() =>
@@ -368,14 +413,12 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
 
   // Arsenal & Starting Arc
   const [selectedToolIdx, setSelectedToolIdx] = useState(2);
-  const [selectedArcIdx, setSelectedArcIdx] = useState(0);
+ const [selectedArcIdx, setSelectedArcIdx] = useState(0);
   const [customArcDescription, setCustomArcDescription] = useState(
-    () =>
-      STARTING_ARCS[0]?.description ||
-      'Chuva torrencial no distrito de Shinjuku às 23h00 enquanto uma Cortina misteriosa desce sobre um arranha-céu abandonado.'
+    () => DEFAULT_STARTING_ARC.scene
   );
   const [customArcLocation, setCustomArcLocation] = useState(
-    () => STARTING_ARCS[0]?.location || 'Escola Secundária Municipal Sugisawa — Pátio Noturno'
+    () => DEFAULT_STARTING_ARC.location
   );
 
   // Interactive Session Zero
@@ -384,6 +427,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   const [isEvaluatingSessionZero, setIsEvaluatingSessionZero] = useState(false);
   const [sessionZeroStatus, setSessionZeroStatus] = useState<'IDLE' | 'NEEDS_BALANCING' | 'BALANCED_READY'>('IDLE');
   const [latestProposedPatch, setLatestProposedPatch] = useState<SessionZeroChatEntry['proposedCharacterPatch'] | null>(null);
+  const [patchedTool, setPatchedTool] = useState<{ name: string; grade: string; effect: string } | null>(null);
 
   const currentFaction = FACTIONS[selectedFactionIdx];
   const currentGradeRule = getGradeProgressionRule(selectedGrade);
@@ -391,97 +435,33 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   const handleFactionChange = (idx: number) => {
     setSelectedFactionIdx(idx);
     setCustomClan(FACTIONS[idx].clan);
+    if (FACTIONS[idx].isHr) {
+      setHeavenlyRestriction({
+        type: 'fisica',
+        price: 'Zero Energia Amaldiçoada',
+        benefit: 'Corpo sobre-humano, sentidos aguçados e invisibilidade para barreiras.',
+      });
+    }
   };
 
   const handleArcChange = (idx: number) => {
     setSelectedArcIdx(idx);
     const arc = STARTING_ARCS[idx];
     if (arc) {
-      setCustomArcDescription(arc.description);
+      setCustomArcDescription(arc.scene);
+      setCustomArcLocation(arc.location);
+   }
+  };
+
+  const handleResetArcScene = () => {
+    const arc = STARTING_ARCS[selectedArcIdx];
+    if (arc) {
+      setCustomArcDescription(arc.scene);
       setCustomArcLocation(arc.location);
     }
   };
 
-  /**
-   * Loads the exact character concept from the user's Session Zero transcript:
-   * Thiago Soares (15 anos, filho adotivo de Satoru Gojo e uma maldição, Clã Marqueti + Ilimitado + Dupla Restrição Celestial + Foice da Morte)
-   */
-  const handleLoadThiagoMarquetiExample = () => {
-    setName('Thiago Soares');
-    setSelectedFactionIdx(2);
-    setCustomClan('Clã Marqueti (Sobrevivente) · Filho Adotivo de Satoru Gojo');
-    setSelectedGrade('Grau 4');
-    setAlignmentPhilosophy('Pragmático / Protetor da Humanidade (Estilo Yuji / Nanami)');
-    setAppearance(
-      '15 anos (1º ano da Escola Técnica de Tóquio). Usa o uniforme escuro tradicional da Escola Jujutsu, olhar confiante com um olho herdado de Satoru Gojo sob bandagem/óculos escuros e carrega a Foice da Morte envolta em energia amaldiçoada.'
-    );
-    setBackstory(
-      'Filho de Satoru Gojo (adotivo) e de um Espírito Amaldiçoado, único sobrevivente biológico do extinto Clã Marqueti — um clã capaz de manipular a realidade usando Energia Amaldiçoada. Age como Gojo (brincalhão para esconder suas dores, mas mortalmente sério quando mexem com seus amigos). Luta para proteger seus amigos e vingar seu clã.'
-    );
-    setCombatStyle(
-      'Combate híbrido corpo-a-corpo e esgrima com a Foice da Morte (forjada a partir da maldição de sua mãe, contendo a alma dela), buscando combinar a manipulação de realidade do Clã Marqueti com o Ilimitado e atributos físicos sobre-humanos.'
-    );
-    setPersonalityTraits(
-      'Espirituoso e sarcástico como Gojo para disfarçar feridas emocionais; implacável e silencioso quando amigos são feridos.'
-    );
-    setIdeals('A força existe para proteger os vulneráveis e erradicar o sofrimento gerado por maldições.');
-    setBonds('Memória da mãe espiritual (selada na Foice da Morte) e vínculo fraternal com Satoru Gojo.');
-    setFlaws('Dificuldade em confiar no Alto Escalão Jujutsu; dreno rápido de EA pelo olho herdado de Gojo.');
-    setTechniqueMode('custom');
-    setCustomConcept(
-      'Herdou a técnica do Clã Marqueti (manipular a realidade utilizando Energia Amaldiçoada) e também o Ilimitado de Gojo, além de desejar ambas as Restrições Celestiais anulando os pontos fracos (físico sobre-humano + energia amaldiçoada alta).'
-    );
-    setCustomTechnique({
-      name: 'Manipulação da Realidade (Clã Marqueti) & Ilimitado',
-      isCanon: false,
-      description:
-        'Técnica ancestral do Clã Marqueti que altera a realidade usando Energia Amaldiçoada, combinada ao Ilimitado herdado de Satoru Gojo e à anomalia de dupla Restrição Celestial.',
-      lapse: 'Lapso: Reescrita Corporal & Infinito de Curto Alcance',
-      reversal: UNDEVELOPED_MARKER,
-      maximum: UNDEVELOPED_MARKER,
-      domainExpansion: UNDEVELOPED_MARKER,
-      antiDomain: UNDEVELOPED_MARKER,
-      hasRct: false,
-      rctStatus: UNDEVELOPED_MARKER,
-      activationConditions:
-        'Voto Vinculativo do Clã Marqueti: manipula inicialmente o próprio corpo; usar o olho de Gojo consome muita Energia Amaldiçoada por não ter o sangue biológico do Clã Gojo.',
-    });
-    setIsDomainUndeveloped(true);
-    setSelectedToolIdx(1); // Foice da Morte (Ecos da Mãe)
-    setCustomVowName('Voto Vinculativo do Clã Marqueti');
-    setCustomVowCondition(
-      'A manipulação da realidade começa restrita ao próprio corpo e micro-regras; o olho de Gojo drena muita EA por não ter sangue Gojo.'
-    );
-    setCustomVowBonus(
-      'Anula a fraqueza da Restrição Celestial mantendo físico sobre-humano + Energia Amaldiçoada e evolui a cada Grau.'
-    );
-
-    // Ensure at least 1 pillar is Fragilidade
-    setPillars(
-      DEFAULT_NARRATIVE_PILLARS.map((p) => {
-        if (p.id === 'pillar-ce') {
-          return {
-            ...p,
-            tier: 'Fraco',
-            narrativeNote: 'Fragilidade Obrigatória: O Olho herdado de Gojo sem sangue biológico drena Energia Amaldiçoada rapidamente se forçado.',
-          };
-        }
-        return { ...p };
-      })
-    );
-
-    // Set affinities fitting Thiago Soares
-    setSkills((prev) =>
-      prev.map((s) => {
-        if (s.id === 'skill-taijutsu') return { ...s, level: 'maestria' };
-        if (s.id === 'skill-weapons') return { ...s, level: 'maestria' };
-        if (s.id === 'skill-barriers') return { ...s, level: 'nao_desenvolvido' };
-        if (s.id === 'skill-ce-control') return { ...s, level: 'inaptidao' };
-        if (s.id === 'skill-deception') return { ...s, level: 'inaptidao' };
-        return s;
-      })
-    );
-  };
+  
 
   /**
    * Marks advanced sections as "Não desenvolvido ainda"
@@ -591,8 +571,13 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     if (patch.vowName) setCustomVowName(patch.vowName);
     if (patch.vowCondition) setCustomVowCondition(patch.vowCondition);
     if (patch.vowBonus) setCustomVowBonus(patch.vowBonus);
-    if (patch.toolName && patch.toolName.toLowerCase().includes('foice')) {
-      setSelectedToolIdx(1);
+    if (patch.toolName) {
+      setSelectedToolIdx(-1);
+      setPatchedTool({
+        name: patch.toolName,
+        grade: patch.toolGrade || 'Grau 3',
+        effect: patch.toolEffect || 'Ferramenta Amaldiçoada proposta pelo Mestre na Sessão Zero.',
+      });
     }
     if (patch.technique) {
       setTechniqueMode('custom');
@@ -658,7 +643,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   const handleGenerateAvatar = async () => {
     setIsGeneratingAvatar(true);
     try {
-      const prompt = `Official Jujutsu Kaisen Season 2 anime character portrait by MAPPA studio, ${appearance}, ${combatStyle}, 1:1 square portrait, high contrast cursed energy aura, no text`;
+      const prompt = `Official Jujutsu Kaisen anime character portrait by MAPPA studio, ${appearance}, ${combatStyle}, 1:1 square portrait, high contrast cursed energy aura, no text`;
       const data = await generateAnimeImage({
         prompt,
         aspectRatio: '1:1',
@@ -782,10 +767,19 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
           : domainPortal,
     };
 
-    const chosenTool = INITIAL_TOOLS[selectedToolIdx];
+    const chosenToolRaw = patchedTool ?? (selectedToolIdx >= 0 ? INITIAL_TOOLS[selectedToolIdx] : null);
+    const chosenTool: CursedToolItem | null = chosenToolRaw
+      ? {
+          id: 'tool-chosen',
+          name: chosenToolRaw.name,
+          grade: chosenToolRaw.grade,
+          effect: chosenToolRaw.effect,
+          equipped: true,
+        }
+      : null;
     const chosenArc = STARTING_ARCS[selectedArcIdx];
 
-    const initialInventory: CursedToolItem[] = isSectionUndeveloped(chosenTool?.name)
+    const initialInventory: CursedToolItem[] = isSectionUndeveloped(chosenTool?.name) || !chosenTool
       ? [
           {
             id: 'item-undeveloped-tool',
@@ -821,6 +815,9 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
       avatarUrl,
       faction: currentFaction.id,
       clan: customClan.trim() || currentFaction.clan,
+      clanTrait: clanTrait.trim() || undefined,
+      clanTradition: clanTradition.trim() || undefined,
+      clanStatus: clanStatus.trim() || undefined,
       grade: selectedGrade,
       alignmentPhilosophy,
       personalityTraits: personalityTraits.trim() || UNDEVELOPED_MARKER,
@@ -829,9 +826,18 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
       flaws: flaws.trim() || UNDEVELOPED_MARKER,
       narrativePillars: enforcedPillars,
       narrativeSkills: enforcedSkills,
-      isHeavenlyRestriction: currentFaction.isHr,
+      isHeavenlyRestriction: currentFaction.isHr || heavenlyRestriction.type !== 'nenhuma',
+      heavenlyRestriction:
+        heavenlyRestriction.type !== 'nenhuma'
+          ? {
+              type: heavenlyRestriction.type,
+              price: heavenlyRestriction.price.trim() || 'A definir',
+              benefit: heavenlyRestriction.benefit.trim() || 'A definir',
+            }
+          : undefined,
       hpPercentage: 100,
-      cursedEnergyPercentage: currentFaction.isHr ? 0 : 100,
+      cursedEnergyPercentage:
+        currentFaction.isHr || heavenlyRestriction.type === 'fisica' ? 0 : 100,
       outputPercentage: 100,
       physicalCondition: 'Intacto — Pronto para Exorcismo',
       techniqueState: 'Ativa',
@@ -850,6 +856,13 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
             '+20% de Output imediato de Energia Amaldiçoada e eficácia da técnica.',
           active: false,
         },
+        ...extraVows.map((v, i) => ({
+          id: `vow-extra-${i}-${Date.now()}`,
+          name: v.name.trim() || 'Voto Vinculativo',
+          condition: v.condition.trim() || 'Condição a definir.',
+          bonus: v.bonus.trim() || 'Bônus a definir.',
+          active: false,
+        })),
       ],
       evolutionHistory: [
         {
@@ -870,6 +883,8 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     baseCharacter.progression = ensureCharacterProgression(baseCharacter);
     baseCharacter.exclusiveSheetMarkdown = buildExclusiveCharacterSheetMarkdown(baseCharacter);
 
+    const openingScene = customArcDescription.trim() || chosenArc.scene;
+
     const initialWorld: WorldStateUpdate = {
       location: customArcLocation.trim() || chosenArc.location,
       arc: chosenArc.arcLabel,
@@ -877,6 +892,18 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
         chosenArc.id === 'shibuya-incident' || chosenArc.id === 'culling-game'
           ? 'Cortina Ativa'
           : 'Nenhum',
+      // O objetivo é a missão do arco — nunca a prosa da cena (bug antigo).
+      missionObjective: chosenArc.objective,
+      timelineAnchor: chosenArc.timeline,
+      era: chosenArc.era,
+      campaignPremise: chosenArc.premise,
+      playerRole: chosenArc.playerRole,
+      tone: chosenArc.tone,
+      mustEstablish: chosenArc.mustEstablish,
+      worldFacts: chosenArc.worldFacts,
+      forbiddenEvents: chosenArc.forbidden,
+      openingScene,
+      startingArcTitle: chosenArc.title,
       npcsInScene: chosenArc.initialNpcs.map((n) => ({
         ...n,
         hpPercentage: 100,
@@ -884,12 +911,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
       })),
     };
 
-    onStartCampaign(
-      baseCharacter,
-      initialWorld,
-      chosenArc.title,
-      customArcDescription.trim() || chosenArc.description
-    );
+    onStartCampaign(baseCharacter, initialWorld, chosenArc.title, openingScene);
   };
 
   const renderUndevelopedToggle = (
@@ -912,7 +934,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
         className={`px-2 py-0.5 rounded text-[10px] font-semibold border transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap ${
           undeveloped
             ? 'bg-amber-950/60 border-amber-500/70 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.2)]'
-            : 'bg-[#07070a] border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-300'
+            : 'bg-[#080605] border-slate-700 text-slate-400 hover:border-amber-500/50 hover:text-amber-300'
         }`}
         title="Marcar ou desmarcar esta seção como 'Não desenvolvido ainda' para despertar durante a história"
       >
@@ -932,21 +954,27 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     return s.category === skillCategoryFilter;
   });
 
+  const selectedArc = STARTING_ARCS[selectedArcIdx] ?? STARTING_ARCS[0];
+  const arcsByEra = STARTING_ARC_ERAS.map((era) => ({
+    ...era,
+    arcs: STARTING_ARCS.map((arc, idx) => ({ arc, idx })).filter(({ arc }) => arc.era === era.id),
+  }));
+
   return (
     <div className="min-h-[100dvh] w-full overflow-y-auto rpg-tabletop-desk text-slate-100 px-3 py-6 md:px-8 md:py-10 font-sans safe-bottom">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Top Control Bar */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-rose-950/60 pb-4">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-950/60 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-rose-950/70 border border-rose-500/50 flex items-center justify-center text-rose-400 shadow-[0_0_15px_rgba(225,29,72,0.2)]">
+            <div className="w-10 h-10 rounded-lg bg-amber-950/70 border border-amber-500/50 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(217,119,6,0.2)]">
               <ScrollText className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-rose-400 font-display font-bold">
-                <span>Jujutsu Kaisen · Ficha Oficial de RPG de Mesa</span>
+              <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-amber-400 font-display font-bold">
+                <span>Jujutsu Kaisen · Ficha de Feiticeiro</span>
               </div>
-              <h1 className="font-display text-2xl md:text-3xl font-extrabold tracking-wider text-rose-100 drop-shadow">
-                CURSED CHRONICLES VTT
+              <h1 className="font-display text-2xl md:text-3xl font-extrabold tracking-wider text-amber-100 drop-shadow">
+                MESTRE DE JUJUTSU KAISEN
               </h1>
             </div>
           </div>
@@ -966,7 +994,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
             <button
               type="button"
               onClick={onOpenCloudModal}
-              className="px-3.5 py-2 rounded-lg bg-[#0f0f14] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer"
+              className="px-3.5 py-2 rounded-lg bg-[#0d0b09] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer"
               title="Abrir Diagnóstico da Chave Gemini IA, Configurações de Sistema e Saves na Nuvem"
             >
               <span
@@ -982,7 +1010,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
               </span>
             </button>
 
-            <label className="px-3.5 py-2 rounded-lg bg-[#0f0f14] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
+            <label className="px-3.5 py-2 rounded-lg bg-[#0d0b09] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
               <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
               <span>Importar Save (.json)</span>
               <input
@@ -999,11 +1027,11 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
         </header>
 
         {/* Intelligent Session Zero & Presets Bar */}
-        <section aria-labelledby="sz-heading" className="bg-gradient-to-r from-[#0d0d14] via-[#12111d] to-[#0d0d14] border border-purple-500/40 rounded-2xl p-4 md:p-5 space-y-3 shadow-[0_0_25px_rgba(124,58,237,0.1)]">
+        <section aria-labelledby="sz-heading" className="bg-gradient-to-r from-[#0e0b09] via-[#12111d] to-[#0e0b09] border border-amber-500/40 rounded-2xl p-4 md:p-5 space-y-3 shadow-[0_0_25px_rgba(217,119,6,0.1)]">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
             <div className="space-y-0.5">
-              <div id="sz-heading" className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-purple-300">
-                <Scale className="w-4 h-4 text-purple-400" />
+              <div id="sz-heading" className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300">
+                <Scale className="w-4 h-4 text-amber-400" />
                 <span>Sessão Zero & Equilíbrio de Força · Nivelamento Inteligente com Mestre IA</span>
               </div>
               <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
@@ -1012,15 +1040,6 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
             </div>
 
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleLoadThiagoMarquetiExample}
-                className="px-3 py-1.5 rounded-lg bg-amber-950/50 hover:bg-amber-900/60 border border-amber-500/50 text-amber-200 text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>Carregar Exemplo: Thiago Soares (Clã Marqueti)</span>
-              </button>
-
               <button
                 type="button"
                 onClick={handleMarkAdvancedAsUndeveloped}
@@ -1034,7 +1053,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                 type="button"
                 onClick={() => handleRunSessionZero()}
                 disabled={isEvaluatingSessionZero}
-                className="px-3.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(124,58,237,0.35)] transition-all flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(217,119,6,0.35)] transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <MessageSquare className="w-3.5 h-3.5" />
                 <span>
@@ -1086,22 +1105,22 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                     key={entry.id}
                     className={`p-3 rounded-xl border text-xs leading-relaxed ${
                       entry.sender === 'gm'
-                        ? 'bg-[#07070a] border-purple-500/40 text-slate-200'
+                        ? 'bg-[#080605] border-amber-500/40 text-slate-200'
                         : 'bg-sky-950/30 border-sky-500/40 text-sky-100 ml-4'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-[11px] uppercase tracking-wider text-purple-300">
+                      <span className="font-bold text-[11px] uppercase tracking-wider text-amber-300">
                         {entry.sender === 'gm' ? '🎭 Mestre de Jogo' : `🗣️ ${name}`}
                       </span>
                       {entry.designatedInitialGrade && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950/80 border border-purple-500/40 text-purple-200">
+                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-200">
                           Grau Sugerido: {entry.designatedInitialGrade}
                         </span>
                       )}
                     </div>
                     {entry.powerScaleWarning && (
-                      <div className="mb-1.5 p-1.5 rounded bg-rose-950/40 border border-rose-500/40 text-rose-200 text-[11px]">
+                      <div className="mb-1.5 p-1.5 rounded bg-amber-950/40 border border-amber-500/40 text-amber-200 text-[11px]">
                         <strong>⚠️ Alerta:</strong> {entry.powerScaleWarning}
                       </div>
                     )}
@@ -1125,7 +1144,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                     }
                   }}
                   placeholder="Responda ou proponha um Voto Vinculativo ao Mestre..."
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-[#07070a] border border-slate-700 text-xs text-white focus:outline-none focus:border-purple-500"
+                  className="flex-1 px-3 py-1.5 rounded-lg bg-[#080605] border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
                 />
                 <button
                   type="button"
@@ -1142,15 +1161,15 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
         </section>
 
         {/* =========================================================================
-            THE OFFICIAL D&D 5E TABLETOP CHARACTER SHEET FORM
+            THE OFFICIAL JUJUTSU SORCERER CHARACTER SHEET
            ========================================================================= */}
         <form onSubmit={handleStart} className="dnd5e-sheet-surface space-y-6">
           {/* 1. D&D 5E OFFICIAL HEADER BLOCK */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pb-4 border-b border-rose-500/30">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pb-4 border-b border-amber-500/30">
             {/* Left Block: Character Name & Crest */}
             <div className="lg:col-span-5 flex flex-col sm:flex-row items-center gap-4">
               <div className="relative group shrink-0">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border-2 border-rose-500/60 shadow-[0_0_20px_rgba(225,29,72,0.25)] bg-[#07070a]">
+                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border-2 border-amber-500/60 shadow-[0_0_20px_rgba(217,119,6,0.25)] bg-[#080605]">
                   <img
                     src={avatarUrl}
                     alt={name}
@@ -1162,7 +1181,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                 <button
                   type="button"
                   onClick={() => setShowPortraitGallery(!showPortraitGallery)}
-                  className="absolute bottom-1 right-1 p-1 rounded bg-[#07070a]/90 border border-slate-700 text-slate-200 hover:text-white"
+                  className="absolute bottom-1 right-1 p-1 rounded bg-[#080605]/90 border border-slate-700 text-slate-200 hover:text-white"
                   title="Galeria de Portraits"
                   aria-expanded={showPortraitGallery}
                   aria-controls="portrait-gallery-panel"
@@ -1173,8 +1192,8 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
               </div>
 
               <div className="w-full space-y-1">
-                <label className="block text-[10px] tracking-widest uppercase font-bold text-rose-400" htmlFor="char-name-dnd5e">
-                  NOME DO PERSONAGEM / CHARACTER NAME
+                <label className="block text-[10px] tracking-widest uppercase font-bold text-amber-400" htmlFor="char-name-dnd5e">
+                  NOME DO PERSONAGEM
                 </label>
                 <input
                   id="char-name-dnd5e"
@@ -1182,8 +1201,8 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Thiago Soares, Ren Fushiguro..."
-                  className="w-full px-3 py-2 rounded-lg bg-[#07070a] border border-rose-500/50 font-display text-lg font-bold text-white tracking-wide focus:outline-none focus:border-rose-400"
+                  placeholder="Ex: Ren Fushiguro, Aoi Takeda..."
+                  className="w-full px-3 py-2 rounded-lg bg-[#080605] border border-amber-500/50 font-display text-lg font-bold text-white tracking-wide focus:outline-none focus:border-amber-400"
                 />
 
                 <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -1227,7 +1246,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                   title="Facção e Classe Jujutsu"
                 >
                   {FACTIONS.map((f, idx) => (
-                    <option key={f.id} value={idx} className="bg-[#0f0f14] text-white">
+                    <option key={f.id} value={idx} className="bg-[#0d0b09] text-white">
                       {f.id}
                     </option>
                   ))}
@@ -1257,15 +1276,15 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                   <select
                     value={selectedGrade}
                     onChange={(e) => setSelectedGrade(e.target.value)}
-                    className="bg-transparent text-xs font-bold text-purple-300 border-none focus:outline-none"
+                    className="bg-transparent text-xs font-bold text-amber-300 border-none focus:outline-none"
                   >
                     {GRADES.map((g) => (
-                      <option key={g} value={g} className="bg-[#0f0f14] text-white">
+                      <option key={g} value={g} className="bg-[#0d0b09] text-white">
                         {g}
                       </option>
                     ))}
                   </select>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-950 border border-purple-500/40 text-purple-200 font-semibold whitespace-nowrap">
+                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950 border border-amber-500/40 text-amber-200 font-semibold whitespace-nowrap">
                     +{currentGradeRule.levelsRequired} nv
                   </span>
                 </div>
@@ -1300,9 +1319,9 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
 
           {/* Portrait Gallery Drawer (if toggled) */}
           {showPortraitGallery && (
-            <div id="portrait-gallery-panel" className="p-3.5 rounded-xl bg-[#07070a] border border-purple-500/40 space-y-2.5">
+            <div id="portrait-gallery-panel" className="p-3.5 rounded-xl bg-[#080605] border border-amber-500/40 space-y-2.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-purple-300">
+                <span className="text-xs font-semibold text-amber-300">
                   Galeria de Portraits Oficiais (ArtStation & 318 Personagens Canônicos)
                 </span>
                 <input
@@ -1310,7 +1329,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                   value={portraitSearch}
                   onChange={(e) => setPortraitSearch(e.target.value)}
                   placeholder="Buscar portrait (ex: Aoi, Gojo, Nanami, Sukuna, Choso, Geto)..."
-                  className="px-2.5 py-1 rounded bg-[#0f0f14] border border-slate-700 text-xs text-white focus:outline-none focus:border-purple-500 w-full sm:w-64"
+                  className="px-2.5 py-1 rounded bg-[#0d0b09] border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 w-full sm:w-64"
                 />
               </div>
 
@@ -1342,8 +1361,8 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                     }}
                     className={`p-1 rounded-lg border text-center transition-all cursor-pointer ${
                       avatarUrl === item.url
-                        ? 'border-rose-400 bg-rose-950/40'
-                        : 'border-slate-800 bg-[#0f0f14] hover:border-slate-600'
+                        ? 'border-amber-400 bg-amber-950/40'
+                        : 'border-slate-800 bg-[#0d0b09] hover:border-slate-600'
                     }`}
                   >
                     <img
@@ -1363,13 +1382,13 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
               2. THE TABLETOP BODY (RESPONSIVE: MOBILE, TABLET & WEB)
              ========================================================================= */}
           {/* Responsive Mobile / Tablet Tab Switcher (< lg) */}
-          <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-xl bg-[#0a0a0f] border border-slate-800 overflow-x-auto no-scrollbar">
+          <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-xl bg-[#0b0907] border border-slate-800 overflow-x-auto no-scrollbar">
             <button
               type="button"
               onClick={() => setMobileSheetTab('all')}
               className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
                 mobileSheetTab === 'all'
-                  ? 'bg-rose-600 text-white shadow-[0_0_12px_rgba(225,29,72,0.4)]'
+                  ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.4)]'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -1380,7 +1399,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
               onClick={() => setMobileSheetTab('pillars')}
               className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
                 mobileSheetTab === 'pillars'
-                  ? 'bg-sky-600 text-white shadow-[0_0_12px_rgba(2,132,199,0.4)]'
+                  ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.4)]'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -1391,7 +1410,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
               onClick={() => setMobileSheetTab('technique')}
               className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
                 mobileSheetTab === 'technique'
-                  ? 'bg-purple-600 text-white shadow-[0_0_12px_rgba(124,58,237,0.4)]'
+                  ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.4)]'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -1425,7 +1444,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                   className={`p-2.5 rounded-lg border text-[11px] leading-snug space-y-1.5 ${
                     limitationsCheck.isValid
                       ? 'bg-emerald-950/25 border-emerald-500/40 text-emerald-200'
-                      : 'bg-rose-950/40 border-rose-500/60 text-rose-200'
+                      : 'bg-amber-950/40 border-amber-500/60 text-amber-200'
                   }`}
                 >
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -1439,7 +1458,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       <button
                         type="button"
                         onClick={handleAutoFixLimitations}
-                        className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[10px] font-bold cursor-pointer shrink-0"
+                        className="px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold cursor-pointer shrink-0"
                       >
                         Equilibrar Agora
                       </button>
@@ -1447,13 +1466,13 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                   </div>
                   <p className="text-[10px] text-slate-300 leading-relaxed">
                     Obrigatoriamente pelo menos <strong>1 Pilar</strong> deve ser{' '}
-                    <span className="text-rose-300 font-semibold">▼ Fragilidade</span> (atual:{' '}
+                    <span className="text-amber-300 font-semibold">▼ Fragilidade</span> (atual:{' '}
                     <strong>{limitationsCheck.fragilePillarCount}</strong>) e no máximo{' '}
                     <strong>3 Pilares</strong> como Ponto Forte/Ápice (atual:{' '}
                     <strong>{limitationsCheck.strongOrApexPillarCount}/3</strong>).
                   </p>
                   {!limitationsCheck.isValid && limitationsCheck.warnings.length > 0 && (
-                    <ul className="list-disc list-inside text-[10px] text-rose-300 space-y-0.5">
+                    <ul className="list-disc list-inside text-[10px] text-amber-300 space-y-0.5">
                       {limitationsCheck.warnings.map((w, i) => (
                         <li key={i}>{w}</li>
                       ))}
@@ -1471,7 +1490,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onClick={() => handleTogglePillar(pillar.id)}
                         className={`rpg-ability-box text-left transition-all cursor-pointer group w-full ${
                           pillar.tier === 'Fraco'
-                            ? 'border-rose-500/70 bg-rose-950/20'
+                            ? 'border-amber-500/70 bg-amber-950/20'
                             : 'hover:border-amber-400'
                         }`}
                       >
@@ -1516,9 +1535,9 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                 </div>
 
                 {/* Legend & Stats */}
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] bg-[#07070a] p-2.5 rounded-lg border border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] bg-[#080605] p-2.5 rounded-lg border border-slate-800">
                   <span className="text-emerald-400 font-bold">🟢 Ajuda: {helpingSkillsCount}</span>
-                  <span className="text-rose-400 font-bold">🔴 Fragilidades: {hinderingSkillsCount} (mín. 1)</span>
+                  <span className="text-amber-400 font-bold">🔴 Fragilidades: {hinderingSkillsCount} (mín. 1)</span>
                   <span className="text-amber-400 font-bold">🔒 Não desenv.: {undevelopedSkillsCount}</span>
                 </div>
 
@@ -1538,7 +1557,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       className={`px-2.5 py-1 rounded border transition-colors cursor-pointer ${
                         skillCategoryFilter === tab.id
                           ? 'bg-amber-600/30 border-amber-500 text-amber-200 font-bold'
-                          : 'bg-[#07070a] border-slate-800 text-slate-400 hover:text-white'
+                          : 'bg-[#080605] border-slate-800 text-slate-400 hover:text-white'
                       }`}
                     >
                       {tab.label}
@@ -1566,9 +1585,9 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                                   : skill.level === 'afinidade'
                                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400'
                                   : skill.level === 'inaptidao'
-                                  ? 'bg-rose-500/20 text-rose-300 border-rose-500'
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500'
                                   : skill.level === 'nao_desenvolvido'
-                                  ? 'bg-purple-500/20 text-purple-300 border-purple-500'
+                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500'
                                   : 'bg-transparent text-slate-500 border-slate-700'
                               }`}
                             >
@@ -1605,14 +1624,14 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
 
                 {/* Add Custom Narrative Skill Modal / Form */}
                 {isAddingCustomSkill && (
-                  <div className="p-3 rounded-lg bg-[#07070a] border border-amber-500/50 space-y-2 text-xs">
+                  <div className="p-3 rounded-lg bg-[#080605] border border-amber-500/50 space-y-2 text-xs">
                     <div className="font-bold text-amber-300">Criar Perícia Narrativa Personalizada</div>
                     <input
                       type="text"
                       value={customSkillName}
                       onChange={(e) => setCustomSkillName(e.target.value)}
                       placeholder="Nome da Perícia (ex: Esgrima com Foice, Pilotagem, Investigação)..."
-                      className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-white text-xs"
+                      className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-white text-xs"
                     />
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <select
@@ -1620,7 +1639,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onChange={(e) =>
                           setCustomSkillCategory(e.target.value as typeof customSkillCategory)
                         }
-                        className="px-2 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-slate-200 text-xs"
+                        className="px-2 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-200 text-xs"
                       >
                         <option value="Combate & Corpo">Combate & Corpo</option>
                         <option value="Jujutsu & Barreiras">Jujutsu & Barreiras</option>
@@ -1633,7 +1652,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onChange={(e) =>
                           setCustomSkillAffinity(e.target.value as NarrativeAffinityLevel)
                         }
-                        className="px-2 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-slate-200 text-xs font-bold"
+                        className="px-2 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-200 text-xs font-bold"
                       >
                         <option value="maestria">★ Maestria (Ajuda Muito)</option>
                         <option value="afinidade">● Afinidade (Ajuda)</option>
@@ -1648,7 +1667,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       value={customSkillDesc}
                       onChange={(e) => setCustomSkillDesc(e.target.value)}
                       placeholder="Como essa perícia atua narrativamente na história..."
-                      className="w-full px-2.5 py-1.5 rounded bg-[#0f0f14] border border-slate-700 text-slate-300 text-xs leading-relaxed"
+                      className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-300 text-xs leading-relaxed"
                     />
 
                     <div className="flex items-center justify-end gap-2 pt-1">
@@ -1685,25 +1704,25 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                 mobileSheetTab === 'technique' || mobileSheetTab === 'all' ? 'block' : 'hidden'
               } lg:block lg:col-span-7 space-y-5 min-w-0`}
             >
-              {/* Combat Stats Trio (D&D 5e Armor Class, Initiative, Speed equivalent) */}
+              {/* Painel de Atributos Táticos */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <div className="dnd5e-framed-box text-center">
                   <div className="text-sm sm:text-base font-display font-bold text-sky-400 break-words">
                     {currentFaction.isHr ? 'SOBRE-HUMANA' : 'REFORÇO EA'}
                   </div>
-                  <div className="dnd5e-section-caption">GUARDA & DEFESA (CA)</div>
+                  <div className="dnd5e-section-caption">GUARDA & DEFESA</div>
                 </div>
 
                 <div className="dnd5e-framed-box text-center">
                   <div className="text-sm sm:text-base font-display font-bold text-amber-400 break-words">
-                    {selectedGrade.includes('Especial') || selectedGrade.includes('1') ? 'INSTANTÂNEA' : 'AGILIDADE'}
+                    {selectedGrade.includes('Especial') || selectedGrade.includes('1') ? 'INSTANTÂNEA' : 'ÁGIL'}
                   </div>
-                  <div className="dnd5e-section-caption">INICIATIVA / REAÇÃO</div>
+                  <div className="dnd5e-section-caption">REAÇÃO & PERCEPÇÃO</div>
                 </div>
 
                 <div className="dnd5e-framed-box text-center">
-                  <div className="text-sm sm:text-base font-display font-bold text-rose-400 break-words">
-                    100% EA
+                  <div className="text-sm sm:text-base font-display font-bold text-amber-400 break-words">
+                    {heavenlyRestriction.type === 'fisica' || currentFaction.isHr ? '0% EA' : '100% EA'}
                   </div>
                   <div className="dnd5e-section-caption">OUTPUT BASE</div>
                 </div>
@@ -1711,9 +1730,9 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
 
               {/* Grimório da Técnica Inata */}
               <div className="dnd5e-framed-box space-y-3.5">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-500/20 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300 uppercase tracking-wider">
-                    <Sword className="w-4 h-4 text-purple-400 shrink-0" />
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider">
+                    <Sword className="w-4 h-4 text-amber-400 shrink-0" />
                     <span>Grimório da Técnica Inata</span>
                   </div>
 
@@ -1723,8 +1742,8 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       onClick={() => setTechniqueMode('custom')}
                       className={`px-2.5 py-1 rounded text-[10px] font-semibold cursor-pointer ${
                         techniqueMode === 'custom'
-                          ? 'bg-purple-600 text-white'
-                          : 'bg-[#07070a] text-slate-400'
+                          ? 'bg-amber-600 text-white'
+                          : 'bg-[#080605] text-slate-400'
                       }`}
                     >
                       Original
@@ -1735,7 +1754,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       className={`px-2.5 py-1 rounded text-[10px] font-semibold cursor-pointer ${
                         techniqueMode === 'canon'
                           ? 'bg-sky-600 text-white'
-                          : 'bg-[#07070a] text-slate-400'
+                          : 'bg-[#080605] text-slate-400'
                       }`}
                     >
                       Canônica
@@ -1748,7 +1767,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                     <select
                       value={selectedCanonIdx}
                       onChange={(e) => setSelectedCanonIdx(Number(e.target.value))}
-                      className="w-full px-2.5 py-2 rounded-lg bg-[#07070a] border border-slate-700 text-xs text-white"
+                      className="w-full px-2.5 py-2 rounded-lg bg-[#080605] border border-slate-700 text-xs text-white"
                     >
                       {CANONICAL_TECHNIQUES.map((t, idx) => (
                         <option key={t.name} value={idx}>
@@ -1765,14 +1784,14 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                     {/* Concept & Forge */}
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="text-[11px] font-semibold text-purple-300" htmlFor="custom-concept-dnd5e">
+                        <label className="text-[11px] font-semibold text-amber-300" htmlFor="custom-concept-dnd5e">
                           Conceito Central da Técnica Inata
                         </label>
                         <button
                           type="button"
                           onClick={handleGenerateBalancedTechnique}
                           disabled={isGeneratingTech}
-                          className="px-2.5 py-1 rounded bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer"
+                          className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer"
                         >
                           <Wand2 className="w-3 h-3" />
                           <span>{isGeneratingTech ? 'Forjando...' : 'Forjar Técnica com IA'}</span>
@@ -1784,7 +1803,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         value={customConcept}
                         onChange={(e) => setCustomConcept(e.target.value)}
                         placeholder="Descreva o funcionamento e limites da sua técnica..."
-                        className="w-full px-2.5 py-2 rounded bg-[#07070a] border border-slate-700 text-xs text-slate-200 leading-relaxed"
+                        className="w-full px-2.5 py-2 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
                       />
                     </div>
 
@@ -1800,7 +1819,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onChange={(e) =>
                           setCustomTechnique({ ...customTechnique, name: e.target.value })
                         }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#07070a] border border-slate-700 text-xs text-white font-bold"
+                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white font-bold"
                       />
                     </div>
 
@@ -1822,14 +1841,14 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onChange={(e) =>
                           setCustomTechnique({ ...customTechnique, lapse: e.target.value })
                         }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#07070a] border border-slate-700 text-xs text-slate-200 leading-relaxed"
+                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
                       />
                     </div>
 
                     {/* Reversão (Reversal) */}
                     <div className="space-y-1">
                       <div className="flex flex-wrap items-center justify-between gap-1">
-                        <span className="text-[10px] font-bold uppercase text-rose-400">
+                        <span className="text-[10px] font-bold uppercase text-amber-400">
                           Reversão da Técnica (Vermelho / Energia Positiva)
                         </span>
                         {renderUndevelopedToggle(
@@ -1844,7 +1863,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onChange={(e) =>
                           setCustomTechnique({ ...customTechnique, reversal: e.target.value })
                         }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#07070a] border border-slate-700 text-xs text-slate-200 leading-relaxed"
+                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
                       />
                     </div>
 
@@ -1866,13 +1885,13 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onChange={(e) =>
                           setCustomTechnique({ ...customTechnique, maximum: e.target.value })
                         }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#07070a] border border-slate-700 text-xs text-slate-200 leading-relaxed"
+                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
                       />
                     </div>
 
                     {/* RCT & Anti-Domain */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      <div className="p-2.5 rounded bg-[#07070a] border border-slate-800 space-y-1.5">
+                      <div className="p-2.5 rounded bg-[#080605] border border-slate-800 space-y-1.5">
                         <div className="flex flex-wrap items-center justify-between gap-1">
                           <span className="text-[10px] font-bold text-emerald-400">
                             Técnica Reversa (RCT)
@@ -1888,7 +1907,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         </div>
                       </div>
 
-                      <div className="p-2.5 rounded bg-[#07070a] border border-slate-800 space-y-1.5">
+                      <div className="p-2.5 rounded bg-[#080605] border border-slate-800 space-y-1.5">
                         <div className="flex flex-wrap items-center justify-between gap-1">
                           <span className="text-[10px] font-bold text-sky-400">
                             Anti-Domínio
@@ -1903,7 +1922,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                           type="text"
                           value={customTechnique.antiDomain || ''}
                           onChange={(e) => setCustomTechnique({ ...customTechnique, antiDomain: e.target.value })}
-                          className="w-full px-2 py-1 rounded bg-[#0f0f14] border border-slate-700 text-[11px] text-white"
+                          className="w-full px-2 py-1 rounded bg-[#0d0b09] border border-slate-700 text-[11px] text-white"
                         />
                       </div>
                     </div>
@@ -1913,7 +1932,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
 
               {/* Arsenal & Ferramentas Amaldiçoadas */}
               <div className="dnd5e-framed-box space-y-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-500/20 pb-1.5">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-1.5">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider">
                     <Sword className="w-3.5 h-3.5 text-amber-400 shrink-0" />
                     <span>Arsenal & Ferramenta Amaldiçoada</span>
@@ -1923,9 +1942,17 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
 
                 <select
                   value={selectedToolIdx}
-                  onChange={(e) => setSelectedToolIdx(Number(e.target.value))}
-                  className="w-full px-2.5 py-2 rounded bg-[#07070a] border border-slate-700 text-xs text-white"
+                  onChange={(e) => {
+                    setSelectedToolIdx(Number(e.target.value));
+                    if (Number(e.target.value) >= 0) setPatchedTool(null);
+                  }}
+                  className="w-full px-2.5 py-2 rounded bg-[#080605] border border-slate-700 text-xs text-white"
                 >
+                  {patchedTool && selectedToolIdx < 0 && (
+                    <option value={-1}>
+                      {patchedTool.name} ({patchedTool.grade})
+                    </option>
+                  )}
                   {INITIAL_TOOLS.map((tool, idx) => (
                     <option key={tool.id} value={idx}>
                       {tool.name} ({tool.grade})
@@ -1933,15 +1960,162 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                   ))}
                 </select>
                 <div className="text-xs text-slate-300 leading-relaxed break-words">
-                  {INITIAL_TOOLS[selectedToolIdx].effect}
+                  {patchedTool && selectedToolIdx < 0
+                    ? patchedTool.effect
+                    : INITIAL_TOOLS[selectedToolIdx >= 0 ? selectedToolIdx : 0].effect}
+                </div>
+              </div>
+
+              {/* História, Personalidade & Estilo Marcial */}
+              <div className="dnd5e-framed-box space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-sky-300 uppercase tracking-wider border-b border-sky-500/20 pb-2">
+                  <User className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                  <span>História, Personalidade & Estilo Marcial</span>
+                </div>
+                <div className="space-y-2">
+                  <Field label="Aparência Física & Aura">
+                    <textarea rows={2} value={appearance} onChange={(e) => setAppearance(e.target.value)} placeholder="Como seu feiticeiro se parece?" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                  <Field label="História de Origem (Backstory)">
+                    <textarea rows={3} value={backstory} onChange={(e) => setBackstory(e.target.value)} placeholder="De onde ele vem? O que o motiva?" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                  <Field label="Estilo de Combate & Taijutsu">
+                    <textarea rows={2} value={combatStyle} onChange={(e) => setCombatStyle(e.target.value)} placeholder="Como ele luta?" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <Field label="Traços de Personalidade">
+                      <textarea rows={2} value={personalityTraits} onChange={(e) => setPersonalityTraits(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                    </Field>
+                    <Field label="Ideais & Motivação">
+                      <textarea rows={2} value={ideals} onChange={(e) => setIdeals(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                    </Field>
+                    <Field label="Vínculos (Bonds)">
+                      <textarea rows={2} value={bonds} onChange={(e) => setBonds(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                    </Field>
+                    <Field label="Defeitos & Fragilidades (Flaws)">
+                      <textarea rows={2} value={flaws} onChange={(e) => setFlaws(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+
+              {/* Clã / Linhagem */}
+              <div className="dnd5e-framed-box space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 uppercase tracking-wider border-b border-emerald-500/20 pb-2">
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Clã & Linhagem (Criação Livre)</span>
+                </div>
+                <div className="space-y-2">
+                  <Field label="Status do Clã">
+                    <input type="text" value={clanStatus} onChange={(e) => setClanStatus(e.target.value)} placeholder="Ex: Três Grandes Famílias, clã menor, exilado, sobrevivente..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                  <Field label="Traço Genético Amaldiçoado (Técnica de Linhagem)">
+                    <textarea rows={2} value={clanTrait} onChange={(e) => setClanTrait(e.target.value)} placeholder="Habilidade ou marca herdada pelo sangue do clã." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                  <Field label="Tradição, História & Conflitos do Clã">
+                    <textarea rows={2} value={clanTradition} onChange={(e) => setClanTradition(e.target.value)} placeholder="Rivalidades com os Três Grandes Clãs, ritos, reputação..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                </div>
+              </div>
+
+              {/* Restrição Celestial */}
+              <div className="dnd5e-framed-box space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20 pb-2">
+                  <Scale className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Restrição Celestial (Tenshin Jubaku)</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                  {(
+                    [
+                      { v: 'nenhuma', l: 'Nenhuma' },
+                      { v: 'fisica', l: 'Física (Zero EA)' },
+                      { v: 'espiritual', l: 'Espiritual (EA Ampliada)' },
+                      { v: 'parcial', l: 'Parcial' },
+                    ] as const
+                  ).map((opt) => (
+                    <button
+                      key={opt.v}
+                      type="button"
+                      onClick={() => setHeavenlyRestriction((prev) => ({ ...prev, type: opt.v }))}
+                      className={`px-2 py-1.5 rounded text-[11px] font-semibold cursor-pointer border transition-colors ${
+                        heavenlyRestriction.type === opt.v
+                          ? 'bg-amber-600/30 border-amber-500 text-amber-100'
+                          : 'bg-[#080605] border-slate-700 text-slate-400'
+                      }`}
+                    >
+                      {opt.l}
+                    </button>
+                  ))}
+                </div>
+                {heavenlyRestriction.type !== 'nenhuma' && (
+                  <div className="space-y-2">
+                    <Field label="Preço / Custo">
+                      <input type="text" value={heavenlyRestriction.price} onChange={(e) => setHeavenlyRestriction((prev) => ({ ...prev, price: e.target.value }))} placeholder="Ex: 0% de EA, corpo frágil, alcance limitado..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                    </Field>
+                    <Field label="Benefício em Troca">
+                      <input type="text" value={heavenlyRestriction.benefit} onChange={(e) => setHeavenlyRestriction((prev) => ({ ...prev, benefit: e.target.value }))} placeholder="Ex: corpo sobre-humano, alcance quilométrico de EA..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                    </Field>
+                  </div>
+                )}
+              </div>
+
+              {/* Votos Vinculativos Livres */}
+              <div className="dnd5e-framed-box space-y-3">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20 pb-2">
+                  <HeartHandshake className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Votos Vinculativos Livres (Binding Vows)</span>
+                </div>
+                <div className="space-y-2">
+                  <Field label="Voto Principal (Nome)">
+                    <input type="text" value={customVowName} onChange={(e) => setCustomVowName(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                  <Field label="Condição do Voto">
+                    <input type="text" value={customVowCondition} onChange={(e) => setCustomVowCondition(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                  <Field label="Bônus do Voto">
+                    <input type="text" value={customVowBonus} onChange={(e) => setCustomVowBonus(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  </Field>
+                </div>
+
+                {extraVows.length > 0 && (
+                  <div className="space-y-1.5">
+                    {extraVows.map((v, i) => (
+                      <div key={i} className="p-2 rounded-lg bg-[#0b0907] border border-slate-800 flex items-start justify-between gap-2">
+                        <div className="min-w-0 text-[11px] text-slate-300">
+                          <div className="font-bold text-amber-200">{v.name}</div>
+                          <div className="text-slate-400">{v.condition} → {v.bonus}</div>
+                        </div>
+                        <button type="button" onClick={() => setExtraVows((prev) => prev.filter((_, idx) => idx !== i))} className="text-amber-400 hover:text-amber-300 text-xs cursor-pointer shrink-0">✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-1.5">
+                  <input type="text" value={newVowName} onChange={(e) => setNewVowName(e.target.value)} placeholder="Nome do novo Voto" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  <input type="text" value={newVowCondition} onChange={(e) => setNewVowCondition(e.target.value)} placeholder="Condição (ex: 'não usar técnica durante a semana')" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  <input type="text" value={newVowBonus} onChange={(e) => setNewVowBonus(e.target.value)} placeholder="Bônus (ex: 'dobrar o poder no sábado')" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!newVowName.trim()) return;
+                      setExtraVows((prev) => [...prev, { name: newVowName.trim(), condition: newVowCondition.trim(), bonus: newVowBonus.trim() }]);
+                      setNewVowName('');
+                      setNewVowCondition('');
+                      setNewVowBonus('');
+                    }}
+                    className="px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer justify-center"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Adicionar Voto
+                  </button>
                 </div>
               </div>
 
               {/* Configuração do Portal de Expansão de Domínio */}
               <div className="dnd5e-framed-box space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-rose-500/20 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-purple-300 uppercase tracking-wider">
-                    <Zap className="w-4 h-4 text-purple-400 shrink-0" />
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider">
+                    <Zap className="w-4 h-4 text-amber-400 shrink-0" />
                     <span>Portal de Expansão de Domínio</span>
                   </div>
                   {renderUndevelopedToggle(
@@ -1971,7 +2145,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                           type="text"
                           value={domainPortal.domainName}
                           onChange={(e) => setDomainPortal({ ...domainPortal, domainName: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded bg-[#07070a] border border-slate-700 text-white font-bold"
+                          className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-white font-bold"
                         />
                       </div>
                       <div>
@@ -1984,7 +2158,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                               barrierType: e.target.value as DomainBarrierType,
                             })
                           }
-                          className="w-full px-2 py-1.5 rounded bg-[#07070a] border border-slate-700 text-white"
+                          className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-white"
                         >
                           {BARRIER_TYPES.map((b) => (
                             <option key={b} value={b}>
@@ -1996,7 +2170,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                     </div>
 
                     <div>
-                      <label className="text-[10px] font-bold uppercase text-purple-300">
+                      <label className="text-[10px] font-bold uppercase text-amber-300">
                         Acerto Garantido (Sure-Hit)
                       </label>
                       <textarea
@@ -2005,7 +2179,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                         onChange={(e) =>
                           setDomainPortal({ ...domainPortal, sureHitEffect: e.target.value })
                         }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#07070a] border border-slate-700 text-slate-200 leading-relaxed"
+                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-slate-200 leading-relaxed"
                       />
                     </div>
 
@@ -2023,8 +2197,8 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                             }
                             className={`px-2.5 py-1.5 rounded border text-[10px] text-left break-words cursor-pointer ${
                               domainPortal.visualStyle === st.id
-                                ? 'bg-purple-600/30 border-purple-500 text-white font-bold'
-                                : 'bg-[#07070a] border-slate-800 text-slate-400'
+                                ? 'bg-amber-600/30 border-amber-500 text-white font-bold'
+                                : 'bg-[#080605] border-slate-800 text-slate-400'
                             }`}
                           >
                             {st.label}
@@ -2041,9 +2215,59 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/25 pb-2">
                   <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider font-display">
                     <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Arco Cronológico · Onde a Campanha Irá Iniciar</span>
+                    <span>Arco Cronológico &amp; Premissa · Onde a Campanha Irá Iniciar</span>
                   </div>
-                  <span className="text-[10px] text-amber-200/80">Ponto de Partida Narrativo</span>
+                  <span className="text-[10px] text-amber-200/80">Briefing enviado ao Mestre</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {STARTING_ARC_ERAS.map((era) => {
+                    const isActive = selectedArc.era === era.id;
+                    return (
+                      <button
+                        key={era.id}
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={() => {
+                          const idx = STARTING_ARCS.findIndex((a) => a.era === era.id);
+                          if (idx >= 0) handleArcChange(idx);
+                        }}
+                        className={`text-left rounded-xl border px-3 py-2 transition-colors cursor-pointer ${
+                          isActive
+                            ? 'border-amber-400 bg-amber-950/40 text-amber-100'
+                            : 'border-slate-800 bg-[#080605] text-slate-400 hover:border-amber-500/50 hover:text-amber-200'
+                        }`}
+                      >
+                        <span className="block text-[11px] font-bold uppercase tracking-wide">
+                          {era.label}
+                        </span>
+                        <span className="block text-[10px] leading-snug mt-0.5">{era.hint}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Premissa da campanha — o que a IA recebe como bússola do mundo. */}
+                <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#0d0a07] to-[#0a0806] px-3.5 py-3 space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
+                    <Compass className="w-3.5 h-3.5 shrink-0" />
+                    <span>Premissa da campanha</span>
+                  </div>
+                  <p className="text-[12px] leading-relaxed text-amber-50/90">{selectedArc.premise}</p>
+                  <div className="grid grid-cols-1 gap-2 border-t border-amber-500/15 pt-2.5 sm:grid-cols-2">
+                    <div className="min-w-0">
+                      <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                        Seu papel neste arco
+                      </span>
+                      <p className="text-[11px] leading-snug text-slate-300">{selectedArc.playerRole}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-500">
+                        Tom que o Mestre deve sustentar
+                      </span>
+                      <p className="text-[11px] leading-snug text-slate-300">{selectedArc.tone.join(' · ')}</p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -2055,12 +2279,16 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       id="arc-select"
                       value={selectedArcIdx}
                       onChange={(e) => handleArcChange(Number(e.target.value))}
-                      className="w-full px-2.5 py-2 rounded-lg bg-[#07070a] border border-amber-500/40 text-xs text-white font-semibold"
+                      className="w-full px-2.5 py-2 rounded-lg bg-[#080605] border border-amber-500/40 text-xs text-white font-semibold"
                     >
-                      {STARTING_ARCS.map((arc, idx) => (
-                        <option key={arc.id} value={idx}>
-                          {arc.title}
-                        </option>
+                      {arcsByEra.map((group) => (
+                        <optgroup key={group.id} label={group.label}>
+                          {group.arcs.map(({ arc, idx }) => (
+                            <option key={arc.id} value={idx}>
+                              {arc.title}
+                            </option>
+                          ))}
+                        </optgroup>
                       ))}
                     </select>
                   </div>
@@ -2075,15 +2303,30 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       value={customArcLocation}
                       onChange={(e) => setCustomArcLocation(e.target.value)}
                       placeholder="Ex: Escola Técnica de Tóquio, Estação de Shibuya..."
-                      className="w-full px-2.5 py-2 rounded-lg bg-[#07070a] border border-slate-700 text-xs text-amber-100"
+                      className="w-full px-2.5 py-2 rounded-lg bg-[#080605] border border-slate-700 text-xs text-amber-100"
                     />
                   </div>
                 </div>
 
-                {STARTING_ARCS[selectedArcIdx]?.initialNpcs?.length > 0 && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
+                  <div className="rounded-lg border border-slate-800 bg-[#080605] px-2.5 py-2">
+                    <span className="block text-[9px] uppercase tracking-wider text-slate-500">
+                      Cronologia enviada ao Mestre
+                    </span>
+                    <span className="text-amber-100">{selectedArc.timeline}</span>
+                  </div>
+                  <div className="rounded-lg border border-slate-800 bg-[#080605] px-2.5 py-2">
+                    <span className="block text-[9px] uppercase tracking-wider text-slate-500">
+                      Objetivo imediato
+                    </span>
+                    <span className="text-amber-100">{selectedArc.objective}</span>
+                  </div>
+                </div>
+
+                {selectedArc.initialNpcs.length > 0 && (
                   <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-300">
                     <span className="text-amber-400 font-semibold">Personagens Presentes na Abertura:</span>
-                    {STARTING_ARCS[selectedArcIdx].initialNpcs.map((npc, i) => (
+                    {selectedArc.initialNpcs.map((npc, i) => (
                       <span key={npc.name}>
                         {i > 0 && <span className="mx-1 text-slate-600">·</span>}
                         <strong className="text-white">{npc.name}</strong> ({npc.attitude})
@@ -2093,27 +2336,76 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                 )}
 
                 <div className="space-y-1.5">
-                  <label className="block text-[11px] font-bold text-amber-200" htmlFor="arc-opening-textarea">
-                    Cena e Contexto de Abertura da Campanha (Edite ou expanda como desejar)
-                  </label>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="text-[11px] font-bold text-amber-200" htmlFor="arc-opening-textarea">
+                      Cena de Abertura (o que o Mestre IA narra no Turno #1)
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleResetArcScene}
+                      className="text-[10px] font-semibold px-2 py-1 rounded-md border border-amber-500/40 text-amber-300 hover:bg-amber-950/50 cursor-pointer"
+                    >
+                      Restaurar cena do arco
+                    </button>
+                  </div>
                   <textarea
                     id="arc-opening-textarea"
-                    rows={6}
+                    rows={8}
+                    maxLength={4000}
                     value={customArcDescription}
                     onChange={(e) => setCustomArcDescription(e.target.value)}
                     placeholder="Descreva em detalhes por onde e como sua campanha irá começar (clima, local, missão inicial, personagens ao redor, tensão do momento)..."
-                    className="w-full px-3.5 py-3 rounded-xl bg-[#07070a] border border-amber-500/40 text-sm font-narrative text-amber-50 leading-relaxed focus:outline-none focus:border-amber-400"
+                    className="w-full px-3.5 py-3 rounded-xl bg-[#080605] border border-amber-500/40 text-sm font-narrative text-amber-50 leading-relaxed focus:outline-none focus:border-amber-400"
                   />
                   <p className="text-[11px] text-slate-400 leading-snug">
-                    O Mestre IA usará este texto como ponto de partida imediato para narrar o Turno #1 da sua campanha.
+                    {customArcDescription.trim().length} / 4000 caracteres · este é exatamente o texto que o Mestre recebe como cena canônica do Turno #1, junto com a premissa, o seu papel, a cronologia, o objetivo e os limites do arco. Descreva lugar, clima, o que está em jogo e o que você vê — sem instruções, sem pensamentos e sem falas do seu personagem.
                   </p>
                 </div>
 
+                <details className="rounded-xl border border-slate-800 bg-[#080605] px-3 py-2">
+                  <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-wide text-amber-300">
+                    Contrato do Mestre · fatos do mundo e limites
+                  </summary>
+                  <div className="mt-2 space-y-3">
+                    <div>
+                      <span className="block text-[9px] uppercase tracking-wider text-amber-400 mb-1">
+                        Batidas obrigatórias do Turno #1
+                      </span>
+                      <ul className="grid list-disc grid-cols-1 gap-1 pl-4 text-[11px] text-slate-300 sm:grid-cols-2">
+                        {selectedArc.mustEstablish.map((beat) => (
+                          <li key={beat}>{beat}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <div>
+                      <span className="block text-[9px] uppercase tracking-wider text-emerald-400 mb-1">
+                        Fatos imutáveis
+                      </span>
+                      <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-300">
+                        {selectedArc.worldFacts.map((fact) => (
+                          <li key={fact}>{fact}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div>
+                      <span className="block text-[9px] uppercase tracking-wider text-amber-400 mb-1">
+                        O Mestre não pode
+                      </span>
+                      <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-300">
+                        {selectedArc.forbidden.map((rule) => (
+                          <li key={rule}>{rule}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </details>
                 <div className="pt-2 flex justify-end">
                   <button
                     type="submit"
                     data-start="true"
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-display font-bold tracking-wider text-xs sm:text-sm shadow-[0_0_25px_rgba(225,29,72,0.45)] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-display font-bold tracking-wider text-xs sm:text-sm shadow-[0_0_25px_rgba(217,119,6,0.45)] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
                     <Flame className="w-4 h-4 fill-current text-white shrink-0" />
                     <span>Iniciar Campanha neste Arco</span>
@@ -2124,14 +2416,14 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
           </div>
 
           {/* Sticky Mobile Floating Quick-Start Bar (< lg) */}
-          <div className="lg:hidden sticky bottom-3 z-40 p-2.5 rounded-2xl bg-[#09090e]/95 backdrop-blur-md border border-rose-500/50 shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-between gap-3 safe-bottom">
+          <div className="lg:hidden sticky bottom-3 z-40 p-2.5 rounded-2xl bg-[#0a0807]/95 backdrop-blur-md border border-amber-500/50 shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-between gap-3 safe-bottom">
             <div className="flex items-center gap-2.5 pl-1 min-w-0">
-              <div className="w-9 h-9 rounded-lg overflow-hidden border border-rose-500/60 shrink-0 bg-[#07070a]">
+              <div className="w-9 h-9 rounded-lg overflow-hidden border border-amber-500/60 shrink-0 bg-[#080605]">
                 <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
               </div>
               <div className="min-w-0">
                 <div className="text-xs font-bold text-white break-words leading-tight">{name || 'Feiticeiro'}</div>
-                <div className="text-[10px] text-purple-300 font-semibold flex flex-wrap items-center gap-1">
+                <div className="text-[10px] text-amber-300 font-semibold flex flex-wrap items-center gap-1">
                   <span>{selectedGrade}</span>
                   <span>·</span>
                   <span className="text-slate-400">Nv. 1 (100 XP)</span>
@@ -2141,7 +2433,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
 
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-display font-bold text-xs tracking-wider shadow-[0_0_20px_rgba(225,29,72,0.5)] flex items-center gap-1.5 shrink-0 cursor-pointer touch-target-min"
+              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-display font-bold text-xs tracking-wider shadow-[0_0_20px_rgba(217,119,6,0.5)] flex items-center gap-1.5 shrink-0 cursor-pointer touch-target-min"
             >
               <Flame className="w-3.5 h-3.5 fill-current" />
               <span>INICIAR</span>

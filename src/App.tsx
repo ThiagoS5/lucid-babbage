@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import {
   ActionMode,
   CampaignState,
@@ -31,20 +31,24 @@ import {
   saveCampaignStateSafe,
   saveCustomCodexSafe,
 } from './utils/storageManager';
-import {
-  saveCampaignToCloud,
-  subscribeToAuth,
-} from './services/firebaseClient';
-import { CharacterWizard } from './components/CharacterWizard';
 import { LeftSorcererSheet } from './components/LeftSorcererSheet';
 import { CenterNarrativeStage } from './components/CenterNarrativeStage';
 import { RightWorldRadar } from './components/RightWorldRadar';
-import { SystemAndCloudPanel } from './components/SystemAndCloudPanel';
+
+// Code-splitting: a ficha (com a galeria de retratos) e o painel de sistema
+// só baixam quando o jogador realmente abre cada um.
+const CharacterWizard = lazy(() =>
+  import('./components/CharacterWizard').then((m) => ({ default: m.CharacterWizard }))
+);
+const SystemAndCloudPanel = lazy(() =>
+  import('./components/SystemAndCloudPanel').then((m) => ({ default: m.SystemAndCloudPanel }))
+);
 import { jjkAudio } from './utils/soundEffects';
 import {
   executeNarrativeTurn,
   generateAnimeImage,
   GeminiConnectionReport,
+  streamNarrativeTurn,
   summarizeCampaignMemory,
   validateGeminiConnection,
 } from './services/geminiService';
@@ -66,7 +70,9 @@ import {
 } from 'lucide-react';
 
 function createInitialAutostartCampaign(): CampaignState {
-  const defaultArc = STARTING_ARCS[0];
+  // A demo de autostart (URL ?autostart=1) narra a abertura canônica de
+  // Sendai/2018; a campanha criada pelo Wizard usa por padrão o SEGUIMENTO.
+  const defaultArc = STARTING_ARCS.find((a) => a.id === 'sendai-2018') ?? STARTING_ARCS[0];
   const character: CharacterSheet = {
     name: 'Ren Fushiguro',
     appearance:
@@ -120,6 +126,17 @@ function createInitialAutostartCampaign(): CampaignState {
     location: defaultArc.location,
     arc: defaultArc.arcLabel,
     activeBarrierOrDomain: 'Cortina Ativa',
+    missionObjective: defaultArc.objective,
+    timelineAnchor: defaultArc.timeline,
+    era: defaultArc.era,
+    campaignPremise: defaultArc.premise,
+    playerRole: defaultArc.playerRole,
+    tone: defaultArc.tone,
+    mustEstablish: defaultArc.mustEstablish,
+    worldFacts: defaultArc.worldFacts,
+    forbiddenEvents: defaultArc.forbidden,
+    openingScene: defaultArc.scene,
+    startingArcTitle: defaultArc.title,
     npcsInScene: defaultArc.initialNpcs.map((n) => ({
       ...n,
       hpPercentage: 100,
@@ -147,7 +164,7 @@ function createInitialAutostartCampaign(): CampaignState {
       visualEffectTrigger: 'NONE',
       narrative: `*Narrador*: O relógio da Escola Secundária Municipal Sugisawa marca 23h30 sob uma lua carmesim opressora. Uma Cortina escura desce silenciosamente sobre o pátio úmido, isolando o prédio do mundo exterior. No corredor do segundo andar, a pressão espiritual de um Objeto Amaldiçoado de Grau Especial — um dos vinte dedos de Ryomen Sukuna — atrai um Espírito Amaldiçoado grotesco que estilhaça as janelas de vidro.\n\n*Megumi Fushiguro*: Unindo as mãos no selo dos Cães Divinos enquanto sombras líquidas se erguem ao redor de seus pés, ele olha para você com expressão séria. "A assinatura de energia amaldiçoada do dedo está agitando todas as maldições do distrito. Eu imobilizo a criatura pelas sombras — prepare sua técnica para exorcizá-la antes que ela devore o objeto!"\n\n*Espírito Amaldiçoado do Pátio*: Múltiplos olhos amarelos giram no torso deformado da criatura enquanto ela avança babando energia densa. "Ca... carne... dedo... poder...!"\n\n*Narrador*: O concreto racha sob o avanço da maldição de Grau 2 a poucos metros de você e de Fushiguro. O que você faz?`,
       imagePrompt:
-        'Official Jujutsu Kaisen Season 2 anime screenshot by MAPPA studio, high contrast, Japanese school courtyard at midnight under a crimson moon with Megumi Fushiguro and a sorcerer facing a cursed spirit, no text',
+        'Official Jujutsu Kaisen anime keyframe by MAPPA studio, high contrast, Japanese school courtyard at midnight under a crimson moon with Megumi Fushiguro and a sorcerer facing a cursed spirit, no text',
       isCombatScene: true,
       combatSceneImageQuestion:
         'O combate contra o Espírito Amaldiçoado do Pátio na Escola Sugisawa vai começar! Deseja que o Mestre solicite ao Nano Banana uma imagem do início desta cena de combate com os mesmos gráficos do anime?',
@@ -190,6 +207,15 @@ function createInitialAutostartCampaign(): CampaignState {
       'Ryomen Sukuna': generateCanonicalPortraitSvg('Ryomen Sukuna'),
     },
   };
+}
+
+function FullScreenLoader({ label }: { label: string }) {
+  return (
+    <div className="min-h-[100dvh] w-full flex flex-col items-center justify-center gap-4 bg-[#0b0908] text-amber-100">
+      <div className="h-10 w-10 rounded-full border-2 border-amber-500/25 border-t-amber-400 animate-spin" />
+      <p className="text-[11px] uppercase tracking-[0.2em] text-amber-200/70">{label}</p>
+    </div>
+  );
 }
 
 export default function App() {
@@ -235,7 +261,7 @@ export default function App() {
   const [model, setModel] = useState<GeminiModelOption>('gemini-3.8-flash');
   const [fontSize, setFontSize] = useState<FontSizeOption>('medium');
   const [autoGenerateImages, setAutoGenerateImages] = useState(false);
-  const [autoRollDice, setAutoRollDice] = useState(true);
+  const [autoRollDice, setAutoRollDice] = useState(false);
   const [currentDiceRoll, setCurrentDiceRoll] = useState<number>(15);
   const [sfxEnabled, setSfxEnabled] = useState<boolean>(true);
   const [customApiKey, setCustomApiKey] = useState<string>(() => {
@@ -253,6 +279,7 @@ export default function App() {
 
   // Async Loading & VFX States
   const [isSubmittingTurn, setIsSubmittingTurn] = useState(false);
+  const [streamingNarrative, setStreamingNarrative] = useState('');
   const [isRegeneratingPortrait, setIsRegeneratingPortrait] = useState(false);
   const [generatingNpcName, setGeneratingNpcName] = useState(null as string | null);
   const [isGeneratingImageForTurn, setIsGeneratingImageForTurn] = useState(null as string | null);
@@ -337,13 +364,28 @@ export default function App() {
     document.body.dataset.state = viewMode === 'vtt' ? 'playing' : 'title';
   }, [viewMode]);
 
-  // Subscribe to Firebase Auth
+  // Firebase é carregado sob demanda: o SDK (~centenas de KB) não entra no
+  // bundle inicial da crônica. O chunk é buscado depois do primeiro paint.
   useEffect(() => {
-    const unsub = subscribeToAuth((user) => {
-      setUserEmail(user?.email || null);
-    });
-    return () => unsub();
-  }, []);
+    // Só baixa o SDK do Firebase quando o jogador abre o painel de nuvem.
+    if (!showSystemModal && mobileTab !== 'sistema') return;
+    let cancelled = false;
+    let unsubscribe: (() => void) | undefined;
+    import('./services/firebaseClient')
+      .then(({ subscribeToAuth }) => {
+        if (cancelled) return;
+        unsubscribe = subscribeToAuth((user) => {
+          setUserEmail(user?.email || null);
+        });
+      })
+      .catch(() => {
+        // Sem Firebase disponível: campanha local continua funcionando.
+      });
+    return () => {
+      cancelled = true;
+      unsubscribe?.();
+    };
+  }, [showSystemModal, mobileTab]);
 
   // 5MB-Safe Auto-save to localStorage (campaign without codex) and Cloud (Firebase Firestore)
   useEffect(() => {
@@ -351,7 +393,8 @@ export default function App() {
     saveCampaignStateSafe(campaign);
 
     if (userEmail) {
-      saveCampaignToCloud(campaign)
+      import('./services/firebaseClient')
+        .then(({ saveCampaignToCloud }) => saveCampaignToCloud(campaign))
         .then(() => setLastCloudSyncIso(new Date().toISOString()))
         .catch(() => {});
     }
@@ -388,6 +431,25 @@ export default function App() {
   ) => {
     setIsGeneratingImageForTurn(turnId);
     const targetTurn = campaign?.turns.find((t) => t.id === turnId);
+    const referenceImages = campaign
+      ? [
+          campaign.character.avatarUrl,
+          ...campaign.world.npcsInScene
+            .map((n) => n.avatarUrl || campaign.npcAvatars[n.name])
+            .filter(Boolean),
+        ].filter(
+          (u) =>
+            typeof u === 'string' &&
+            (u.startsWith('/portraits/') || u.startsWith('data:image/png') || u.startsWith('data:image/jpeg') || u.startsWith('data:image/webp'))
+        )
+      : [];
+    const charactersInScene = campaign
+      ? [
+          `${campaign.character.name} (${campaign.character.appearance})`,
+          ...campaign.world.npcsInScene.map((n) => n.name),
+        ]
+      : [];
+
     try {
       const data = await generateAnimeImage({
         prompt,
@@ -399,42 +461,40 @@ export default function App() {
         location: campaign?.world.location || '',
         aspectRatio: '16:9',
         customApiKey,
+        referenceImages,
+        charactersInScene,
       });
-      const imageUrl =
-        data.ok && data.imageUrl
-          ? data.imageUrl
-          : generateSceneIllustrationSvg(prompt, vfx);
 
-      setCampaign((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          updatedAt: new Date().toISOString(),
-          turns: prev.turns.map((t) =>
-            t.id === turnId
-              ? {
-                  ...t,
-                  sceneImageUrl: imageUrl,
-                  nanoBananaGeneratedPromptLog:
-                    data.nanoBananaPromptLog ||
-                    t.gmResponse.nanoBananaAnimePrompt ||
-                    `Cena renderizada no estilo oficial do anime Jujutsu Kaisen (MAPPA) em ${prev.world.location}.`,
-                }
-              : t
-          ),
-        };
-      });
+      if (data.ok && data.imageUrl) {
+        setCampaign((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            updatedAt: new Date().toISOString(),
+            turns: prev.turns.map((t) =>
+              t.id === turnId
+                ? {
+                    ...t,
+                    sceneImageUrl: data.imageUrl,
+                    nanoBananaGeneratedPromptLog:
+                      data.nanoBananaPromptLog ||
+                      t.gmResponse.nanoBananaAnimePrompt ||
+                      `Cena renderizada no estilo oficial do anime Jujutsu Kaisen (MAPPA) em ${prev.world.location}.`,
+                  }
+                : t
+            ),
+          };
+        });
+      } else {
+        setRateLimitNotice(
+          data.message ||
+            'Não foi possível gerar a imagem da cena agora. Verifique a chave da API Gemini e a cota de imagem.'
+        );
+      }
     } catch {
-      const fallbackUrl = generateSceneIllustrationSvg(prompt, vfx);
-      setCampaign((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          turns: prev.turns.map((t) =>
-            t.id === turnId ? { ...t, sceneImageUrl: fallbackUrl } : t
-          ),
-        };
-      });
+      setRateLimitNotice(
+        'Falha ao gerar a imagem da cena. Verifique a conexão e a chave da API Gemini.'
+      );
     } finally {
       setIsGeneratingImageForTurn(null);
     }
@@ -453,7 +513,8 @@ export default function App() {
     const matchedCards = selectActiveStoryCardsForTurn(
       allCodexCards,
       `${startingArcTitle} ${initialWorld.location} ${character.technique.name} ${customOpeningPrompt || ''}`,
-      10
+      10,
+      initialWorld.era
     );
 
     const placeholderTurnId = `turn-${Date.now()}`;
@@ -483,7 +544,7 @@ export default function App() {
               }"`
             : `*Narrador*: As sombras ao redor parecem vivas, denunciando que uma presença amaldiçoada espreita nas proximidades.`
         }\n\n*Narrador*: O cenário está posto diante de você. O que você faz?`,
-        imagePrompt: `Official Jujutsu Kaisen Season 2 anime screenshot by MAPPA studio, high contrast, depicting ${character.name} (${character.appearance}) at ${initialWorld.location}, cursed energy aura, no text`,
+        imagePrompt: `Official Jujutsu Kaisen anime keyframe by MAPPA studio, high contrast, depicting ${character.name} (${character.appearance}) at ${initialWorld.location}, cursed energy aura, no text`,
         isCombatScene: true,
         combatSceneImageQuestion: `A cena inicial em ${initialWorld.location} começou! Deseja que o Mestre faça uma descrição detalhada solicitando ao Nano Banana uma imagem do início desta cena com os mesmos gráficos do anime?`,
         nanoBananaAnimePrompt: `🍌 [Solicitação da IA para o Nano Banana — Gráficos Oficiais do Anime Jujutsu Kaisen (MAPPA)]: Quadro 16:9 em cel-shading retratando ${character.name} (${character.appearance}) canalizando ${character.technique.name} em ${initialWorld.location} diante de ${firstNpc?.name || 'uma ameaça amaldiçoada'}.`,
@@ -536,7 +597,8 @@ export default function App() {
         character,
         world: initialWorld,
         actionMode: 'STORY',
-        actionText: customOpeningPrompt || startingArcTitle,
+        // O Turno #1 não é uma ação do jogador: a cena vai no contrato, não no campo de ação.
+        actionText: 'Abrir a campanha: narrar o Turno #1 a partir da cena de abertura.',
         diceRoll: 15,
         revealedHandVow: false,
         isOpening: true,
@@ -568,6 +630,7 @@ export default function App() {
         const gmData = result.data;
         const wsu = gmData.worldStateUpdate || initialWorld;
         const updatedWorld: WorldStateUpdate = {
+          ...initialWorld,
           location: wsu.location || initialWorld.location,
           arc: wsu.arc || initialWorld.arc,
           activeBarrierOrDomain: wsu.activeBarrierOrDomain || initialWorld.activeBarrierOrDomain,
@@ -602,6 +665,12 @@ export default function App() {
             turns: [aiOpeningTurn],
           };
         });
+      } else {
+        setRateLimitNotice(
+          result.errorMessage ||
+            result.statusNotice ||
+            'O Mestre não devolveu a abertura. A cena modelo permanece e você pode tentar novamente.'
+        );
       }
     } catch {
       // Keeps initial opening turn seamlessly if network error occurs
@@ -639,7 +708,12 @@ export default function App() {
       campaign.turns[campaign.turns.length - 1]?.gmResponse.narrative || '',
     ].join(' ');
 
-    const matchedCards = selectActiveStoryCardsForTurn(allCodexCards, searchContext, 10);
+    const matchedCards = selectActiveStoryCardsForTurn(
+      allCodexCards,
+      searchContext,
+      10,
+      campaign.world.era
+    );
     const ragContext = matchedCards
       .map((c) => `### ${c.title}\n${c.value}`)
       .join('\n\n');
@@ -660,7 +734,7 @@ export default function App() {
       .join('\n---\n');
 
     try {
-      const result = await executeNarrativeTurn({
+      const turnPayload = {
         model,
         character: campaign.character,
         world: campaign.world,
@@ -673,7 +747,27 @@ export default function App() {
         memoryContext,
         recentHistory,
         isOpening: false,
+        customApiKey,
+      };
+
+      let result;
+      setStreamingNarrative('');
+      const streamRes = await streamNarrativeTurn(turnPayload, (delta) => {
+        setStreamingNarrative((prev) => prev + delta);
       });
+      if (streamRes.ok && streamRes.data) {
+        result = {
+          ok: true,
+          usedFallback: false,
+          apiKeyState: streamRes.apiKeyState,
+          usedModel: streamRes.usedModel,
+          switchedFromPrimary: streamRes.switchedFromPrimary,
+          data: streamRes.data,
+        };
+      } else {
+        result = await executeNarrativeTurn(turnPayload);
+      }
+      setStreamingNarrative('');
 
       if (result.apiKeyState) {
         setGeminiReport({
@@ -694,6 +788,21 @@ export default function App() {
             `Cota do modelo principal atingida — turno mestrado automaticamente por ${result.usedModel} sem interromper sua campanha.`
           );
         }
+      }
+
+      if (!result.ok || !result.data) {
+        const failed = result as {
+          errorMessage?: string;
+          statusNotice?: string;
+          message?: string;
+        };
+        setRateLimitNotice(
+          failed.errorMessage ||
+            failed.statusNotice ||
+            failed.message ||
+            'O servidor não devolveu um turno. Verifique o status da IA e tente novamente.'
+        );
+        return;
       }
 
       const gmData = result.data;
@@ -746,6 +855,8 @@ export default function App() {
       }
 
       const updatedWorld: WorldStateUpdate = {
+        // Mantém era, fatos do mundo, limites, objetivo e cronologia entre turnos.
+        ...campaign.world,
         location: wsu.location || campaign.world.location,
         arc: wsu.arc || campaign.world.arc,
         activeBarrierOrDomain: wsu.activeBarrierOrDomain || 'Nenhum',
@@ -808,6 +919,7 @@ export default function App() {
       }
     } finally {
       setIsSubmittingTurn(false);
+      setStreamingNarrative('');
     }
   };
 
@@ -849,15 +961,22 @@ export default function App() {
     setIsRegeneratingPortrait(true);
     try {
       const prompt = `Detailed anime character portrait in Jujutsu Kaisen MAPPA studio style of ${campaign.character.name}, ${campaign.character.appearance}, condition: ${campaign.character.physicalCondition}, 1:1 square portrait`;
-      const data = await generateAnimeImage({ prompt, aspectRatio: '1:1', customApiKey });
-      const newAvatar =
-        data.ok && data.imageUrl
-          ? data.imageUrl
-          : generateCanonicalPortraitSvg(`${campaign.character.name} ${campaign.character.physicalCondition}`);
-      setCampaign({
-        ...campaign,
-        character: { ...campaign.character, avatarUrl: newAvatar },
+      const data = await generateAnimeImage({
+        prompt,
+        aspectRatio: '1:1',
+        customApiKey,
+        referenceImages: [campaign.character.avatarUrl].filter((u) => typeof u === 'string'),
       });
+      if (data.ok && data.imageUrl) {
+        setCampaign({
+          ...campaign,
+          character: { ...campaign.character, avatarUrl: data.imageUrl },
+        });
+      } else {
+        setRateLimitNotice(
+          data.message || 'Não foi possível gerar o retrato agora. Verifique a chave/cota da API Gemini.'
+        );
+      }
     } finally {
       setIsRegeneratingPortrait(false);
     }
@@ -871,18 +990,22 @@ export default function App() {
         prompt: npc.visualDescription,
         aspectRatio: '1:1',
         customApiKey,
+        charactersInScene: [npc.name],
       });
-      const url =
-        data.ok && data.imageUrl
-          ? data.imageUrl
-          : generateCanonicalPortraitSvg(`${npc.name} ${npc.attitude}`);
-      setCampaign((prev) => {
-        if (!prev) return prev;
-        return {
-          ...prev,
-          npcAvatars: { ...prev.npcAvatars, [npc.name]: url },
-        };
-      });
+      if (data.ok && data.imageUrl) {
+        const url = data.imageUrl;
+        setCampaign((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            npcAvatars: { ...prev.npcAvatars, [npc.name]: url },
+          };
+        });
+      } else {
+        setRateLimitNotice(
+          data.message || `Não foi possível gerar o retrato de ${npc.name} agora.`
+        );
+      }
     } finally {
       setGeneratingNpcName(null);
     }
@@ -960,6 +1083,7 @@ export default function App() {
 
   if (viewMode === 'wizard' || !campaign) {
     return (
+      <Suspense fallback={<FullScreenLoader label="Abrindo a ficha de feiticeiro..." />}>
       <>
         <CharacterWizard
           onStartCampaign={handleStartNewCampaignFromWizard}
@@ -974,7 +1098,7 @@ export default function App() {
 
         {showSystemModal && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div className="w-full max-w-3xl rounded-2xl bg-[#0f0f14] border border-slate-800 shadow-2xl overflow-hidden">
+            <div className="w-full max-w-3xl rounded-2xl bg-[#120e0b] border border-amber-500/25 shadow-2xl overflow-hidden">
               <SystemAndCloudPanel
                 campaign={campaign}
                 model={model}
@@ -1002,6 +1126,7 @@ export default function App() {
           </div>
         )}
       </>
+      </Suspense>
     );
   }
 
@@ -1034,7 +1159,7 @@ export default function App() {
             <span>Ficha</span>
           </button>
           <span className="font-display text-base font-bold tracking-wider text-amber-100 whitespace-nowrap">
-            JUJUTSU KAISEN · CRÔNICAS DE MESA
+            JUJUTSU KAISEN · SEGUIMENTO
           </span>
         </div>
 
@@ -1099,14 +1224,14 @@ export default function App() {
             title={rightSidebarOpen ? 'Recolher Escudo do Mestre' : 'Abrir Escudo do Mestre (Dados & Códice)'}
             className="px-2.5 py-1.5 rounded-lg bg-[#1a1410] border border-amber-500/30 text-amber-200/80 hover:text-amber-100 hover:border-amber-400 flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
           >
-            <span>Escudo & D20</span>
+            <span>Escudo & Dados</span>
             {rightSidebarOpen ? <PanelRightClose className="w-4 h-4 text-amber-400" /> : <PanelRightOpen className="w-4 h-4 text-amber-400" />}
           </button>
         </div>
       </header>
 
       {/* Mobile Sticky Mini-Header (< 1024px) */}
-      <header className="lg:hidden flex items-center justify-between gap-2 px-3 py-2 bg-[#0f0f14] border-b border-slate-800/90 shrink-0">
+      <header className="lg:hidden safe-top flex items-center justify-between gap-2 px-3 py-2 bg-[#110d0b]/95 border-b border-amber-500/25 shrink-0">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-1.5">
             <span className="font-display text-xs font-bold text-white break-words leading-tight">
@@ -1158,7 +1283,7 @@ export default function App() {
               setCurrentDiceRoll(r);
             }}
             aria-label="Rolar 1d20 rápido"
-            className="px-2 py-1 rounded-lg bg-[#07070a] border border-amber-500/50 text-amber-400 font-mono-tabular text-xs font-bold flex items-center gap-1 cursor-pointer"
+            className="px-2 py-1 rounded-lg bg-[#080605] border border-amber-500/50 text-amber-400 font-mono-tabular text-xs font-bold flex items-center gap-1 cursor-pointer"
           >
             <Dices className="w-3.5 h-3.5" />
             <span>{currentDiceRoll}</span>
@@ -1211,6 +1336,7 @@ export default function App() {
             onOpenLightbox={(url, caption) => setLightboxData({ url, caption })}
             onSubmitAction={handleSubmitAction}
             isSubmittingTurn={isSubmittingTurn}
+            streamingNarrative={streamingNarrative}
             onEditTurnNarrative={(turnId, newText) => {
               setCampaign({
                 ...campaign,
@@ -1287,8 +1413,8 @@ export default function App() {
         )}
 
         {/* Mobile Full-Screen Active Tab (< 1024px) */}
-        <div className="lg:hidden flex-1 w-full h-full overflow-y-auto">
-          {mobileTab === 'cronica' && (
+        <div className="lg:hidden tablet-drawer relative flex-1 w-full h-full overflow-y-auto md:overflow-hidden">
+          <div className={mobileTab === 'cronica' ? 'tablet-center h-full' : 'tablet-center hidden md:block h-full'}>
             <CenterNarrativeStage
               character={campaign.character}
               world={campaign.world}
@@ -1302,6 +1428,7 @@ export default function App() {
               onOpenLightbox={(url, caption) => setLightboxData({ url, caption })}
               onSubmitAction={handleSubmitAction}
               isSubmittingTurn={isSubmittingTurn}
+              streamingNarrative={streamingNarrative}
               onEditTurnNarrative={(turnId, newText) => {
                 setCampaign({
                   ...campaign,
@@ -1352,7 +1479,7 @@ export default function App() {
               }}
               onResetCampaign={() => setViewMode('wizard')}
             />
-          )}
+          </div>
 
           {mobileTab === 'ficha' && (
             <LeftSorcererSheet
@@ -1423,6 +1550,7 @@ export default function App() {
           )}
 
           {mobileTab === 'sistema' && (
+            <Suspense fallback={<div className="p-6 text-xs text-slate-300">Carregando painel de sistema...</div>}>
             <SystemAndCloudPanel
               campaign={campaign}
               model={model}
@@ -1445,6 +1573,7 @@ export default function App() {
               geminiReport={geminiReport}
               onRefreshGeminiStatus={handleRefreshGeminiStatus}
             />
+            </Suspense>
           )}
         </div>
       </div>
@@ -1452,7 +1581,7 @@ export default function App() {
       {/* Mobile Native-App Bottom Navigation Bar (5 Tabs, min-height 48px) */}
       <nav
         aria-label="Navegação Principal Mobile"
-        className="lg:hidden grid grid-cols-5 items-center bg-[#0f0f14] border-t border-slate-800/90 shrink-0"
+        className="lg:hidden safe-bottom grid grid-cols-5 items-center bg-[#110d0b]/95 border-t border-amber-500/25 shrink-0"
       >
         {(
           [
@@ -1471,7 +1600,7 @@ export default function App() {
               type="button"
               onClick={() => setMobileTab(tab.id)}
               className={`min-h-[52px] flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer ${
-                isActive ? 'text-rose-400 bg-rose-950/20' : 'text-slate-400 hover:text-slate-200'
+                isActive ? 'text-amber-300 bg-amber-500/10' : 'text-amber-200/55 hover:text-amber-100'
               }`}
             >
               <Icon className="w-5 h-5" />
@@ -1484,7 +1613,8 @@ export default function App() {
       {/* Desktop System & Cloud Modal */}
       {showSystemModal && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-3xl rounded-2xl bg-[#0f0f14] border border-slate-800 shadow-2xl overflow-hidden">
+          <div className="w-full max-w-3xl rounded-2xl bg-[#120e0b] border border-amber-500/25 shadow-2xl overflow-hidden">
+            <Suspense fallback={<div className="p-6 text-xs text-slate-300">Carregando painel de sistema...</div>}>
             <SystemAndCloudPanel
               campaign={campaign}
               model={model}
@@ -1505,6 +1635,7 @@ export default function App() {
               geminiReport={geminiReport}
               onRefreshGeminiStatus={handleRefreshGeminiStatus}
             />
+            </Suspense>
           </div>
         </div>
       )}
