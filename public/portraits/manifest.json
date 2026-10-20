@@ -1,0 +1,1934 @@
+{
+  "artstation": [
+    {
+      "character": "Kento Nanami",
+      "localUrl": "/portraits/artstation/nanami.png"
+    },
+    {
+      "character": "Ryomen Sukuna",
+      "localUrl": "/portraits/artstation/sukuna.png"
+    },
+    {
+      "character": "Satoru Gojo",
+      "localUrl": "/portraits/artstation/gojo.png"
+    },
+    {
+      "character": "Choso",
+      "localUrl": "/portraits/artstation/choso.png"
+    },
+    {
+      "character": "Suguru Geto",
+      "localUrl": "/portraits/artstation/geto.png"
+    }
+  ],
+  "wiki": [
+    {
+      "fileName": "AoiP.png",
+      "safeLocalName": "AoiP.png",
+      "localUrl": "/portraits/wiki/AoiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d1/AoiP.png/revision/latest?cb=20261005174403"
+    },
+    {
+      "fileName": "AkariNittaP.png",
+      "safeLocalName": "AkariNittaP.png",
+      "localUrl": "/portraits/wiki/AkariNittaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/4c/AkariNittaP.png/revision/latest?cb=20260922023345"
+    },
+    {
+      "fileName": "CharPortal1.png",
+      "safeLocalName": "CharPortal1.png",
+      "localUrl": "/portraits/wiki/CharPortal1.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/97/CharPortal1.png/revision/latest?cb=20191022214448"
+    },
+    {
+      "fileName": "CharPortal2.png",
+      "safeLocalName": "CharPortal2.png",
+      "localUrl": "/portraits/wiki/CharPortal2.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/09/CharPortal2.png/revision/latest?cb=20191022214454"
+    },
+    {
+      "fileName": "CharPortal3.png",
+      "safeLocalName": "CharPortal3.png",
+      "localUrl": "/portraits/wiki/CharPortal3.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1a/CharPortal3.png/revision/latest?cb=20191022214459"
+    },
+    {
+      "fileName": "CharPortal4.png",
+      "safeLocalName": "CharPortal4.png",
+      "localUrl": "/portraits/wiki/CharPortal4.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/34/CharPortal4.png/revision/latest?cb=20191022214504"
+    },
+    {
+      "fileName": "CharPortal5.png",
+      "safeLocalName": "CharPortal5.png",
+      "localUrl": "/portraits/wiki/CharPortal5.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/74/CharPortal5.png/revision/latest?cb=20191022214510"
+    },
+    {
+      "fileName": "CharPortal6.png",
+      "safeLocalName": "CharPortal6.png",
+      "localUrl": "/portraits/wiki/CharPortal6.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1c/CharPortal6.png/revision/latest?cb=20191022214514"
+    },
+    {
+      "fileName": "CharPortal7.png",
+      "safeLocalName": "CharPortal7.png",
+      "localUrl": "/portraits/wiki/CharPortal7.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1f/CharPortal7.png/revision/latest?cb=20191022214519"
+    },
+    {
+      "fileName": "ChosoP.png",
+      "safeLocalName": "ChosoP.png",
+      "localUrl": "/portraits/wiki/ChosoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6c/ChosoP.png/revision/latest?cb=20260927025331"
+    },
+    {
+      "fileName": "EsoP.png",
+      "safeLocalName": "EsoP.png",
+      "localUrl": "/portraits/wiki/EsoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d9/EsoP.png/revision/latest?cb=20261005174558"
+    },
+    {
+      "fileName": "AtsuyaKusakabeP.png",
+      "safeLocalName": "AtsuyaKusakabeP.png",
+      "localUrl": "/portraits/wiki/AtsuyaKusakabeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3c/AtsuyaKusakabeP.png/revision/latest?cb=20261005194054"
+    },
+    {
+      "fileName": "DagonP.png",
+      "safeLocalName": "DagonP.png",
+      "localUrl": "/portraits/wiki/DagonP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/ac/DagonP.png/revision/latest?cb=20261005185842"
+    },
+    {
+      "fileName": "CursedRikaOrimotoP.png",
+      "safeLocalName": "CursedRikaOrimotoP.png",
+      "localUrl": "/portraits/wiki/CursedRikaOrimotoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/46/CursedRikaOrimotoP.png/revision/latest?cb=20261009234243"
+    },
+    {
+      "fileName": "BridgeCurseP.png",
+      "safeLocalName": "BridgeCurseP.png",
+      "localUrl": "/portraits/wiki/BridgeCurseP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8e/BridgeCurseP.png/revision/latest?cb=20201117194612"
+    },
+    {
+      "fileName": "BagMaskCurseUserP.png",
+      "safeLocalName": "BagMaskCurseUserP.png",
+      "localUrl": "/portraits/wiki/BagMaskCurseUserP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/0c/BagMaskCurseUserP.png/revision/latest?cb=20201202040248"
+    },
+    {
+      "fileName": "DagonP (Cursed Womb).png",
+      "safeLocalName": "DagonP__Cursed_Womb_.png",
+      "localUrl": "/portraits/wiki/DagonP__Cursed_Womb_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/5d/DagonP_%28Cursed_Womb%29.png/revision/latest?cb=20210417191225"
+    },
+    {
+      "fileName": "Adult SaoriP.png",
+      "safeLocalName": "Adult_SaoriP.png",
+      "localUrl": "/portraits/wiki/Adult_SaoriP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/49/Adult_SaoriP.png/revision/latest?cb=20261005174116"
+    },
+    {
+      "fileName": "ChojuroZeninP.png",
+      "safeLocalName": "ChojuroZeninP.png",
+      "localUrl": "/portraits/wiki/ChojuroZeninP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9c/ChojuroZeninP.png/revision/latest?cb=20261005185218"
+    },
+    {
+      "fileName": "ArataNittaP.png",
+      "safeLocalName": "ArataNittaP.png",
+      "localUrl": "/portraits/wiki/ArataNittaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/13/ArataNittaP.png/revision/latest?cb=20261005100230"
+    },
+    {
+      "fileName": "ChizuruHariP.png",
+      "safeLocalName": "ChizuruHariP.png",
+      "localUrl": "/portraits/wiki/ChizuruHariP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/ab/ChizuruHariP.png/revision/latest?cb=20211214020351"
+    },
+    {
+      "fileName": "DhruvLakdawallaP.png",
+      "safeLocalName": "DhruvLakdawallaP.png",
+      "localUrl": "/portraits/wiki/DhruvLakdawallaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/67/DhruvLakdawallaP.png/revision/latest?cb=20261005100552"
+    },
+    {
+      "fileName": "FightClubP1.png",
+      "safeLocalName": "FightClubP1.png",
+      "localUrl": "/portraits/wiki/FightClubP1.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e7/FightClubP1.png/revision/latest?cb=20261004031140"
+    },
+    {
+      "fileName": "FightClubP2.png",
+      "safeLocalName": "FightClubP2.png",
+      "localUrl": "/portraits/wiki/FightClubP2.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fd/FightClubP2.png/revision/latest?cb=20261004031127"
+    },
+    {
+      "fileName": "FightClubP3.png",
+      "safeLocalName": "FightClubP3.png",
+      "localUrl": "/portraits/wiki/FightClubP3.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/cd/FightClubP3.png/revision/latest?cb=20261004031048"
+    },
+    {
+      "fileName": "FightClubP4.png",
+      "safeLocalName": "FightClubP4.png",
+      "localUrl": "/portraits/wiki/FightClubP4.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/69/FightClubP4.png/revision/latest?cb=20261004031203"
+    },
+    {
+      "fileName": "FightClubP5.png",
+      "safeLocalName": "FightClubP5.png",
+      "localUrl": "/portraits/wiki/FightClubP5.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/42/FightClubP5.png/revision/latest?cb=20261004030920"
+    },
+    {
+      "fileName": "CharlesBernardP.png",
+      "safeLocalName": "CharlesBernardP.png",
+      "localUrl": "/portraits/wiki/CharlesBernardP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/db/CharlesBernardP.png/revision/latest?cb=20220420154904"
+    },
+    {
+      "fileName": "CursedNaoyaP.png",
+      "safeLocalName": "CursedNaoyaP.png",
+      "localUrl": "/portraits/wiki/CursedNaoyaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/cd/CursedNaoyaP.png/revision/latest?cb=20261005100357"
+    },
+    {
+      "fileName": "CyrusVeilP.png",
+      "safeLocalName": "CyrusVeilP.png",
+      "localUrl": "/portraits/wiki/CyrusVeilP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e5/CyrusVeilP.png/revision/latest?cb=20261005100514"
+    },
+    {
+      "fileName": "BakeryGirlP.png",
+      "safeLocalName": "BakeryGirlP.png",
+      "localUrl": "/portraits/wiki/BakeryGirlP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/af/BakeryGirlP.png/revision/latest?cb=20230703235807"
+    },
+    {
+      "fileName": "AyaSaitoP.png",
+      "safeLocalName": "AyaSaitoP.png",
+      "localUrl": "/portraits/wiki/AyaSaitoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/7a/AyaSaitoP.png/revision/latest?cb=20261003180624"
+    },
+    {
+      "fileName": "AidaP.png",
+      "safeLocalName": "AidaP.png",
+      "localUrl": "/portraits/wiki/AidaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/be/AidaP.png/revision/latest?cb=20261005090423"
+    },
+    {
+      "fileName": "Akuro-o OtakeP.png",
+      "safeLocalName": "Akuro-o_OtakeP.png",
+      "localUrl": "/portraits/wiki/Akuro-o_OtakeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b3/Akuro-o_OtakeP.png/revision/latest?cb=20261005174341"
+    },
+    {
+      "fileName": "AngelP.png",
+      "safeLocalName": "AngelP.png",
+      "localUrl": "/portraits/wiki/AngelP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/bd/AngelP.png/revision/latest?cb=20240610051153"
+    },
+    {
+      "fileName": "EmikoKaminumaP.png",
+      "safeLocalName": "EmikoKaminumaP.png",
+      "localUrl": "/portraits/wiki/EmikoKaminumaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/2d/EmikoKaminumaP.png/revision/latest?cb=20261003231719"
+    },
+    {
+      "fileName": "AkariP (Anime).png",
+      "safeLocalName": "AkariP__Anime_.png",
+      "localUrl": "/portraits/wiki/AkariP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6b/AkariP_%28Anime%29.png/revision/latest?cb=20241110002611"
+    },
+    {
+      "fileName": "ChosoP (Anime).png",
+      "safeLocalName": "ChosoP__Anime_.png",
+      "localUrl": "/portraits/wiki/ChosoP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a9/ChosoP_%28Anime%29.png/revision/latest?cb=20241110020433"
+    },
+    {
+      "fileName": "AoiP (Anime).png",
+      "safeLocalName": "AoiP__Anime_.png",
+      "localUrl": "/portraits/wiki/AoiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/37/AoiP_%28Anime%29.png/revision/latest?cb=20241110020105"
+    },
+    {
+      "fileName": "CrossP.png",
+      "safeLocalName": "CrossP.png",
+      "localUrl": "/portraits/wiki/CrossP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d0/CrossP.png/revision/latest?cb=20261005095353"
+    },
+    {
+      "fileName": "CurseUsertraffickerP.png",
+      "safeLocalName": "CurseUsertraffickerP.png",
+      "localUrl": "/portraits/wiki/CurseUsertraffickerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/99/CurseUsertraffickerP.png/revision/latest?cb=20261005090530"
+    },
+    {
+      "fileName": "DaburaP.png",
+      "safeLocalName": "DaburaP.png",
+      "localUrl": "/portraits/wiki/DaburaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/67/DaburaP.png/revision/latest?cb=20261005020329"
+    },
+    {
+      "fileName": "2086Healer.png",
+      "safeLocalName": "2086Healer.png",
+      "localUrl": "/portraits/wiki/2086Healer.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/ad/2086Healer.png/revision/latest?cb=20251207233402"
+    },
+    {
+      "fileName": "2086HigherupP.png",
+      "safeLocalName": "2086HigherupP.png",
+      "localUrl": "/portraits/wiki/2086HigherupP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e7/2086HigherupP.png/revision/latest?cb=20261005090307"
+    },
+    {
+      "fileName": "BoroP.png",
+      "safeLocalName": "BoroP.png",
+      "localUrl": "/portraits/wiki/BoroP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/52/BoroP.png/revision/latest?cb=20261005090651"
+    },
+    {
+      "fileName": "DuraP.png",
+      "safeLocalName": "DuraP.png",
+      "localUrl": "/portraits/wiki/DuraP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/97/DuraP.png/revision/latest?cb=20261005020901"
+    },
+    {
+      "fileName": "DeskunteChiefP.png",
+      "safeLocalName": "DeskunteChiefP.png",
+      "localUrl": "/portraits/wiki/DeskunteChiefP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b5/DeskunteChiefP.png/revision/latest?cb=20261005020204"
+    },
+    {
+      "fileName": "DapaP.png",
+      "safeLocalName": "DapaP.png",
+      "localUrl": "/portraits/wiki/DapaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e5/DapaP.png/revision/latest?cb=20261005020627"
+    },
+    {
+      "fileName": "Cursed death paintings momP.png",
+      "safeLocalName": "Cursed_death_paintings_momP.png",
+      "localUrl": "/portraits/wiki/Cursed_death_paintings_momP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a6/Cursed_death_paintings_momP.png/revision/latest?cb=20260922034036"
+    },
+    {
+      "fileName": "FamiresuManagerP.png",
+      "safeLocalName": "FamiresuManagerP.png",
+      "localUrl": "/portraits/wiki/FamiresuManagerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/26/FamiresuManagerP.png/revision/latest?cb=20261004043004"
+    },
+    {
+      "fileName": "GojoP.png",
+      "safeLocalName": "GojoP.png",
+      "localUrl": "/portraits/wiki/GojoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/53/GojoP.png/revision/latest?cb=20261007021506"
+    },
+    {
+      "fileName": "HanamiP.png",
+      "safeLocalName": "HanamiP.png",
+      "localUrl": "/portraits/wiki/HanamiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6a/HanamiP.png/revision/latest?cb=20261005185827"
+    },
+    {
+      "fileName": "IjichiP.png",
+      "safeLocalName": "IjichiP.png",
+      "localUrl": "/portraits/wiki/IjichiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f7/IjichiP.png/revision/latest?cb=20261005174904"
+    },
+    {
+      "fileName": "IguchiP.png",
+      "safeLocalName": "IguchiP.png",
+      "localUrl": "/portraits/wiki/IguchiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b3/IguchiP.png/revision/latest?cb=20261005101301"
+    },
+    {
+      "fileName": "FlyHeadsP.png",
+      "safeLocalName": "FlyHeadsP.png",
+      "localUrl": "/portraits/wiki/FlyHeadsP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/48/FlyHeadsP.png/revision/latest?cb=20200529013335"
+    },
+    {
+      "fileName": "GojoP (Anime).png",
+      "safeLocalName": "GojoP__Anime_.png",
+      "localUrl": "/portraits/wiki/GojoP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/50/GojoP_%28Anime%29.png/revision/latest?cb=20240618013616"
+    },
+    {
+      "fileName": "HarutaShigemoP.png",
+      "safeLocalName": "HarutaShigemoP.png",
+      "localUrl": "/portraits/wiki/HarutaShigemoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9a/HarutaShigemoP.png/revision/latest?cb=20210417043151"
+    },
+    {
+      "fileName": "FujinumaBrotherP.png",
+      "safeLocalName": "FujinumaBrotherP.png",
+      "localUrl": "/portraits/wiki/FujinumaBrotherP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/46/FujinumaBrotherP.png/revision/latest?cb=20261005100632"
+    },
+    {
+      "fileName": "FujinumaSisterP.png",
+      "safeLocalName": "FujinumaSisterP.png",
+      "localUrl": "/portraits/wiki/FujinumaSisterP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a3/FujinumaSisterP.png/revision/latest?cb=20201111042329"
+    },
+    {
+      "fileName": "HikariGenjiP.png",
+      "safeLocalName": "HikariGenjiP.png",
+      "localUrl": "/portraits/wiki/HikariGenjiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/62/HikariGenjiP.png/revision/latest?cb=20201219022317"
+    },
+    {
+      "fileName": "InventoryCurseP.png",
+      "safeLocalName": "InventoryCurseP.png",
+      "localUrl": "/portraits/wiki/InventoryCurseP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/44/InventoryCurseP.png/revision/latest?cb=20261005101447"
+    },
+    {
+      "fileName": "GrasshopperCurseP.png",
+      "safeLocalName": "GrasshopperCurseP.png",
+      "localUrl": "/portraits/wiki/GrasshopperCurseP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/7b/GrasshopperCurseP.png/revision/latest?cb=20201221190421"
+    },
+    {
+      "fileName": "HapinaCurseP.png",
+      "safeLocalName": "HapinaCurseP.png",
+      "localUrl": "/portraits/wiki/HapinaCurseP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e7/HapinaCurseP.png/revision/latest?cb=20210214042944"
+    },
+    {
+      "fileName": "GakuganjiCurseP.png",
+      "safeLocalName": "GakuganjiCurseP.png",
+      "localUrl": "/portraits/wiki/GakuganjiCurseP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8a/GakuganjiCurseP.png/revision/latest?cb=20210214043422"
+    },
+    {
+      "fileName": "IjichiP (2006).png",
+      "safeLocalName": "IjichiP__2006_.png",
+      "localUrl": "/portraits/wiki/IjichiP__2006_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/32/IjichiP_%282006%29.png/revision/latest?cb=20261007042806"
+    },
+    {
+      "fileName": "FurudateP.png",
+      "safeLocalName": "FurudateP.png",
+      "localUrl": "/portraits/wiki/FurudateP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3c/FurudateP.png/revision/latest?cb=20261005190558"
+    },
+    {
+      "fileName": "FingerBearerP.png",
+      "safeLocalName": "FingerBearerP.png",
+      "localUrl": "/portraits/wiki/FingerBearerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f9/FingerBearerP.png/revision/latest?cb=20210901230950"
+    },
+    {
+      "fileName": "HiromiHigurumaP.png",
+      "safeLocalName": "HiromiHigurumaP.png",
+      "localUrl": "/portraits/wiki/HiromiHigurumaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9d/HiromiHigurumaP.png/revision/latest?cb=20261005174850"
+    },
+    {
+      "fileName": "HajimeKashimoP.png",
+      "safeLocalName": "HajimeKashimoP.png",
+      "localUrl": "/portraits/wiki/HajimeKashimoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a8/HajimeKashimoP.png/revision/latest?cb=20261005174637"
+    },
+    {
+      "fileName": "HanyuP.png",
+      "safeLocalName": "HanyuP.png",
+      "localUrl": "/portraits/wiki/HanyuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f6/HanyuP.png/revision/latest?cb=20261005101111"
+    },
+    {
+      "fileName": "HabaP.png",
+      "safeLocalName": "HabaP.png",
+      "localUrl": "/portraits/wiki/HabaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/78/HabaP.png/revision/latest?cb=20261005183726"
+    },
+    {
+      "fileName": "FumihikoTakabaP.png",
+      "safeLocalName": "FumihikoTakabaP.png",
+      "localUrl": "/portraits/wiki/FumihikoTakabaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/61/FumihikoTakabaP.png/revision/latest?cb=20261005182710"
+    },
+    {
+      "fileName": "HanaKurusuP.png",
+      "safeLocalName": "HanaKurusuP.png",
+      "localUrl": "/portraits/wiki/HanaKurusuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/0c/HanaKurusuP.png/revision/latest?cb=20261007023001"
+    },
+    {
+      "fileName": "IoriHazenokiP.png",
+      "safeLocalName": "IoriHazenokiP.png",
+      "localUrl": "/portraits/wiki/IoriHazenokiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/72/IoriHazenokiP.png/revision/latest?cb=20261005174920"
+    },
+    {
+      "fileName": "HaganeDaidoP.png",
+      "safeLocalName": "HaganeDaidoP.png",
+      "localUrl": "/portraits/wiki/HaganeDaidoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b0/HaganeDaidoP.png/revision/latest?cb=20261005174614"
+    },
+    {
+      "fileName": "GarryKJohnsonP.png",
+      "safeLocalName": "GarryKJohnsonP.png",
+      "localUrl": "/portraits/wiki/GarryKJohnsonP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8f/GarryKJohnsonP.png/revision/latest?cb=20261004000019"
+    },
+    {
+      "fileName": "GaneshaP.png",
+      "safeLocalName": "GaneshaP.png",
+      "localUrl": "/portraits/wiki/GaneshaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/7a/GaneshaP.png/revision/latest?cb=20261005100716"
+    },
+    {
+      "fileName": "GorillaP.png",
+      "safeLocalName": "GorillaP.png",
+      "localUrl": "/portraits/wiki/GorillaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/eb/GorillaP.png/revision/latest?cb=20230704000329"
+    },
+    {
+      "fileName": "IdiotAP.png",
+      "safeLocalName": "IdiotAP.png",
+      "localUrl": "/portraits/wiki/IdiotAP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fe/IdiotAP.png/revision/latest?cb=20230704001547"
+    },
+    {
+      "fileName": "HiroshiYamatoP.png",
+      "safeLocalName": "HiroshiYamatoP.png",
+      "localUrl": "/portraits/wiki/HiroshiYamatoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/28/HiroshiYamatoP.png/revision/latest?cb=20230704003957"
+    },
+    {
+      "fileName": "HondaP.png",
+      "safeLocalName": "HondaP.png",
+      "localUrl": "/portraits/wiki/HondaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/03/HondaP.png/revision/latest?cb=20230704004146"
+    },
+    {
+      "fileName": "IkezawaP.png",
+      "safeLocalName": "IkezawaP.png",
+      "localUrl": "/portraits/wiki/IkezawaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/14/IkezawaP.png/revision/latest?cb=20261005101403"
+    },
+    {
+      "fileName": "HiroKatoP.png",
+      "safeLocalName": "HiroKatoP.png",
+      "localUrl": "/portraits/wiki/HiroKatoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/61/HiroKatoP.png/revision/latest?cb=20261003180056"
+    },
+    {
+      "fileName": "FoxP.png",
+      "safeLocalName": "FoxP.png",
+      "localUrl": "/portraits/wiki/FoxP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/29/FoxP.png/revision/latest?cb=20230812055432"
+    },
+    {
+      "fileName": "FujiwaraP.png",
+      "safeLocalName": "FujiwaraP.png",
+      "localUrl": "/portraits/wiki/FujiwaraP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/43/FujiwaraP.png/revision/latest?cb=20230812055432"
+    },
+    {
+      "fileName": "HonokaP.png",
+      "safeLocalName": "HonokaP.png",
+      "localUrl": "/portraits/wiki/HonokaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/ca/HonokaP.png/revision/latest?cb=20260922021857"
+    },
+    {
+      "fileName": "Honoka'sdadP.png",
+      "safeLocalName": "Honoka_sdadP.png",
+      "localUrl": "/portraits/wiki/Honoka_sdadP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/41/Honoka%27sdadP.png/revision/latest?cb=20261003231521"
+    },
+    {
+      "fileName": "IkezawabullyP.png",
+      "safeLocalName": "IkezawabullyP.png",
+      "localUrl": "/portraits/wiki/IkezawabullyP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/09/IkezawabullyP.png/revision/latest?cb=20261003231409"
+    },
+    {
+      "fileName": "Higher-up1P.png",
+      "safeLocalName": "Higher-up1P.png",
+      "localUrl": "/portraits/wiki/Higher-up1P.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/79/Higher-up1P.png/revision/latest?cb=20261003231233"
+    },
+    {
+      "fileName": "Higher-up3P.png",
+      "safeLocalName": "Higher-up3P.png",
+      "localUrl": "/portraits/wiki/Higher-up3P.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/0a/Higher-up3P.png/revision/latest?cb=20261003231159"
+    },
+    {
+      "fileName": "Higher-up2P.png",
+      "safeLocalName": "Higher-up2P.png",
+      "localUrl": "/portraits/wiki/Higher-up2P.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/21/Higher-up2P.png/revision/latest?cb=20261003231222"
+    },
+    {
+      "fileName": "HitoshiMatsumotoP.png",
+      "safeLocalName": "HitoshiMatsumotoP.png",
+      "localUrl": "/portraits/wiki/HitoshiMatsumotoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e1/HitoshiMatsumotoP.png/revision/latest?cb=20261003231736"
+    },
+    {
+      "fileName": "IjichiP (Anime).png",
+      "safeLocalName": "IjichiP__Anime_.png",
+      "localUrl": "/portraits/wiki/IjichiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a2/IjichiP_%28Anime%29.png/revision/latest?cb=20241110001304"
+    },
+    {
+      "fileName": "HanamiP (Anime).png",
+      "safeLocalName": "HanamiP__Anime_.png",
+      "localUrl": "/portraits/wiki/HanamiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b1/HanamiP_%28Anime%29.png/revision/latest?cb=20241110020413"
+    },
+    {
+      "fileName": "JabalomaP.png",
+      "safeLocalName": "JabalomaP.png",
+      "localUrl": "/portraits/wiki/JabalomaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/2b/JabalomaP.png/revision/latest?cb=20261005020841"
+    },
+    {
+      "fileName": "IoriOkkotsuP.png",
+      "safeLocalName": "IoriOkkotsuP.png",
+      "localUrl": "/portraits/wiki/IoriOkkotsuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/94/IoriOkkotsuP.png/revision/latest?cb=20260926004524"
+    },
+    {
+      "fileName": "Higuruma'sClientP.png",
+      "safeLocalName": "Higuruma_sClientP.png",
+      "localUrl": "/portraits/wiki/Higuruma_sClientP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b8/Higuruma%27sClientP.png/revision/latest?cb=20261005090408"
+    },
+    {
+      "fileName": "JapaneseTraitorP.png",
+      "safeLocalName": "JapaneseTraitorP.png",
+      "localUrl": "/portraits/wiki/JapaneseTraitorP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/bb/JapaneseTraitorP.png/revision/latest?cb=20261004000224"
+    },
+    {
+      "fileName": "FightClubP6.png",
+      "safeLocalName": "FightClubP6.png",
+      "localUrl": "/portraits/wiki/FightClubP6.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/30/FightClubP6.png/revision/latest?cb=20261004031145"
+    },
+    {
+      "fileName": "FightClubP7.png",
+      "safeLocalName": "FightClubP7.png",
+      "localUrl": "/portraits/wiki/FightClubP7.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9e/FightClubP7.png/revision/latest?cb=20261004031349"
+    },
+    {
+      "fileName": "JunpeiYoshinoP.png",
+      "safeLocalName": "JunpeiYoshinoP.png",
+      "localUrl": "/portraits/wiki/JunpeiYoshinoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/4b/JunpeiYoshinoP.png/revision/latest?cb=20261005175048"
+    },
+    {
+      "fileName": "MakiP.png",
+      "safeLocalName": "MakiP.png",
+      "localUrl": "/portraits/wiki/MakiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/dc/MakiP.png/revision/latest?cb=20261009023439"
+    },
+    {
+      "fileName": "MahitoP.png",
+      "safeLocalName": "MahitoP.png",
+      "localUrl": "/portraits/wiki/MahitoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/ec/MahitoP.png/revision/latest?cb=20261005225750"
+    },
+    {
+      "fileName": "JogoP.png",
+      "safeLocalName": "JogoP.png",
+      "localUrl": "/portraits/wiki/JogoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/76/JogoP.png/revision/latest?cb=20261006015952"
+    },
+    {
+      "fileName": "MasamichiP.png",
+      "safeLocalName": "MasamichiP.png",
+      "localUrl": "/portraits/wiki/MasamichiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/60/MasamichiP.png/revision/latest?cb=20261005175410"
+    },
+    {
+      "fileName": "KokichiP.png",
+      "safeLocalName": "KokichiP.png",
+      "localUrl": "/portraits/wiki/KokichiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6d/KokichiP.png/revision/latest?cb=20261005175133"
+    },
+    {
+      "fileName": "KasumiMiwaP.png",
+      "safeLocalName": "KasumiMiwaP.png",
+      "localUrl": "/portraits/wiki/KasumiMiwaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d8/KasumiMiwaP.png/revision/latest?cb=20260922021922"
+    },
+    {
+      "fileName": "JuzoKumiyaP.png",
+      "safeLocalName": "JuzoKumiyaP.png",
+      "localUrl": "/portraits/wiki/JuzoKumiyaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/ca/JuzoKumiyaP.png/revision/latest?cb=20261005175109"
+    },
+    {
+      "fileName": "ManamiSudaP.png",
+      "safeLocalName": "ManamiSudaP.png",
+      "localUrl": "/portraits/wiki/ManamiSudaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/ea/ManamiSudaP.png/revision/latest?cb=20261005180333"
+    },
+    {
+      "fileName": "KokunP.png",
+      "safeLocalName": "KokunP.png",
+      "localUrl": "/portraits/wiki/KokunP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/25/KokunP.png/revision/latest?cb=20261005175201"
+    },
+    {
+      "fileName": "KechizuP.png",
+      "safeLocalName": "KechizuP.png",
+      "localUrl": "/portraits/wiki/KechizuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/48/KechizuP.png/revision/latest?cb=20261005190136"
+    },
+    {
+      "fileName": "JiroAwasakaP.png",
+      "safeLocalName": "JiroAwasakaP.png",
+      "localUrl": "/portraits/wiki/JiroAwasakaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6c/JiroAwasakaP.png/revision/latest?cb=20261005175010"
+    },
+    {
+      "fileName": "MaiP.png",
+      "safeLocalName": "MaiP.png",
+      "localUrl": "/portraits/wiki/MaiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/46/MaiP.png/revision/latest?cb=20260922023801"
+    },
+    {
+      "fileName": "MechamaruP.png",
+      "safeLocalName": "MechamaruP.png",
+      "localUrl": "/portraits/wiki/MechamaruP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/ac/MechamaruP.png/revision/latest?cb=20261007024037"
+    },
+    {
+      "fileName": "MakiP (Anime).png",
+      "safeLocalName": "MakiP__Anime_.png",
+      "localUrl": "/portraits/wiki/MakiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e1/MakiP_%28Anime%29.png/revision/latest?cb=20241110001307"
+    },
+    {
+      "fileName": "Megumi JuniorHighP.png",
+      "safeLocalName": "Megumi_JuniorHighP.png",
+      "localUrl": "/portraits/wiki/Megumi_JuniorHighP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/93/Megumi_JuniorHighP.png/revision/latest?cb=20201111040858"
+    },
+    {
+      "fileName": "MasamichiYagaP (2006).png",
+      "safeLocalName": "MasamichiYagaP__2006_.png",
+      "localUrl": "/portraits/wiki/MasamichiYagaP__2006_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/dc/MasamichiYagaP_%282006%29.png/revision/latest?cb=20201220225211"
+    },
+    {
+      "fileName": "KentoNanamiP (2006).png",
+      "safeLocalName": "KentoNanamiP__2006_.png",
+      "localUrl": "/portraits/wiki/KentoNanamiP__2006_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e5/KentoNanamiP_%282006%29.png/revision/latest?cb=20201220225739"
+    },
+    {
+      "fileName": "Kuchisake-OnnaP.png",
+      "safeLocalName": "Kuchisake-OnnaP.png",
+      "localUrl": "/portraits/wiki/Kuchisake-OnnaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/74/Kuchisake-OnnaP.png/revision/latest?cb=20261005175217"
+    },
+    {
+      "fileName": "LarueP.png",
+      "safeLocalName": "LarueP.png",
+      "localUrl": "/portraits/wiki/LarueP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/20/LarueP.png/revision/latest?cb=20261005175244"
+    },
+    {
+      "fileName": "JinichiZeninP.png",
+      "safeLocalName": "JinichiZeninP.png",
+      "localUrl": "/portraits/wiki/JinichiZeninP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/80/JinichiZeninP.png/revision/latest?cb=20261007052123"
+    },
+    {
+      "fileName": "MechamaruAbsoluteP.png",
+      "safeLocalName": "MechamaruAbsoluteP.png",
+      "localUrl": "/portraits/wiki/MechamaruAbsoluteP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/5a/MechamaruAbsoluteP.png/revision/latest?cb=20210223014036"
+    },
+    {
+      "fileName": "KentoNanamiP (2006 Color).png",
+      "safeLocalName": "KentoNanamiP__2006_Color_.png",
+      "localUrl": "/portraits/wiki/KentoNanamiP__2006_Color_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/ac/KentoNanamiP_%282006_Color%29.png/revision/latest?cb=20210505173625"
+    },
+    {
+      "fileName": "MasamichiYagaP (2006 Color).png",
+      "safeLocalName": "MasamichiYagaP__2006_Color_.png",
+      "localUrl": "/portraits/wiki/MasamichiYagaP__2006_Color_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1a/MasamichiYagaP_%282006_Color%29.png/revision/latest?cb=20261007042438"
+    },
+    {
+      "fileName": "KinjiHakariP.png",
+      "safeLocalName": "KinjiHakariP.png",
+      "localUrl": "/portraits/wiki/KinjiHakariP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/29/KinjiHakariP.png/revision/latest?cb=20261005183930"
+    },
+    {
+      "fileName": "KiraraHoshiP.png",
+      "safeLocalName": "KiraraHoshiP.png",
+      "localUrl": "/portraits/wiki/KiraraHoshiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/83/KiraraHoshiP.png/revision/latest?cb=20260922023601"
+    },
+    {
+      "fileName": "MakiZeninP (Post-Shibuya Color).png",
+      "safeLocalName": "MakiZeninP__Post-Shibuya_Color_.png",
+      "localUrl": "/portraits/wiki/MakiZeninP__Post-Shibuya_Color_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/ea/MakiZeninP_%28Post-Shibuya_Color%29.png/revision/latest?cb=20210929022001"
+    },
+    {
+      "fileName": "John☆BobbyP.png",
+      "safeLocalName": "John_BobbyP.png",
+      "localUrl": "/portraits/wiki/John_BobbyP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/23/John%E2%98%86BobbyP.png/revision/latest?cb=20261003230908"
+    },
+    {
+      "fileName": "MakiP (Second-Year).png",
+      "safeLocalName": "MakiP__Second-Year_.png",
+      "localUrl": "/portraits/wiki/MakiP__Second-Year_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9a/MakiP_%28Second-Year%29.png/revision/latest?cb=20261008010037"
+    },
+    {
+      "fileName": "MakiP (Current).png",
+      "safeLocalName": "MakiP__Current_.png",
+      "localUrl": "/portraits/wiki/MakiP__Current_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/da/MakiP_%28Current%29.png/revision/latest?cb=20261007085147"
+    },
+    {
+      "fileName": "KanemoriP.png",
+      "safeLocalName": "KanemoriP.png",
+      "localUrl": "/portraits/wiki/KanemoriP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/88/KanemoriP.png/revision/latest?cb=20230703232638"
+    },
+    {
+      "fileName": "MamaguroP.png",
+      "safeLocalName": "MamaguroP.png",
+      "localUrl": "/portraits/wiki/MamaguroP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/29/MamaguroP.png/revision/latest?cb=20261005180359"
+    },
+    {
+      "fileName": "KusakabeSisterP.png",
+      "safeLocalName": "KusakabeSisterP.png",
+      "localUrl": "/portraits/wiki/KusakabeSisterP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/18/KusakabeSisterP.png/revision/latest?cb=20230704004117"
+    },
+    {
+      "fileName": "KenP.png",
+      "safeLocalName": "KenP.png",
+      "localUrl": "/portraits/wiki/KenP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/69/KenP.png/revision/latest?cb=20261003231044"
+    },
+    {
+      "fileName": "KenjakuP.png",
+      "safeLocalName": "KenjakuP.png",
+      "localUrl": "/portraits/wiki/KenjakuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/4f/KenjakuP.png/revision/latest?cb=20261005182550"
+    },
+    {
+      "fileName": "MahoragaP.png",
+      "safeLocalName": "MahoragaP.png",
+      "localUrl": "/portraits/wiki/MahoragaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b0/MahoragaP.png/revision/latest?cb=20260929001230"
+    },
+    {
+      "fileName": "JinItadoriP.png",
+      "safeLocalName": "JinItadoriP.png",
+      "localUrl": "/portraits/wiki/JinItadoriP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e2/JinItadoriP.png/revision/latest?cb=20261005174941"
+    },
+    {
+      "fileName": "LakeGoshoPlayerP.png",
+      "safeLocalName": "LakeGoshoPlayerP.png",
+      "localUrl": "/portraits/wiki/LakeGoshoPlayerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/97/LakeGoshoPlayerP.png/revision/latest?cb=20240729002304"
+    },
+    {
+      "fileName": "JogoP (Anime).png",
+      "safeLocalName": "JogoP__Anime_.png",
+      "localUrl": "/portraits/wiki/JogoP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/db/JogoP_%28Anime%29.png/revision/latest?cb=20241110001305"
+    },
+    {
+      "fileName": "KenjakuP (Anime).png",
+      "safeLocalName": "KenjakuP__Anime_.png",
+      "localUrl": "/portraits/wiki/KenjakuP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/af/KenjakuP_%28Anime%29.png/revision/latest?cb=20241110001305"
+    },
+    {
+      "fileName": "MaiP (Anime).png",
+      "safeLocalName": "MaiP__Anime_.png",
+      "localUrl": "/portraits/wiki/MaiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b5/MaiP_%28Anime%29.png/revision/latest?cb=20241110001306"
+    },
+    {
+      "fileName": "MahitoP (Anime).png",
+      "safeLocalName": "MahitoP__Anime_.png",
+      "localUrl": "/portraits/wiki/MahitoP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/df/MahitoP_%28Anime%29.png/revision/latest?cb=20241110015916"
+    },
+    {
+      "fileName": "MaruP.png",
+      "safeLocalName": "MaruP.png",
+      "localUrl": "/portraits/wiki/MaruP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/00/MaruP.png/revision/latest?cb=20261007044852"
+    },
+    {
+      "fileName": "KyokoTomoeP.png",
+      "safeLocalName": "KyokoTomoeP.png",
+      "localUrl": "/portraits/wiki/KyokoTomoeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d2/KyokoTomoeP.png/revision/latest?cb=20261005180449"
+    },
+    {
+      "fileName": "Maruandcross'sdadP.png",
+      "safeLocalName": "Maruandcross_sdadP.png",
+      "localUrl": "/portraits/wiki/Maruandcross_sdadP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/95/Maruandcross%27sdadP.png/revision/latest?cb=20251207233409"
+    },
+    {
+      "fileName": "KadowakiP.png",
+      "safeLocalName": "KadowakiP.png",
+      "localUrl": "/portraits/wiki/KadowakiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/cf/KadowakiP.png/revision/latest?cb=20261005090351"
+    },
+    {
+      "fileName": "MasakiTakedaP.png",
+      "safeLocalName": "MasakiTakedaP.png",
+      "localUrl": "/portraits/wiki/MasakiTakedaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8d/MasakiTakedaP.png/revision/latest?cb=20261005175339"
+    },
+    {
+      "fileName": "MakiP (ID).png",
+      "safeLocalName": "MakiP__ID_.png",
+      "localUrl": "/portraits/wiki/MakiP__ID_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/61/MakiP_%28ID%29.png/revision/latest?cb=20260907012737"
+    },
+    {
+      "fileName": "JudgeP.png",
+      "safeLocalName": "JudgeP.png",
+      "localUrl": "/portraits/wiki/JudgeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d4/JudgeP.png/revision/latest?cb=20261004011748"
+    },
+    {
+      "fileName": "Kechizu'svesselP.png",
+      "safeLocalName": "Kechizu_svesselP.png",
+      "localUrl": "/portraits/wiki/Kechizu_svesselP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/36/Kechizu%27svesselP.png/revision/latest?cb=20261004000330"
+    },
+    {
+      "fileName": "MegumiP.png",
+      "safeLocalName": "MegumiP.png",
+      "localUrl": "/portraits/wiki/MegumiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/58/MegumiP.png/revision/latest?cb=20261007021217"
+    },
+    {
+      "fileName": "NobaraP.png",
+      "safeLocalName": "NobaraP.png",
+      "localUrl": "/portraits/wiki/NobaraP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/81/NobaraP.png/revision/latest?cb=20261007021338"
+    },
+    {
+      "fileName": "MeiMeiP.png",
+      "safeLocalName": "MeiMeiP.png",
+      "localUrl": "/portraits/wiki/MeiMeiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/c6/MeiMeiP.png/revision/latest?cb=20260922023931"
+    },
+    {
+      "fileName": "NoritoshiKamoP.png",
+      "safeLocalName": "NoritoshiKamoP.png",
+      "localUrl": "/portraits/wiki/NoritoshiKamoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6c/NoritoshiKamoP.png/revision/latest?cb=20261008014525"
+    },
+    {
+      "fileName": "MomoNishimiyaP.png",
+      "safeLocalName": "MomoNishimiyaP.png",
+      "localUrl": "/portraits/wiki/MomoNishimiyaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b4/MomoNishimiyaP.png/revision/latest?cb=20260922022041"
+    },
+    {
+      "fileName": "MiguelP.png",
+      "safeLocalName": "MiguelP.png",
+      "localUrl": "/portraits/wiki/MiguelP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b9/MiguelP.png/revision/latest?cb=20261005180626"
+    },
+    {
+      "fileName": "NaobitoZeninP.png",
+      "safeLocalName": "NaobitoZeninP.png",
+      "localUrl": "/portraits/wiki/NaobitoZeninP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/7b/NaobitoZeninP.png/revision/latest?cb=20261005180708"
+    },
+    {
+      "fileName": "MimikoP.png",
+      "safeLocalName": "MimikoP.png",
+      "localUrl": "/portraits/wiki/MimikoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/47/MimikoP.png/revision/latest?cb=20201128012534"
+    },
+    {
+      "fileName": "NanakoP.png",
+      "safeLocalName": "NanakoP.png",
+      "localUrl": "/portraits/wiki/NanakoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e7/NanakoP.png/revision/latest?cb=20201128012457"
+    },
+    {
+      "fileName": "MisatoKuroiP.png",
+      "safeLocalName": "MisatoKuroiP.png",
+      "localUrl": "/portraits/wiki/MisatoKuroiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/ea/MisatoKuroiP.png/revision/latest?cb=20261005183222"
+    },
+    {
+      "fileName": "NobaraP (Gray).png",
+      "safeLocalName": "NobaraP__Gray_.png",
+      "localUrl": "/portraits/wiki/NobaraP__Gray_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fc/NobaraP_%28Gray%29.png/revision/latest?cb=20200129150417"
+    },
+    {
+      "fileName": "MegumiP (Gray).png",
+      "safeLocalName": "MegumiP__Gray_.png",
+      "localUrl": "/portraits/wiki/MegumiP__Gray_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/43/MegumiP_%28Gray%29.png/revision/latest?cb=20200204023008"
+    },
+    {
+      "fileName": "NanamiP (Gray).png",
+      "safeLocalName": "NanamiP__Gray_.png",
+      "localUrl": "/portraits/wiki/NanamiP__Gray_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1a/NanamiP_%28Gray%29.png/revision/latest?cb=20200414172158"
+    },
+    {
+      "fileName": "NanamiP.png",
+      "safeLocalName": "NanamiP.png",
+      "localUrl": "/portraits/wiki/NanamiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3e/NanamiP.png/revision/latest?cb=20261007023427"
+    },
+    {
+      "fileName": "MegumiP (Anime).png",
+      "safeLocalName": "MegumiP__Anime_.png",
+      "localUrl": "/portraits/wiki/MegumiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d1/MegumiP_%28Anime%29.png/revision/latest?cb=20200904173342"
+    },
+    {
+      "fileName": "NobaraP (Anime).png",
+      "safeLocalName": "NobaraP__Anime_.png",
+      "localUrl": "/portraits/wiki/NobaraP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f9/NobaraP_%28Anime%29.png/revision/latest?cb=20241110021559"
+    },
+    {
+      "fileName": "NanamiP (Anime).png",
+      "safeLocalName": "NanamiP__Anime_.png",
+      "localUrl": "/portraits/wiki/NanamiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/54/NanamiP_%28Anime%29.png/revision/latest?cb=20240618013640"
+    },
+    {
+      "fileName": "PandaP (Anime).png",
+      "safeLocalName": "PandaP__Anime_.png",
+      "localUrl": "/portraits/wiki/PandaP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/94/PandaP_%28Anime%29.png/revision/latest?cb=20241110020504"
+    },
+    {
+      "fileName": "OldCurseUserP.png",
+      "safeLocalName": "OldCurseUserP.png",
+      "localUrl": "/portraits/wiki/OldCurseUserP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a0/OldCurseUserP.png/revision/latest?cb=20261005181101"
+    },
+    {
+      "fileName": "OgamiP.png",
+      "safeLocalName": "OgamiP.png",
+      "localUrl": "/portraits/wiki/OgamiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b0/OgamiP.png/revision/latest?cb=20261005183127"
+    },
+    {
+      "fileName": "OgamiGrandsonP.png",
+      "safeLocalName": "OgamiGrandsonP.png",
+      "localUrl": "/portraits/wiki/OgamiGrandsonP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3d/OgamiGrandsonP.png/revision/latest?cb=20261005181005"
+    },
+    {
+      "fileName": "NaoyaZeninP.png",
+      "safeLocalName": "NaoyaZeninP.png",
+      "localUrl": "/portraits/wiki/NaoyaZeninP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/25/NaoyaZeninP.png/revision/latest?cb=20210531151938"
+    },
+    {
+      "fileName": "OgiZeninP.png",
+      "safeLocalName": "OgiZeninP.png",
+      "localUrl": "/portraits/wiki/OgiZeninP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/43/OgiZeninP.png/revision/latest?cb=20261005181030"
+    },
+    {
+      "fileName": "NijiEbinaP.png",
+      "safeLocalName": "NijiEbinaP.png",
+      "localUrl": "/portraits/wiki/NijiEbinaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/19/NijiEbinaP.png/revision/latest?cb=20261005185431"
+    },
+    {
+      "fileName": "NoritoshiKamoAP.png",
+      "safeLocalName": "NoritoshiKamoAP.png",
+      "localUrl": "/portraits/wiki/NoritoshiKamoAP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/2a/NoritoshiKamoAP.png/revision/latest?cb=20261005185533"
+    },
+    {
+      "fileName": "NobuakiZeninP.png",
+      "safeLocalName": "NobuakiZeninP.png",
+      "localUrl": "/portraits/wiki/NobuakiZeninP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a4/NobuakiZeninP.png/revision/latest?cb=20261005184803"
+    },
+    {
+      "fileName": "NaoyaZeninP (Color).png",
+      "safeLocalName": "NaoyaZeninP__Color_.png",
+      "localUrl": "/portraits/wiki/NaoyaZeninP__Color_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/46/NaoyaZeninP_%28Color%29.png/revision/latest?cb=20261005180730"
+    },
+    {
+      "fileName": "NoritoshiKamoP (Culling Game).png",
+      "safeLocalName": "NoritoshiKamoP__Culling_Game_.png",
+      "localUrl": "/portraits/wiki/NoritoshiKamoP__Culling_Game_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/69/NoritoshiKamoP_%28Culling_Game%29.png/revision/latest?cb=20261005183542"
+    },
+    {
+      "fileName": "NoritoshiMotherP.png",
+      "safeLocalName": "NoritoshiMotherP.png",
+      "localUrl": "/portraits/wiki/NoritoshiMotherP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/0e/NoritoshiMotherP.png/revision/latest?cb=20221004194743"
+    },
+    {
+      "fileName": "MomAkutamiP.png",
+      "safeLocalName": "MomAkutamiP.png",
+      "localUrl": "/portraits/wiki/MomAkutamiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/2e/MomAkutamiP.png/revision/latest?cb=20230704000347"
+    },
+    {
+      "fileName": "OsamuShimadaP.png",
+      "safeLocalName": "OsamuShimadaP.png",
+      "localUrl": "/portraits/wiki/OsamuShimadaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/75/OsamuShimadaP.png/revision/latest?cb=20230704001637"
+    },
+    {
+      "fileName": "Noritoshi'sMomP.png",
+      "safeLocalName": "Noritoshi_sMomP.png",
+      "localUrl": "/portraits/wiki/Noritoshi_sMomP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a8/Noritoshi%27sMomP.png/revision/latest?cb=20261005183148"
+    },
+    {
+      "fileName": "Ogi'sWifeP.png",
+      "safeLocalName": "Ogi_sWifeP.png",
+      "localUrl": "/portraits/wiki/Ogi_sWifeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/5c/Ogi%27sWifeP.png/revision/latest?cb=20260922022205"
+    },
+    {
+      "fileName": "NishimuraP.png",
+      "safeLocalName": "NishimuraP.png",
+      "localUrl": "/portraits/wiki/NishimuraP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1a/NishimuraP.png/revision/latest?cb=20230704004159"
+    },
+    {
+      "fileName": "Noritoshi'sSiblingP.png",
+      "safeLocalName": "Noritoshi_sSiblingP.png",
+      "localUrl": "/portraits/wiki/Noritoshi_sSiblingP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/27/Noritoshi%27sSiblingP.png/revision/latest?cb=20230704004313"
+    },
+    {
+      "fileName": "Noritoshi'sstepdadP.png",
+      "safeLocalName": "Noritoshi_sstepdadP.png",
+      "localUrl": "/portraits/wiki/Noritoshi_sstepdadP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d4/Noritoshi%27sstepdadP.png/revision/latest?cb=20230811160044"
+    },
+    {
+      "fileName": "MeiMeiP (Anime).png",
+      "safeLocalName": "MeiMeiP__Anime_.png",
+      "localUrl": "/portraits/wiki/MeiMeiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d1/MeiMeiP_%28Anime%29.png/revision/latest?cb=20241110002613"
+    },
+    {
+      "fileName": "NobaraGrandmotherP.png",
+      "safeLocalName": "NobaraGrandmotherP.png",
+      "localUrl": "/portraits/wiki/NobaraGrandmotherP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/14/NobaraGrandmotherP.png/revision/latest?cb=20241225221510"
+    },
+    {
+      "fileName": "NobaraMotherP.png",
+      "safeLocalName": "NobaraMotherP.png",
+      "localUrl": "/portraits/wiki/NobaraMotherP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f2/NobaraMotherP.png/revision/latest?cb=20260922022112"
+    },
+    {
+      "fileName": "NewShadowStyleHeadP.png",
+      "safeLocalName": "NewShadowStyleHeadP.png",
+      "localUrl": "/portraits/wiki/NewShadowStyleHeadP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/7d/NewShadowStyleHeadP.png/revision/latest?cb=20261005180748"
+    },
+    {
+      "fileName": "MinoP.png",
+      "safeLocalName": "MinoP.png",
+      "localUrl": "/portraits/wiki/MinoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/70/MinoP.png/revision/latest?cb=20261005180646"
+    },
+    {
+      "fileName": "OsadaP.png",
+      "safeLocalName": "OsadaP.png",
+      "localUrl": "/portraits/wiki/OsadaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e5/OsadaP.png/revision/latest?cb=20251005062057"
+    },
+    {
+      "fileName": "MiyaguniP.png",
+      "safeLocalName": "MiyaguniP.png",
+      "localUrl": "/portraits/wiki/MiyaguniP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/23/MiyaguniP.png/revision/latest?cb=20260919203753"
+    },
+    {
+      "fileName": "OsukiP.png",
+      "safeLocalName": "OsukiP.png",
+      "localUrl": "/portraits/wiki/OsukiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/05/OsukiP.png/revision/latest?cb=20261005090633"
+    },
+    {
+      "fileName": "MifuyuOkkotsuP.png",
+      "safeLocalName": "MifuyuOkkotsuP.png",
+      "localUrl": "/portraits/wiki/MifuyuOkkotsuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3a/MifuyuOkkotsuP.png/revision/latest?cb=20260717074248"
+    },
+    {
+      "fileName": "NobaraP (Modulo).png",
+      "safeLocalName": "NobaraP__Modulo_.png",
+      "localUrl": "/portraits/wiki/NobaraP__Modulo_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/25/NobaraP_%28Modulo%29.png/revision/latest?cb=20261007070107"
+    },
+    {
+      "fileName": "MegumiP (ID).png",
+      "safeLocalName": "MegumiP__ID_.png",
+      "localUrl": "/portraits/wiki/MegumiP__ID_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/5d/MegumiP_%28ID%29.png/revision/latest?cb=20260907021116"
+    },
+    {
+      "fileName": "NobaraP (ID).png",
+      "safeLocalName": "NobaraP__ID_.png",
+      "localUrl": "/portraits/wiki/NobaraP__ID_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/06/NobaraP_%28ID%29.png/revision/latest?cb=20260907021343"
+    },
+    {
+      "fileName": "Miguel'sclan'shead.png",
+      "safeLocalName": "Miguel_sclan_shead.png",
+      "localUrl": "/portraits/wiki/Miguel_sclan_shead.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b3/Miguel%27sclan%27shead.png/revision/latest?cb=20261005010746"
+    },
+    {
+      "fileName": "Mino'sfriendP.png",
+      "safeLocalName": "Mino_sfriendP.png",
+      "localUrl": "/portraits/wiki/Mino_sfriendP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/dc/Mino%27sfriendP.png/revision/latest?cb=20261005043927"
+    },
+    {
+      "fileName": "PandaP.png",
+      "safeLocalName": "PandaP.png",
+      "localUrl": "/portraits/wiki/PandaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/50/PandaP.png/revision/latest?cb=20261007020926"
+    },
+    {
+      "fileName": "SukunaP.png",
+      "safeLocalName": "SukunaP.png",
+      "localUrl": "/portraits/wiki/SukunaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3a/SukunaP.png/revision/latest?cb=20261005181916"
+    },
+    {
+      "fileName": "ShokoIeriP.png",
+      "safeLocalName": "ShokoIeriP.png",
+      "localUrl": "/portraits/wiki/ShokoIeriP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fc/ShokoIeriP.png/revision/latest?cb=20260922022334"
+    },
+    {
+      "fileName": "SuguruGetoP.png",
+      "safeLocalName": "SuguruGetoP.png",
+      "localUrl": "/portraits/wiki/SuguruGetoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/bf/SuguruGetoP.png/revision/latest?cb=20261005181723"
+    },
+    {
+      "fileName": "SotomuraP.png",
+      "safeLocalName": "SotomuraP.png",
+      "localUrl": "/portraits/wiki/SotomuraP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/0c/SotomuraP.png/revision/latest?cb=20220419235132"
+    },
+    {
+      "fileName": "ShotaItoP.png",
+      "safeLocalName": "ShotaItoP.png",
+      "localUrl": "/portraits/wiki/ShotaItoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/7a/ShotaItoP.png/revision/latest?cb=20261005181652"
+    },
+    {
+      "fileName": "RikoAmanaiP.png",
+      "safeLocalName": "RikoAmanaiP.png",
+      "localUrl": "/portraits/wiki/RikoAmanaiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1d/RikoAmanaiP.png/revision/latest?cb=20261007074627"
+    },
+    {
+      "fileName": "ShigeruSonodaP.png",
+      "safeLocalName": "ShigeruSonodaP.png",
+      "localUrl": "/portraits/wiki/ShigeruSonodaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6d/ShigeruSonodaP.png/revision/latest?cb=20261005181429"
+    },
+    {
+      "fileName": "Tadashi'sMomP.png",
+      "safeLocalName": "Tadashi_sMomP.png",
+      "localUrl": "/portraits/wiki/Tadashi_sMomP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/ac/Tadashi%27sMomP.png/revision/latest?cb=20260922022407"
+    },
+    {
+      "fileName": "RikaOrimotoP.png",
+      "safeLocalName": "RikaOrimotoP.png",
+      "localUrl": "/portraits/wiki/RikaOrimotoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/98/RikaOrimotoP.png/revision/latest?cb=20210219080427"
+    },
+    {
+      "fileName": "SukunaP (Gray).png",
+      "safeLocalName": "SukunaP__Gray_.png",
+      "localUrl": "/portraits/wiki/SukunaP__Gray_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/56/SukunaP_%28Gray%29.png/revision/latest?cb=20200130223256"
+    },
+    {
+      "fileName": "SatoruP (Gray).png",
+      "safeLocalName": "SatoruP__Gray_.png",
+      "localUrl": "/portraits/wiki/SatoruP__Gray_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/30/SatoruP_%28Gray%29.png/revision/latest?cb=20200204023009"
+    },
+    {
+      "fileName": "SukunaP (Anime).png",
+      "safeLocalName": "SukunaP__Anime_.png",
+      "localUrl": "/portraits/wiki/SukunaP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8d/SukunaP_%28Anime%29.png/revision/latest?cb=20241110021424"
+    },
+    {
+      "fileName": "ShiuKongP.png",
+      "safeLocalName": "ShiuKongP.png",
+      "localUrl": "/portraits/wiki/ShiuKongP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/7a/ShiuKongP.png/revision/latest?cb=20261005185711"
+    },
+    {
+      "fileName": "SatoruGojoP (2006).png",
+      "safeLocalName": "SatoruGojoP__2006_.png",
+      "localUrl": "/portraits/wiki/SatoruGojoP__2006_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d8/SatoruGojoP_%282006%29.png/revision/latest?cb=20261010025123"
+    },
+    {
+      "fileName": "SuguruGetoP (2006).png",
+      "safeLocalName": "SuguruGetoP__2006_.png",
+      "localUrl": "/portraits/wiki/SuguruGetoP__2006_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d5/SuguruGetoP_%282006%29.png/revision/latest?cb=20261010025148"
+    },
+    {
+      "fileName": "ShokoIeiriP (2006).png",
+      "safeLocalName": "ShokoIeiriP__2006_.png",
+      "localUrl": "/portraits/wiki/ShokoIeiriP__2006_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6d/ShokoIeiriP_%282006%29.png/revision/latest?cb=20261007042140"
+    },
+    {
+      "fileName": "RainbowDragonP.png",
+      "safeLocalName": "RainbowDragonP.png",
+      "localUrl": "/portraits/wiki/RainbowDragonP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/39/RainbowDragonP.png/revision/latest?cb=20201221045854"
+    },
+    {
+      "fileName": "Roppongi Curse.png",
+      "safeLocalName": "Roppongi_Curse.png",
+      "localUrl": "/portraits/wiki/Roppongi_Curse.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e8/Roppongi_Curse.png/revision/latest?cb=20201221184721"
+    },
+    {
+      "fileName": "Sting-RayCurseP.png",
+      "safeLocalName": "Sting-RayCurseP.png",
+      "localUrl": "/portraits/wiki/Sting-RayCurseP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/17/Sting-RayCurseP.png/revision/latest?cb=20201221184751"
+    },
+    {
+      "fileName": "SmallpoxDeityP.png",
+      "safeLocalName": "SmallpoxDeityP.png",
+      "localUrl": "/portraits/wiki/SmallpoxDeityP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/5b/SmallpoxDeityP.png/revision/latest?cb=20261005181624"
+    },
+    {
+      "fileName": "RinAmaiP.png",
+      "safeLocalName": "RinAmaiP.png",
+      "localUrl": "/portraits/wiki/RinAmaiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fd/RinAmaiP.png/revision/latest?cb=20261005181332"
+    },
+    {
+      "fileName": "RemiP.png",
+      "safeLocalName": "RemiP.png",
+      "localUrl": "/portraits/wiki/RemiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/18/RemiP.png/revision/latest?cb=20261005183052"
+    },
+    {
+      "fileName": "ReggieStarP.png",
+      "safeLocalName": "ReggieStarP.png",
+      "localUrl": "/portraits/wiki/ReggieStarP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/67/ReggieStarP.png/revision/latest?cb=20261005181301"
+    },
+    {
+      "fileName": "RyuIshigoriP.png",
+      "safeLocalName": "RyuIshigoriP.png",
+      "localUrl": "/portraits/wiki/RyuIshigoriP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/5d/RyuIshigoriP.png/revision/latest?cb=20261005181407"
+    },
+    {
+      "fileName": "RoppongiKidP.png",
+      "safeLocalName": "RoppongiKidP.png",
+      "localUrl": "/portraits/wiki/RoppongiKidP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/bb/RoppongiKidP.png/revision/latest?cb=20261007071355"
+    },
+    {
+      "fileName": "ShinoKamoP.png",
+      "safeLocalName": "ShinoKamoP.png",
+      "localUrl": "/portraits/wiki/ShinoKamoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e0/ShinoKamoP.png/revision/latest?cb=20261005181603"
+    },
+    {
+      "fileName": "RokujushiMiyoP.png",
+      "safeLocalName": "RokujushiMiyoP.png",
+      "localUrl": "/portraits/wiki/RokujushiMiyoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d3/RokujushiMiyoP.png/revision/latest?cb=20261005181350"
+    },
+    {
+      "fileName": "SukunaP (Megumi).png",
+      "safeLocalName": "SukunaP__Megumi_.png",
+      "localUrl": "/portraits/wiki/SukunaP__Megumi_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/82/SukunaP_%28Megumi%29.png/revision/latest?cb=20261007020232"
+    },
+    {
+      "fileName": "SaitoDaughterP.png",
+      "safeLocalName": "SaitoDaughterP.png",
+      "localUrl": "/portraits/wiki/SaitoDaughterP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b8/SaitoDaughterP.png/revision/latest?cb=20230704000419"
+    },
+    {
+      "fileName": "StudentCouncilPresidentP.png",
+      "safeLocalName": "StudentCouncilPresidentP.png",
+      "localUrl": "/portraits/wiki/StudentCouncilPresidentP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/59/StudentCouncilPresidentP.png/revision/latest?cb=20261004042421"
+    },
+    {
+      "fileName": "SalarymanBossP.png",
+      "safeLocalName": "SalarymanBossP.png",
+      "localUrl": "/portraits/wiki/SalarymanBossP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/01/SalarymanBossP.png/revision/latest?cb=20261003231346"
+    },
+    {
+      "fileName": "SaitoP.png",
+      "safeLocalName": "SaitoP.png",
+      "localUrl": "/portraits/wiki/SaitoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f7/SaitoP.png/revision/latest?cb=20230704002315"
+    },
+    {
+      "fileName": "SayamaP.png",
+      "safeLocalName": "SayamaP.png",
+      "localUrl": "/portraits/wiki/SayamaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9c/SayamaP.png/revision/latest?cb=20230704003815"
+    },
+    {
+      "fileName": "SayakaYamaguchiP.png",
+      "safeLocalName": "SayakaYamaguchiP.png",
+      "localUrl": "/portraits/wiki/SayakaYamaguchiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/5c/SayakaYamaguchiP.png/revision/latest?cb=20261003180433"
+    },
+    {
+      "fileName": "SayuriAmanogawaP.png",
+      "safeLocalName": "SayuriAmanogawaP.png",
+      "localUrl": "/portraits/wiki/SayuriAmanogawaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/74/SayuriAmanogawaP.png/revision/latest?cb=20261003175848"
+    },
+    {
+      "fileName": "SuzukaShimizuP.png",
+      "safeLocalName": "SuzukaShimizuP.png",
+      "localUrl": "/portraits/wiki/SuzukaShimizuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/97/SuzukaShimizuP.png/revision/latest?cb=20261003180340"
+    },
+    {
+      "fileName": "ShimizuP.png",
+      "safeLocalName": "ShimizuP.png",
+      "localUrl": "/portraits/wiki/ShimizuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/59/ShimizuP.png/revision/latest?cb=20261005182924"
+    },
+    {
+      "fileName": "SavedgirlP.png",
+      "safeLocalName": "SavedgirlP.png",
+      "localUrl": "/portraits/wiki/SavedgirlP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/50/SavedgirlP.png/revision/latest?cb=20260922022247"
+    },
+    {
+      "fileName": "SukunaP (Yuji).png",
+      "safeLocalName": "SukunaP__Yuji_.png",
+      "localUrl": "/portraits/wiki/SukunaP__Yuji_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/61/SukunaP_%28Yuji%29.png/revision/latest?cb=20261006042015"
+    },
+    {
+      "fileName": "Roll-hair ojousamaP.png",
+      "safeLocalName": "Roll-hair_ojousamaP.png",
+      "localUrl": "/portraits/wiki/Roll-hair_ojousamaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/ab/Roll-hair_ojousamaP.png/revision/latest?cb=20240608221443"
+    },
+    {
+      "fileName": "SotaFianceeP.png",
+      "safeLocalName": "SotaFianceeP.png",
+      "localUrl": "/portraits/wiki/SotaFianceeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/02/SotaFianceeP.png/revision/latest?cb=20261005183022"
+    },
+    {
+      "fileName": "SotaFukuzawaP.png",
+      "safeLocalName": "SotaFukuzawaP.png",
+      "localUrl": "/portraits/wiki/SotaFukuzawaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/09/SotaFukuzawaP.png/revision/latest?cb=20261003231626"
+    },
+    {
+      "fileName": "SpejoP.png",
+      "safeLocalName": "SpejoP.png",
+      "localUrl": "/portraits/wiki/SpejoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/4f/SpejoP.png/revision/latest?cb=20260922023253"
+    },
+    {
+      "fileName": "ShackP.png",
+      "safeLocalName": "ShackP.png",
+      "localUrl": "/portraits/wiki/ShackP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d3/ShackP.png/revision/latest?cb=20261005020606"
+    },
+    {
+      "fileName": "RumelianElderP.png",
+      "safeLocalName": "RumelianElderP.png",
+      "localUrl": "/portraits/wiki/RumelianElderP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a7/RumelianElderP.png/revision/latest?cb=20261005030423"
+    },
+    {
+      "fileName": "SuzukiP.png",
+      "safeLocalName": "SuzukiP.png",
+      "localUrl": "/portraits/wiki/SuzukiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f0/SuzukiP.png/revision/latest?cb=20251208014543"
+    },
+    {
+      "fileName": "SoldierJesusP.png",
+      "safeLocalName": "SoldierJesusP.png",
+      "localUrl": "/portraits/wiki/SoldierJesusP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/cd/SoldierJesusP.png/revision/latest?cb=20261005192014"
+    },
+    {
+      "fileName": "PandaP (ID).png",
+      "safeLocalName": "PandaP__ID_.png",
+      "localUrl": "/portraits/wiki/PandaP__ID_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/90/PandaP_%28ID%29.png/revision/latest?cb=20260907012937"
+    },
+    {
+      "fileName": "ProsecutorP.png",
+      "safeLocalName": "ProsecutorP.png",
+      "localUrl": "/portraits/wiki/ProsecutorP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fb/ProsecutorP.png/revision/latest?cb=20261004011801"
+    },
+    {
+      "fileName": "Takagi.png",
+      "safeLocalName": "Takagi.png",
+      "localUrl": "/portraits/wiki/Takagi.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/82/Takagi.png/revision/latest?cb=20261005190525"
+    },
+    {
+      "fileName": "TogeP.png",
+      "safeLocalName": "TogeP.png",
+      "localUrl": "/portraits/wiki/TogeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3d/TogeP.png/revision/latest?cb=20191022215544"
+    },
+    {
+      "fileName": "TakumaInoP.png",
+      "safeLocalName": "TakumaInoP.png",
+      "localUrl": "/portraits/wiki/TakumaInoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8b/TakumaInoP.png/revision/latest?cb=20261005181933"
+    },
+    {
+      "fileName": "YoshinobuP.png",
+      "safeLocalName": "YoshinobuP.png",
+      "localUrl": "/portraits/wiki/YoshinobuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/da/YoshinobuP.png/revision/latest?cb=20240701012059"
+    },
+    {
+      "fileName": "UtahimeP.png",
+      "safeLocalName": "UtahimeP.png",
+      "localUrl": "/portraits/wiki/UtahimeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d7/UtahimeP.png/revision/latest?cb=20260922022953"
+    },
+    {
+      "fileName": "ToshihisaNegiP.png",
+      "safeLocalName": "ToshihisaNegiP.png",
+      "localUrl": "/portraits/wiki/ToshihisaNegiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/c6/ToshihisaNegiP.png/revision/latest?cb=20261005182008"
+    },
+    {
+      "fileName": "VayerP.png",
+      "safeLocalName": "VayerP.png",
+      "localUrl": "/portraits/wiki/VayerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f5/VayerP.png/revision/latest?cb=20261005182259"
+    },
+    {
+      "fileName": "TojiFushiguroP.png",
+      "safeLocalName": "TojiFushiguroP.png",
+      "localUrl": "/portraits/wiki/TojiFushiguroP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e4/TojiFushiguroP.png/revision/latest?cb=20261005181953"
+    },
+    {
+      "fileName": "TadashiOkazakiP.png",
+      "safeLocalName": "TadashiOkazakiP.png",
+      "localUrl": "/portraits/wiki/TadashiOkazakiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6d/TadashiOkazakiP.png/revision/latest?cb=20240618044322"
+    },
+    {
+      "fileName": "WasukeItadoriP.png",
+      "safeLocalName": "WasukeItadoriP.png",
+      "localUrl": "/portraits/wiki/WasukeItadoriP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9c/WasukeItadoriP.png/revision/latest?cb=20261005190337"
+    },
+    {
+      "fileName": "TsumikiFushiguroP.png",
+      "safeLocalName": "TsumikiFushiguroP.png",
+      "localUrl": "/portraits/wiki/TsumikiFushiguroP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/30/TsumikiFushiguroP.png/revision/latest?cb=20261007023313"
+    },
+    {
+      "fileName": "TogeP (Anime).png",
+      "safeLocalName": "TogeP__Anime_.png",
+      "localUrl": "/portraits/wiki/TogeP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/cc/TogeP_%28Anime%29.png/revision/latest?cb=20241110020541"
+    },
+    {
+      "fileName": "UraumeP.png",
+      "safeLocalName": "UraumeP.png",
+      "localUrl": "/portraits/wiki/UraumeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8b/UraumeP.png/revision/latest?cb=20261005182819"
+    },
+    {
+      "fileName": "Tsumiki JuniorHighP.png",
+      "safeLocalName": "Tsumiki_JuniorHighP.png",
+      "localUrl": "/portraits/wiki/Tsumiki_JuniorHighP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/6a/Tsumiki_JuniorHighP.png/revision/latest?cb=20260922022747"
+    },
+    {
+      "fileName": "TakedaP.png",
+      "safeLocalName": "TakedaP.png",
+      "localUrl": "/portraits/wiki/TakedaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/7/79/TakedaP.png/revision/latest?cb=20201111042819"
+    },
+    {
+      "fileName": "UiUiP.png",
+      "safeLocalName": "UiUiP.png",
+      "localUrl": "/portraits/wiki/UiUiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e0/UiUiP.png/revision/latest?cb=20261005182109"
+    },
+    {
+      "fileName": "Takada-chanP.png",
+      "safeLocalName": "Takada-chanP.png",
+      "localUrl": "/portraits/wiki/Takada-chanP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d5/Takada-chanP.png/revision/latest?cb=20260922022454"
+    },
+    {
+      "fileName": "TogeP (Second-Year).png",
+      "safeLocalName": "TogeP__Second-Year_.png",
+      "localUrl": "/portraits/wiki/TogeP__Second-Year_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/04/TogeP_%28Second-Year%29.png/revision/latest?cb=20261005184415"
+    },
+    {
+      "fileName": "Tamamo-no-MaeP.png",
+      "safeLocalName": "Tamamo-no-MaeP.png",
+      "localUrl": "/portraits/wiki/Tamamo-no-MaeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/2f/Tamamo-no-MaeP.png/revision/latest?cb=20261005182840"
+    },
+    {
+      "fileName": "TakumaInoP (masked).png",
+      "safeLocalName": "TakumaInoP__masked_.png",
+      "localUrl": "/portraits/wiki/TakumaInoP__masked_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d9/TakumaInoP_%28masked%29.png/revision/latest?cb=20210313235018"
+    },
+    {
+      "fileName": "TengenP.png",
+      "safeLocalName": "TengenP.png",
+      "localUrl": "/portraits/wiki/TengenP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/37/TengenP.png/revision/latest?cb=20210402190811"
+    },
+    {
+      "fileName": "Takeda P.png",
+      "safeLocalName": "Takeda_P.png",
+      "localUrl": "/portraits/wiki/Takeda_P.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/ca/Takeda_P.png/revision/latest?cb=20210418193532"
+    },
+    {
+      "fileName": "TakakoUroP.png",
+      "safeLocalName": "TakakoUroP.png",
+      "localUrl": "/portraits/wiki/TakakoUroP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/e3/TakakoUroP.png/revision/latest?cb=20261005183823"
+    },
+    {
+      "fileName": "YorozuP.png",
+      "safeLocalName": "YorozuP.png",
+      "localUrl": "/portraits/wiki/YorozuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/00/YorozuP.png/revision/latest?cb=20260922023121"
+    },
+    {
+      "fileName": "WaiterP.png",
+      "safeLocalName": "WaiterP.png",
+      "localUrl": "/portraits/wiki/WaiterP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/56/WaiterP.png/revision/latest?cb=20261003231854"
+    },
+    {
+      "fileName": "TasukeP.png",
+      "safeLocalName": "TasukeP.png",
+      "localUrl": "/portraits/wiki/TasukeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/29/TasukeP.png/revision/latest?cb=20230704001611"
+    },
+    {
+      "fileName": "TriceratopsP.png",
+      "safeLocalName": "TriceratopsP.png",
+      "localUrl": "/portraits/wiki/TriceratopsP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/44/TriceratopsP.png/revision/latest?cb=20261004222216"
+    },
+    {
+      "fileName": "TsubasaP.png",
+      "safeLocalName": "TsubasaP.png",
+      "localUrl": "/portraits/wiki/TsubasaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/24/TsubasaP.png/revision/latest?cb=20230704004211"
+    },
+    {
+      "fileName": "TakagiP.png",
+      "safeLocalName": "TakagiP.png",
+      "localUrl": "/portraits/wiki/TakagiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/64/TakagiP.png/revision/latest?cb=20260922022527"
+    },
+    {
+      "fileName": "YoshizawaP.png",
+      "safeLocalName": "YoshizawaP.png",
+      "localUrl": "/portraits/wiki/YoshizawaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/28/YoshizawaP.png/revision/latest?cb=20261003231322"
+    },
+    {
+      "fileName": "TanukiP.png",
+      "safeLocalName": "TanukiP.png",
+      "localUrl": "/portraits/wiki/TanukiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8e/TanukiP.png/revision/latest?cb=20230812055436"
+    },
+    {
+      "fileName": "UnknownjudgeP.png",
+      "safeLocalName": "UnknownjudgeP.png",
+      "localUrl": "/portraits/wiki/UnknownjudgeP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/fd/UnknownjudgeP.png/revision/latest?cb=20261003231706"
+    },
+    {
+      "fileName": "TsumikiP (Anime).png",
+      "safeLocalName": "TsumikiP__Anime_.png",
+      "localUrl": "/portraits/wiki/TsumikiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/39/TsumikiP_%28Anime%29.png/revision/latest?cb=20241110002613"
+    },
+    {
+      "fileName": "UtahimeP (Anime).png",
+      "safeLocalName": "UtahimeP__Anime_.png",
+      "localUrl": "/portraits/wiki/UtahimeP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/3b/UtahimeP_%28Anime%29.png/revision/latest?cb=20241110002614"
+    },
+    {
+      "fileName": "TsurugiP (Epilogue).png",
+      "safeLocalName": "TsurugiP__Epilogue_.png",
+      "localUrl": "/portraits/wiki/TsurugiP__Epilogue_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/31/TsurugiP_%28Epilogue%29.png/revision/latest?cb=20241225222010"
+    },
+    {
+      "fileName": "UnnamedSotaCurseUserP.png",
+      "safeLocalName": "UnnamedSotaCurseUserP.png",
+      "localUrl": "/portraits/wiki/UnnamedSotaCurseUserP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d2/UnnamedSotaCurseUserP.png/revision/latest?cb=20261005190948"
+    },
+    {
+      "fileName": "UnnamedteenP.png",
+      "safeLocalName": "UnnamedteenP.png",
+      "localUrl": "/portraits/wiki/UnnamedteenP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b5/UnnamedteenP.png/revision/latest?cb=20261005182220"
+    },
+    {
+      "fileName": "TakabaNewPartnerP.png",
+      "safeLocalName": "TakabaNewPartnerP.png",
+      "localUrl": "/portraits/wiki/TakabaNewPartnerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/c/c0/TakabaNewPartnerP.png/revision/latest?cb=20241225222456"
+    },
+    {
+      "fileName": "TsurugiP.png",
+      "safeLocalName": "TsurugiP.png",
+      "localUrl": "/portraits/wiki/TsurugiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/ee/TsurugiP.png/revision/latest?cb=20261007045001"
+    },
+    {
+      "fileName": "UsamiJrP.png",
+      "safeLocalName": "UsamiJrP.png",
+      "localUrl": "/portraits/wiki/UsamiJrP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/49/UsamiJrP.png/revision/latest?cb=20261005191026"
+    },
+    {
+      "fileName": "WanchuoctopisellerP.png",
+      "safeLocalName": "WanchuoctopisellerP.png",
+      "localUrl": "/portraits/wiki/WanchuoctopisellerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d3/WanchuoctopisellerP.png/revision/latest?cb=20261005182323"
+    },
+    {
+      "fileName": "YakumaruP.png",
+      "safeLocalName": "YakumaruP.png",
+      "localUrl": "/portraits/wiki/YakumaruP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1d/YakumaruP.png/revision/latest?cb=20261005024717"
+    },
+    {
+      "fileName": "UsamiP.png",
+      "safeLocalName": "UsamiP.png",
+      "localUrl": "/portraits/wiki/UsamiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/43/UsamiP.png/revision/latest?cb=20251208014917"
+    },
+    {
+      "fileName": "TeamMeiMeiManagerP.png",
+      "safeLocalName": "TeamMeiMeiManagerP.png",
+      "localUrl": "/portraits/wiki/TeamMeiMeiManagerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/17/TeamMeiMeiManagerP.png/revision/latest?cb=20260922022541"
+    },
+    {
+      "fileName": "TogeP (ID).png",
+      "safeLocalName": "TogeP__ID_.png",
+      "localUrl": "/portraits/wiki/TogeP__ID_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f4/TogeP_%28ID%29.png/revision/latest?cb=20260907012834"
+    },
+    {
+      "fileName": "TengenP (Jump GIGA 2021 AUTUMN).png",
+      "safeLocalName": "TengenP__Jump_GIGA_2021_AUTUMN_.png",
+      "localUrl": "/portraits/wiki/TengenP__Jump_GIGA_2021_AUTUMN_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b2/TengenP_%28Jump_GIGA_2021_AUTUMN%29.png/revision/latest?cb=20260930205700"
+    },
+    {
+      "fileName": "Takaba'scollegepartnerP.png",
+      "safeLocalName": "Takaba_scollegepartnerP.png",
+      "localUrl": "/portraits/wiki/Takaba_scollegepartnerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/9/9d/Takaba%27scollegepartnerP.png/revision/latest?cb=20261004000255"
+    },
+    {
+      "fileName": "Takaba'sex-partnerP.png",
+      "safeLocalName": "Takaba_sex-partnerP.png",
+      "localUrl": "/portraits/wiki/Takaba_sex-partnerP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/02/Takaba%27sex-partnerP.png/revision/latest?cb=20261004000315"
+    },
+    {
+      "fileName": "U.S.PresidentP.png",
+      "safeLocalName": "U.S.PresidentP.png",
+      "localUrl": "/portraits/wiki/U.S.PresidentP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/e/ee/U.S.PresidentP.png/revision/latest?cb=20261004000347"
+    },
+    {
+      "fileName": "U.S.DNIP.png",
+      "safeLocalName": "U.S.DNIP.png",
+      "localUrl": "/portraits/wiki/U.S.DNIP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/a/a3/U.S.DNIP.png/revision/latest?cb=20261004000404"
+    },
+    {
+      "fileName": "Zenin Mai.png",
+      "safeLocalName": "Zenin_Mai.png",
+      "localUrl": "/portraits/wiki/Zenin_Mai.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/0/03/Zenin_Mai.png/revision/latest?cb=20200204012321"
+    },
+    {
+      "fileName": "YujiP.png",
+      "safeLocalName": "YujiP.png",
+      "localUrl": "/portraits/wiki/YujiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/64/YujiP.png/revision/latest?cb=20261006044322"
+    },
+    {
+      "fileName": "YutaOkkotsuP.png",
+      "safeLocalName": "YutaOkkotsuP.png",
+      "localUrl": "/portraits/wiki/YutaOkkotsuP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/d1/YutaOkkotsuP.png/revision/latest?cb=20200524020638"
+    },
+    {
+      "fileName": "YuHaibaraP.png",
+      "safeLocalName": "YuHaibaraP.png",
+      "localUrl": "/portraits/wiki/YuHaibaraP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/4/42/YuHaibaraP.png/revision/latest?cb=20201217192123"
+    },
+    {
+      "fileName": "YukoOzawaP.png",
+      "safeLocalName": "YukoOzawaP.png",
+      "localUrl": "/portraits/wiki/YukoOzawaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/dc/YukoOzawaP.png/revision/latest?cb=20191115060928"
+    },
+    {
+      "fileName": "YujiP (Gray).png",
+      "safeLocalName": "YujiP__Gray_.png",
+      "localUrl": "/portraits/wiki/YujiP__Gray_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/5/50/YujiP_%28Gray%29.png/revision/latest?cb=20200417005026"
+    },
+    {
+      "fileName": "YukiTsukumoP.png",
+      "safeLocalName": "YukiTsukumoP.png",
+      "localUrl": "/portraits/wiki/YukiTsukumoP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/2a/YukiTsukumoP.png/revision/latest?cb=20260922023211"
+    },
+    {
+      "fileName": "YujiP (Anime).png",
+      "safeLocalName": "YujiP__Anime_.png",
+      "localUrl": "/portraits/wiki/YujiP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/b/b5/YujiP_%28Anime%29.png/revision/latest?cb=20241110021713"
+    },
+    {
+      "fileName": "YutaOkkotsuP (Second-Year).png",
+      "safeLocalName": "YutaOkkotsuP__Second-Year_.png",
+      "localUrl": "/portraits/wiki/YutaOkkotsuP__Second-Year_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/6/65/YutaOkkotsuP_%28Second-Year%29.png/revision/latest?cb=20261007173002"
+    },
+    {
+      "fileName": "YuHaibaraP (Color).png",
+      "safeLocalName": "YuHaibaraP__Color_.png",
+      "localUrl": "/portraits/wiki/YuHaibaraP__Color_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/f/f8/YuHaibaraP_%28Color%29.png/revision/latest?cb=20210505173702"
+    },
+    {
+      "fileName": "YukiYamaguchiP.png",
+      "safeLocalName": "YukiYamaguchiP.png",
+      "localUrl": "/portraits/wiki/YukiYamaguchiP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8a/YukiYamaguchiP.png/revision/latest?cb=20261003180510"
+    },
+    {
+      "fileName": "YumeAsagiriP.png",
+      "safeLocalName": "YumeAsagiriP.png",
+      "localUrl": "/portraits/wiki/YumeAsagiriP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/d/dd/YumeAsagiriP.png/revision/latest?cb=20261003180006"
+    },
+    {
+      "fileName": "YutaOkkotsuP (Anime).png",
+      "safeLocalName": "YutaOkkotsuP__Anime_.png",
+      "localUrl": "/portraits/wiki/YutaOkkotsuP__Anime_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/2f/YutaOkkotsuP_%28Anime%29.png/revision/latest?cb=20241110015130"
+    },
+    {
+      "fileName": "YukaP (Epilogue).png",
+      "safeLocalName": "YukaP__Epilogue_.png",
+      "localUrl": "/portraits/wiki/YukaP__Epilogue_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/2/22/YukaP_%28Epilogue%29.png/revision/latest?cb=20241225221956"
+    },
+    {
+      "fileName": "YukaP.png",
+      "safeLocalName": "YukaP.png",
+      "localUrl": "/portraits/wiki/YukaP.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/8b/YukaP.png/revision/latest?cb=20261007051316"
+    },
+    {
+      "fileName": "YujiP (Modulo).png",
+      "safeLocalName": "YujiP__Modulo_.png",
+      "localUrl": "/portraits/wiki/YujiP__Modulo_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/1/1f/YujiP_%28Modulo%29.png/revision/latest?cb=20261006044145"
+    },
+    {
+      "fileName": "YutaOkkotsuP (ID).png",
+      "safeLocalName": "YutaOkkotsuP__ID_.png",
+      "localUrl": "/portraits/wiki/YutaOkkotsuP__ID_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/8/89/YutaOkkotsuP_%28ID%29.png/revision/latest?cb=20260907012635"
+    },
+    {
+      "fileName": "YujiP (ID).png",
+      "safeLocalName": "YujiP__ID_.png",
+      "localUrl": "/portraits/wiki/YujiP__ID_.png",
+      "remoteUrl": "https://static.wikia.nocookie.net/jujutsu-kaisen/images/3/36/YujiP_%28ID%29.png/revision/latest?cb=20260907021046"
+    }
+  ]
+}
