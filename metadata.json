@@ -1,6 +1,0 @@
-{
-  "name": "Jujutsu Kaisen: Crônicas de Mesa — RPG Narrativo",
-  "description": "RPG de Mesa puramente narrativo no universo de Jujutsu Kaisen com Mestre IA, Grimório de Feiticeiro, Limitações de Aptidão e Dados D20.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}

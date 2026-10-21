@@ -36,12 +36,7 @@ const character = {
   ideals: 'Ninguém deveria morrer porque a burocracia demorou.',
   bonds: 'A mãe, que ainda acha que ele estuda em um colégio interno.',
   flaws: 'Confunde teimosia com coragem.',
-  hpPercentage: 100,
-  cursedEnergyPercentage: 100,
-  outputPercentage: 100,
   physicalCondition: 'Intacto',
-  techniqueState: 'Ativa',
-  inBlackFlashZone: false,
   isHeavenlyRestriction: false,
   technique: {
     name: 'Ressonância do Horizonte Abissal',
@@ -54,7 +49,7 @@ const character = {
   },
   inventory: [],
   bindingVows: [],
-  exclusiveSheetMarkdown: '# Ren Fushiguro\nGrau 4. Perícias: Controle de EA (Afinidade), Leitura de Terreno (Maestria), Combate Corporal (Inaptidão).',
+  exclusiveSheetMarkdown: '# Ren Fushiguro\nGrau 4. Técnica: Ressonância do Horizonte Abissal. Limites, história e ferimentos são narrativos — sem atributos, HP, energia medida, dados ou níveis.',
 };
 
 const payload = {
@@ -66,7 +61,6 @@ const payload = {
     mode === 'opening'
       ? 'Abrir a campanha: narrar o Turno #1 a partir da cena de abertura.'
       : 'Desço ao saguão, mantenho a mão perto da katana e pergunto a Megumi onde exatamente os seis corpos foram encontrados.',
-  diceRoll: 15,
   revealedHandVow: false,
   ragContext: '',
   activeCards: [],
@@ -78,10 +72,11 @@ const payload = {
     mode === 'opening'
       ? ''
       : 'Turno 1: Megumi Fushiguro mostrou seis fotos de vítimas com cortes paralelos perto da cratera de Shinjuku e perguntou quantos segundos o jogador precisava para descer. O jogador desceu ao saguão e está diante da porta de aço.',
+  ...(process.env.TEST_KEY ? { customApiKey: process.env.TEST_KEY } : {}),
 };
 
 const started = Date.now();
-const res = await fetch('http://localhost:3000/api/gemini/turn', {
+const res = await fetch(`${process.env.API_URL || 'http://localhost:3000'}/api/gemini/turn`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(payload),
@@ -97,4 +92,9 @@ const paras = String(d.narrative || '').split(/\n\s*\n/).filter(Boolean);
 console.log('PARAGRAPHS', paras.length, 'CHARS', String(d.narrative || '').length);
 console.log('NARRATIVE HEAD:\n' + String(d.narrative || '').slice(0, 1600));
 console.log('\nENGINE HEAD: ' + String(d.engineLog || '').slice(0, 220));
+console.log('PLAYER STATE KEYS: ' + Object.keys(d.playerStateUpdate || {}).join(', '));
+console.log(
+  'NPC KEYS: ' +
+    Object.keys(d.worldStateUpdate?.npcsInScene?.[0] || {}).join(', ')
+);
 console.log('SUGGESTIONS: ' + (d.suggestedActions || []).slice(0, 2).join(' | ').slice(0, 220));

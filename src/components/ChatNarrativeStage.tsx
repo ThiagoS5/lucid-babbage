@@ -9,6 +9,7 @@ import {
   WorldStateUpdate,
 } from "../types/jjk";
 import { ApiKeyHealthState } from "../services/geminiService";
+import { EditorialDialog } from "./EditorialDialog";
 import {
   generateCanonicalPortraitSvg,
   generateSceneIllustrationSvg,
@@ -17,7 +18,6 @@ import {
   AlertTriangle,
   ChevronDown,
   Clapperboard,
-  Dices,
   Flame,
   HeartPulse,
   Image as ImageIcon,
@@ -78,8 +78,6 @@ interface ChatNarrativeStageProps {
   apiKeyState?: ApiKeyHealthState;
   onOpenSystemModal?: () => void;
   model?: GeminiModelOption;
-  autoRollDice?: boolean;
-  currentDiceRoll?: number;
   sfxEnabled?: boolean;
   customApiKey?: string;
   onChangeCustomApiKey?: (key: string) => void;
@@ -87,8 +85,6 @@ interface ChatNarrativeStageProps {
   onChangeModel?: (m: GeminiModelOption) => void;
   onChangeFontSize?: (f: FontSizeOption) => void;
   onToggleAutoImages?: () => void;
-  onToggleAutoRoll?: () => void;
-  onManualRollDice?: () => number;
   onUndoLastTurn?: () => void;
   onResetCampaign?: () => void;
   onExportCampaign?: () => void;
@@ -219,13 +215,13 @@ function renderFormattedText(text: string) {
 function TypingDots() {
   return (
     <div className="flex items-center gap-1 py-1" aria-label="O Mestre está narrando">
-      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400/80" />
+      <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#c9a96a]/80" />
       <span
-        className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400/60"
+        className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#c9a96a]/60"
         style={{ animationDelay: "120ms" }}
       />
       <span
-        className="h-1.5 w-1.5 animate-bounce rounded-full bg-amber-400/40"
+        className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#c9a96a]/40"
         style={{ animationDelay: "240ms" }}
       />
     </div>
@@ -243,56 +239,22 @@ function Sheet({
   onClose: () => void;
   children: React.ReactNode;
 }) {
-  if (!open) return null;
   return (
-    <div
-      className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 backdrop-blur-sm sm:items-center sm:p-6"
-      onClick={onClose}
-      role="presentation"
-    >
-      <div
-        className="max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl border border-amber-500/20 bg-[#100c09] shadow-2xl sm:max-w-md sm:rounded-3xl"
-        onClick={(event) => event.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-white/5 bg-[#100c09]/95 px-4 py-3 backdrop-blur">
-          <h2 className="font-display text-sm font-bold uppercase tracking-wider text-amber-100">
-            {title}
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl p-1.5 text-slate-400 transition-colors hover:bg-white/5 hover:text-white"
-            aria-label="Fechar painel"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-        <div className="space-y-4 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          {children}
-        </div>
-      </div>
-    </div>
+    <EditorialDialog open={open} title={title} onClose={onClose}>
+      {children}
+    </EditorialDialog>
   );
 }
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-amber-400/80">
-      {children}
-    </div>
-  );
+  return <div className="editorial-label mb-2">{children}</div>;
 }
 
 function StatBox({ label, value, tone }: { label: string; value: string; tone: string }) {
   return (
-    <div className="rounded-xl border border-white/5 bg-[#17130f] px-2.5 py-2">
-      <div className="text-[9px] font-semibold uppercase tracking-wider text-slate-500">
-        {label}
-      </div>
-      <div className={"mt-0.5 text-sm font-semibold " + tone}>{value}</div>
+    <div className="border border-[rgba(255,255,255,0.08)] px-3 py-2.5">
+      <div className="editorial-label">{label}</div>
+      <div className={"editorial-serif mt-1 text-sm " + tone}>{value}</div>
     </div>
   );
 }
@@ -323,14 +285,10 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
   apiKeyState = "CHECKING",
   onOpenSystemModal,
   model = "gemini-3.8-flash",
-  autoRollDice = true,
-  currentDiceRoll = 15,
   sfxEnabled = true,
   onToggleSfx,
   onChangeModel,
   onChangeFontSize,
-  onToggleAutoRoll,
-  onManualRollDice,
   onUndoLastTurn,
   onResetCampaign,
   onSwitchToLiteAndRetry,
@@ -566,11 +524,11 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
               "ee 90%)",
           }}
         >
-          <div className="animate-pulse rounded-2xl border border-white/20 bg-black/80 px-6 py-4 text-center shadow-2xl backdrop-blur-md">
-            <div className="mb-1 text-[10px] font-mono uppercase tracking-[0.3em] text-amber-300">
+          <div className="border border-[rgba(201,169,106,0.4)] bg-[#090806]/90 px-8 py-6 text-center backdrop-blur-md">
+            <div className="editorial-eyebrow mb-2 text-[9px]">
               Expansão de Domínio · {customDomainPortal.handSeal}
             </div>
-            <div className="font-display text-2xl font-black uppercase tracking-widest text-white md:text-4xl">
+            <div className="editorial-display text-3xl text-[#eee5d4] md:text-5xl">
               {customDomainPortal.domainName}
             </div>
           </div>
@@ -610,69 +568,42 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
     >
       {renderDomainOverlay()}
 
-      {/* Header enxuto: identidade, local e status em uma linha */}
-      <header className="safe-top sticky top-0 z-20 shrink-0 border-b border-white/5 bg-[#0d0a08]/95 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-2xl items-center gap-2.5 px-3 py-2">
+      {/* Header editorial */}
+      <header className="chat-header safe-top sticky top-0 z-20 shrink-0">
+        <div className="mx-auto flex w-full max-w-3xl items-center gap-3 px-4 py-2.5">
           <img
             src={character.avatarUrl}
             alt={character.name}
-            className="h-9 w-9 shrink-0 rounded-full border border-amber-500/30 object-cover"
+            className="h-9 w-9 shrink-0 border border-[rgba(201,169,106,0.28)] object-cover"
             referrerPolicy="no-referrer"
           />
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5">
-              <span className="truncate text-[13px] font-semibold text-amber-50">
+            <div className="flex items-center gap-2">
+              <span className="editorial-serif truncate text-[15px] leading-tight text-[#e7ddcb]">
                 {character.name}
               </span>
-              <span className="shrink-0 rounded border border-amber-500/25 bg-amber-950/40 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-amber-300">
+              <span className="editorial-chip">
                 {character.grade}
               </span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-slate-400">
-              <MapPin className="h-2.5 w-2.5 shrink-0 text-slate-500" />
+            <div className="mt-0.5 flex items-center gap-1 font-sans text-[9px] text-[#8f8470]">
+              <MapPin className="h-2.5 w-2.5 shrink-0" />
               <span className="truncate">{world.location}</span>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <div className="w-10">
-              <div className="flex items-center justify-between text-[8px] font-medium text-emerald-400/80">
-                <span>HP</span>
-                <span>{Math.round(character.hpPercentage)}%</span>
-              </div>
-              <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full bg-emerald-400"
-                  style={{
-                    width:
-                      Math.max(0, Math.min(100, character.hpPercentage)) + "%",
-                  }}
-                />
-              </div>
-            </div>
-            <div className="w-10">
-              <div className="flex items-center justify-between text-[8px] font-medium text-sky-400/80">
-                <span>EA</span>
-                <span>{Math.round(character.cursedEnergyPercentage)}%</span>
-              </div>
-              <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-white/10">
-                <div
-                  className="h-full bg-sky-400"
-                  style={{
-                    width:
-                      Math.max(0, Math.min(100, character.cursedEnergyPercentage)) +
-                      "%",
-                  }}
-                />
-              </div>
+          <div className="hidden min-w-0 max-w-[140px] shrink-0 text-right sm:block">
+            <div className="editorial-label !mb-0 text-[8px]">Condição</div>
+            <div className="truncate font-sans text-[10px] leading-tight text-[#bdb2a0]" title={character.physicalCondition}>
+              {character.physicalCondition || "Intacto"}
             </div>
           </div>
 
           <button
             type="button"
             onClick={() => setShowMenu(true)}
-            className="ml-0.5 rounded-xl border border-white/5 bg-[#17130f] p-2 text-slate-300 transition-colors hover:text-amber-200"
+            className="chat-icon-button ml-0.5"
             aria-label="Menu da crônica"
             title="Menu da crônica"
           >
@@ -682,15 +613,15 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
       </header>
 
       {rateLimitNotice && (
-        <div className="shrink-0 border-b border-amber-500/20 bg-amber-950/40 px-3 py-2">
-          <div className="mx-auto flex w-full max-w-2xl items-start gap-2 text-[11px] leading-snug text-amber-100">
-            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-400" />
+        <div className="shrink-0 border-b border-[rgba(201,169,106,0.22)] bg-[#100e0b] px-4 py-2">
+          <div className="mx-auto flex w-full max-w-[780px] items-start gap-2 font-sans text-[10px] leading-snug text-[#c9bfae]">
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c9a96a]" />
             <p className="min-w-0 flex-1">{rateLimitNotice}</p>
             {onDismissRateLimitNotice && (
               <button
                 type="button"
                 onClick={onDismissRateLimitNotice}
-                className="shrink-0 rounded-lg p-1 text-amber-300 hover:bg-amber-900/40"
+                className="shrink-0 p-1 text-[#b8ad9a] hover:text-[#e6cfa2]"
                 aria-label="Dispensar aviso"
               >
                 <X className="h-3.5 w-3.5" />
@@ -709,15 +640,15 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
           stickToBottom.current =
             el.scrollHeight - el.scrollTop - el.clientHeight < 120;
         }}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-6"
+        className="chat-feed min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5 sm:px-6"
       >
-        <div className="mx-auto w-full max-w-2xl space-y-3">
+        <div className="mx-auto w-full max-w-[780px] space-y-6">
           {hiddenTurns > 0 && (
             <div className="flex justify-center">
               <button
                 type="button"
                 onClick={() => setShowAllTurns(true)}
-                className="rounded-full border border-white/10 bg-[#14110e] px-3 py-1.5 text-[10px] font-medium text-slate-300 hover:text-amber-200"
+                className="editorial-link border border-[rgba(201,169,106,0.22)] px-3 py-1.5"
               >
                 Ver turnos anteriores ({hiddenTurns})
               </button>
@@ -725,7 +656,7 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
           )}
 
           {visibleTurns.length === 0 && (
-            <div className="py-16 text-center text-sm text-slate-400">
+            <div className="editorial-body py-16 text-center text-[1rem]">
               A crônica começa aqui. Envie sua primeira ação para o Mestre.
             </div>
           )}
@@ -739,25 +670,23 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
             );
 
             return (
-              <section key={turn.id} className="space-y-2.5">
-                <div className="flex items-center gap-2 py-1">
-                  <div className="h-px flex-1 bg-white/5" />
+              <section key={turn.id} className="space-y-4">
+                <div className="chat-turn-divider">
                   <button
                     type="button"
                     onClick={() => setDetailsTurnId(turn.id)}
-                    className="flex items-center gap-1.5 rounded-full border border-amber-500/15 bg-[#12100d] px-2.5 py-1 text-[10px] font-medium text-slate-400 transition-colors hover:text-amber-200"
+                    className="chat-turn-button"
                     title="Detalhes do turno"
                   >
                     <span>Turno {turn.turnNumber}</span>
-                    <span className="text-slate-600">·</span>
+                    <span className="text-[#5f574b]">·</span>
                     <span>{formatTime(turn.timestamp)}</span>
                     <Info className="h-3 w-3" />
                   </button>
-                  <div className="h-px flex-1 bg-white/5" />
                 </div>
 
                 {isLatest && showSceneImage && (
-                  <div className="px-1 sm:px-8">
+                  <div>
                     <button
                       type="button"
                       onClick={() =>
@@ -766,24 +695,24 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
                           world.location + " — " + world.arc
                         )
                       }
-                      className="group relative block w-full overflow-hidden rounded-2xl border border-amber-500/15 bg-black"
+                      className="chat-scene-frame group relative block w-full"
                     >
                       <img
                         src={latestSceneImage}
                         alt={world.location}
-                        className="max-h-36 w-full object-cover opacity-95 sm:max-h-48"
+                        className="max-h-40 w-full object-cover sm:max-h-56"
                       />
-                      <span className="absolute right-2 top-2 rounded-full bg-black/60 p-1.5 text-slate-200 opacity-0 transition-opacity group-hover:opacity-100">
+                      <span className="absolute right-2 top-2 bg-black/60 p-1.5 text-[#d8bd86] opacity-0 transition-opacity group-hover:opacity-100">
                         <Maximize2 className="h-3.5 w-3.5" />
                       </span>
                     </button>
-                    <div className="mt-1 flex items-center justify-between px-1 text-[10px] text-slate-500">
-                      <span className="italic">Frame do turno</span>
+                    <div className="mt-1.5 flex items-center justify-between">
+                      <span className="chat-turn-caption italic">Frame do turno</span>
                       <button
                         type="button"
                         onClick={handleGenerateLatestImage}
                         disabled={isGeneratingImageForTurn === turn.id}
-                        className="flex items-center gap-1 rounded-full border border-amber-500/20 bg-[#17130f] px-2 py-0.5 text-amber-300 disabled:opacity-50"
+                        className="editorial-link flex items-center gap-1 disabled:opacity-50"
                       >
                         {isGeneratingImageForTurn === turn.id ? (
                           <Loader2 className="h-3 w-3 animate-spin" />
@@ -801,22 +730,24 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
                 )}
 
                 {turn.playerAction && (
-                  <div className="flex justify-end pl-8 sm:pl-24">
-                    <div className="max-w-[88%] rounded-2xl rounded-br-md border border-amber-600/25 bg-[#3a2a12] px-3.5 py-2.5 shadow-[0_4px_18px_rgba(0,0,0,0.35)]">
-                      <div className="mb-1 flex items-center justify-end gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
-                        <span>{MODE_META[turn.playerAction.mode]?.label || "Ação"}</span>
-                        <span>·</span>
-                        <span>d20 {turn.playerAction.diceRoll}</span>
-                        <span>·</span>
-                        <span>{formatTime(turn.timestamp)}</span>
+                  <div className="chat-message-row chat-message-row--player">
+                    <img
+                      src={character.avatarUrl}
+                      alt={character.name}
+                      className="chat-avatar"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="chat-connector" />
+                    <div className="chat-bubble">
+                      <div className="chat-speaker">
+                        Você · {MODE_META[turn.playerAction.mode]?.label || "Ação"} ·{" "}
+                        {formatTime(turn.timestamp)}
                       </div>
-                      <p className={"whitespace-pre-line text-amber-50 " + bodySizeClass}>
-                        {turn.playerAction.text}
-                      </p>
+                      <p className="chat-bubble-text">{turn.playerAction.text}</p>
                       {turn.playerAction.revealedHandVow && (
-                        <div className="mt-1.5 inline-flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-semibold text-amber-200">
+                        <div className="mt-2 inline-flex items-center gap-1 border border-[rgba(201,169,106,0.25)] px-2 py-0.5 text-[9px] uppercase tracking-[0.12em] text-[#c9a96a]">
                           <Zap className="h-2.5 w-2.5" />
-                          Voto: Revelar a Mão (+20%)
+                          Voto: Revelar a Mão
                         </div>
                       )}
                     </div>
@@ -825,34 +756,26 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
 
                 {paragraphs.map((block, index) =>
                   block.isNarrator ? (
-                    <div key={index} className="flex justify-start pr-4 sm:pr-16">
-                      <div className="max-w-[94%] rounded-2xl rounded-bl-md border border-white/[0.06] bg-[#14110e] px-3.5 py-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-                        <p className={"whitespace-pre-line text-[#ece3d5] " + bodySizeClass}>
-                          {renderFormattedText(block.text)}
-                        </p>
-                      </div>
+                    <div key={index} className="chat-narrator">
+                      <div className="chat-narrator-label">Narrador</div>
+                      <p className={"chat-narrator-text " + bodySizeClass}>
+                        {renderFormattedText(block.text)}
+                      </p>
                     </div>
                   ) : (
-                    <div key={index} className="flex items-start gap-2 pr-4 sm:pr-16">
+                    <div key={index} className="chat-message-row">
                       <img
                         src={getSpeakerAvatar(block.speaker)}
                         alt={block.speaker}
-                        className="mt-0.5 h-8 w-8 shrink-0 rounded-full border border-amber-500/20 object-cover"
+                        className="chat-avatar"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="min-w-0 max-w-[86%]">
-                        <div className="mb-0.5 pl-0.5 text-[11px] font-semibold text-amber-300">
-                          {block.speaker}
-                        </div>
-                        <div className="rounded-2xl rounded-tl-md border border-amber-500/10 bg-[#17130f] px-3.5 py-2.5 shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
-                          <p
-                            className={
-                              "whitespace-pre-line text-[#ece3d5] " + bodySizeClass
-                            }
-                          >
-                            {renderFormattedText(block.text)}
-                          </p>
-                        </div>
+                      <div className="chat-connector" />
+                      <div className="chat-bubble">
+                        <div className="chat-speaker">{block.speaker}</div>
+                        <p className={"chat-bubble-text " + bodySizeClass}>
+                          {renderFormattedText(block.text)}
+                        </p>
                       </div>
                     </div>
                   )
@@ -862,14 +785,19 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
           })}
 
           {pendingAction && (
-            <div className="flex justify-end pl-8 sm:pl-24">
-              <div className="max-w-[88%] rounded-2xl rounded-br-md border border-amber-600/25 bg-[#3a2a12] px-3.5 py-2.5 opacity-90">
-                <div className="mb-1 flex items-center justify-end gap-1.5 text-[9px] font-semibold uppercase tracking-wider text-amber-300/70">
-                  <span>{MODE_META[pendingAction.mode].label}</span>
-                  <span>·</span>
-                  <span>d20 {currentDiceRoll}</span>
+            <div className="chat-message-row chat-message-row--player opacity-80">
+              <img
+                src={character.avatarUrl}
+                alt={character.name}
+                className="chat-avatar"
+                referrerPolicy="no-referrer"
+              />
+              <div className="chat-connector" />
+              <div className="chat-bubble">
+                <div className="chat-speaker">
+                  Você · {MODE_META[pendingAction.mode].label}
                 </div>
-                <p className={"whitespace-pre-line text-amber-50 " + bodySizeClass}>
+                <p className={"chat-bubble-text " + bodySizeClass}>
                   {pendingAction.text}
                 </p>
               </div>
@@ -877,21 +805,16 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
           )}
 
           {(submitting || streamingNarrative) && (
-            <div className="flex justify-start pr-4 sm:pr-16">
-              <div className="max-w-[94%] rounded-2xl rounded-bl-md border border-white/[0.06] bg-[#14110e] px-3.5 py-2.5">
-                {streamingNarrative ? (
-                  <p
-                    className={
-                      "whitespace-pre-line text-[#ece3d5] " + bodySizeClass
-                    }
-                  >
-                    {renderFormattedText(streamingNarrative)}
-                    <span className="ml-0.5 inline-block h-4 w-1.5 animate-pulse rounded-sm bg-amber-400/70 align-middle" />
-                  </p>
-                ) : (
-                  <TypingDots />
-                )}
-              </div>
+            <div className="chat-narrator">
+              <div className="chat-narrator-label">Mestre</div>
+              {streamingNarrative ? (
+                <p className={"chat-narrator-text " + bodySizeClass}>
+                  {renderFormattedText(streamingNarrative)}
+                  <span className="ml-0.5 inline-block h-4 w-1 animate-pulse bg-[#c9a96a]/70 align-middle" />
+                </p>
+              ) : (
+                <TypingDots />
+              )}
             </div>
           )}
 
@@ -899,18 +822,18 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
         </div>
       </div>
 
-      {/* Compositor estilo chat */}
-      <div className="shrink-0 border-t border-white/5 bg-[#0d0a08]/95 px-2.5 pb-2 pt-2 sm:px-4">
-        <div className="mx-auto w-full max-w-2xl">
+      {/* Compositor editorial */}
+      <div className="chat-composer shrink-0 px-3 pb-2 pt-2 sm:px-4">
+        <div className="mx-auto w-full max-w-[780px]">
           {recentLootNotification && (
-            <div className="mb-2 flex items-start gap-2 rounded-xl border border-emerald-500/25 bg-emerald-950/60 px-3 py-2 text-[11px] text-emerald-100">
-              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-emerald-400" />
+            <div className="mb-2 flex items-start gap-2 border border-[rgba(201,169,106,0.28)] px-3 py-2 text-[11px] text-[#ded4c1]">
+              <Sparkles className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#c9a96a]" />
               <p className="min-w-0 flex-1">{recentLootNotification}</p>
               {onDismissLootNotification && (
                 <button
                   type="button"
                   onClick={onDismissLootNotification}
-                  className="shrink-0 rounded p-1 text-emerald-300"
+                  className="shrink-0 p-1 text-[#b8ad9a]"
                   aria-label="Fechar notificação"
                 >
                   <X className="h-3 w-3" />
@@ -926,7 +849,7 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
                   key={index}
                   type="button"
                   onClick={() => handleSuggestionClick(suggestion)}
-                  className="max-w-[78%] shrink-0 truncate rounded-full border border-amber-500/20 bg-[#17130f] px-3 py-1.5 text-[11px] text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200"
+                  className="chat-suggestion max-w-[80%] truncate"
                   title={suggestion}
                 >
                   {suggestion}
@@ -939,9 +862,9 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
             <button
               type="button"
               onClick={() => setShowTools(true)}
-              className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#17130f] text-slate-300 transition-colors hover:border-amber-500/40 hover:text-amber-200"
+              className="chat-icon-button mb-0.5"
               aria-label="Ferramentas de ação"
-              title="Ação, dado e voto"
+              title="Ação e voto"
             >
               <Plus className="h-5 w-5" />
             </button>
@@ -954,7 +877,7 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
                 onChange={(event) => setActionText(event.target.value)}
                 onKeyDown={handleComposerKeyDown}
                 placeholder="Mensagem para o Mestre..."
-                className="max-h-32 w-full resize-none rounded-2xl border border-white/10 bg-[#17130f] px-3.5 py-2.5 text-[15px] leading-relaxed text-amber-50 placeholder:text-slate-500 focus:border-amber-500/50 focus:outline-none"
+                className="chat-composer-input"
                 aria-label="Mensagem para o Mestre"
               />
             </div>
@@ -962,7 +885,7 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
             <button
               type="submit"
               disabled={!actionText.trim() || submitting}
-              className="mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500 text-black transition-colors hover:bg-amber-400 disabled:cursor-not-allowed disabled:bg-[#2a231c] disabled:text-slate-500"
+              className="chat-send-button mb-0.5"
               aria-label="Enviar ação"
             >
               {submitting ? (
@@ -973,14 +896,13 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
             </button>
           </form>
 
-          <div className="mt-1 flex items-center gap-2 px-1 text-[10px] text-slate-500">
-            <span className="flex items-center gap-1 text-amber-300/80">
+          <div className="mt-1.5 flex items-center gap-3 px-0.5 font-sans text-[9px] text-[#6f6659]">
+            <span className="flex items-center gap-1 text-[#b99b63]">
               <ModeIcon className="h-2.5 w-2.5" />
               {MODE_META[actionMode].label}
             </span>
-            <span>· d20 {currentDiceRoll}</span>
             {revealedHandVow && (
-              <span className="flex items-center gap-1 text-amber-300">
+              <span className="flex items-center gap-1 text-[#c9a96a]">
                 <Zap className="h-2.5 w-2.5" /> Voto ativo
               </span>
             )}
@@ -993,25 +915,10 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
       <Sheet open={showMenu} title="Crônica" onClose={() => setShowMenu(false)}>
         <div>
           <SectionLabel>Personagem</SectionLabel>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <StatBox
-              label="Vitalidade"
-              value={Math.round(character.hpPercentage) + "%"}
-              tone="text-emerald-300"
-            />
-            <StatBox
-              label="Energia Amaldiçoada"
-              value={Math.round(character.cursedEnergyPercentage) + "%"}
-              tone="text-sky-300"
-            />
-            <StatBox
-              label="Output"
-              value={Math.round(character.outputPercentage) + "%"}
-              tone="text-amber-300"
-            />
-            <StatBox
-              label="Condição"
-              value={character.physicalCondition}
+              label="Condição narrativa"
+              value={character.physicalCondition || "Intacto"}
               tone="text-slate-200 text-xs"
             />
           </div>
@@ -1045,34 +952,34 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
                 {world.campaignPremise}
               </p>
             )}
+            {world.npcsInScene.length > 0 && (
+              <div className="space-y-2 border-t border-white/5 pt-2">
+                <div className="text-[9px] uppercase tracking-[0.16em] text-amber-300/70">
+                  Presenças ({world.npcsInScene.length})
+                </div>
+                {world.npcsInScene.map((npc) => (
+                  <div key={npc.name} className="flex items-start gap-2">
+                    <img
+                      src={getSpeakerAvatar(npc.name)}
+                      alt={npc.name}
+                      className="h-6 w-6 shrink-0 rounded-full border border-amber-500/20 object-cover"
+                    />
+                    <div className="min-w-0">
+                      <div className="truncate text-[10px] font-semibold text-amber-200">
+                        {npc.name}
+                      </div>
+                      <div className="truncate text-[9px] text-slate-400">{npc.status}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
         <div>
           <SectionLabel>Turno</SectionLabel>
           <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                onManualRollDice?.();
-              }}
-              className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#17130f] px-3 py-2.5 text-xs font-semibold text-slate-200 hover:border-amber-500/40"
-            >
-              <Dices className="h-4 w-4 text-amber-400" />
-              Rolar 1d20 ({currentDiceRoll})
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleAutoRoll?.()}
-              className={
-                "flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold " +
-                (autoRollDice
-                  ? "border-amber-500/40 bg-amber-950/40 text-amber-200"
-                  : "border-white/10 bg-[#17130f] text-slate-400")
-              }
-            >
-              {autoRollDice ? "Auto-rolagem ON" : "Auto-rolagem OFF"}
-            </button>
             <button
               type="button"
               onClick={() => {
@@ -1339,41 +1246,24 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
         </div>
 
         <div>
-          <SectionLabel>Dado e Voto</SectionLabel>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => onManualRollDice?.()}
-              className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#17130f] px-3 py-2.5 text-xs font-semibold text-slate-200"
-            >
-              <Dices className="h-4 w-4 text-amber-400" />
-              Rolar 1d20 ({currentDiceRoll})
-            </button>
-            <button
-              type="button"
-              onClick={() => onToggleAutoRoll?.()}
-              className={
-                "rounded-xl border px-3 py-2.5 text-xs font-semibold " +
-                (autoRollDice
-                  ? "border-amber-500/40 bg-amber-950/40 text-amber-200"
-                  : "border-white/10 bg-[#17130f] text-slate-400")
-              }
-            >
-              {autoRollDice ? "Auto-rolagem ON" : "Auto-rolagem OFF"}
-            </button>
+          <SectionLabel>Voto</SectionLabel>
+          <div className="grid grid-cols-1 gap-2">
             <button
               type="button"
               onClick={() => setRevealedHandVow((value) => !value)}
               className={
-                "col-span-2 flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold " +
+                "flex items-center justify-center gap-2 rounded-xl border px-3 py-2.5 text-xs font-semibold " +
                 (revealedHandVow
                   ? "border-amber-500/40 bg-amber-950/40 text-amber-200"
                   : "border-white/10 bg-[#17130f] text-slate-400")
               }
             >
               <Zap className="h-4 w-4" />
-              {revealedHandVow ? "Voto ativo (+20% Output)" : "Revelar a Própria Mão (+20%)"}
+              {revealedHandVow ? "Voto ativo: Revelar a Própria Mão" : "Revelar a Própria Mão"}
             </button>
+            <p className="px-1 text-[10px] leading-relaxed text-slate-500">
+              Explicar a própria técnica muda a cena: o oponente entende o que você faz — e pode tentar explorar isso.
+            </p>
           </div>
         </div>
 
@@ -1404,9 +1294,9 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
             )}
 
             <div>
-              <SectionLabel>Log do motor</SectionLabel>
+              <SectionLabel>Notas do Mestre</SectionLabel>
               <pre className="max-h-56 overflow-y-auto whitespace-pre-wrap rounded-xl border border-white/5 bg-[#0c0907] p-3 text-[10px] leading-relaxed text-slate-400">
-                {detailsTurn.gmResponse.engineLog || "Sem log neste turno."}
+                {detailsTurn.gmResponse.engineLog || "Sem notas neste turno."}
               </pre>
             </div>
 
@@ -1437,16 +1327,15 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
 
             <div>
               <SectionLabel>Estado</SectionLabel>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 gap-2">
                 <StatBox
-                  label="HP"
-                  value={Math.round(detailsTurn.gmResponse.playerStateUpdate?.hpPercentage ?? 100) + "%"}
-                  tone="text-emerald-300"
-                />
-                <StatBox
-                  label="EA"
-                  value={Math.round(detailsTurn.gmResponse.playerStateUpdate?.cursedEnergyPercentage ?? 100) + "%"}
-                  tone="text-sky-300"
+                  label="Condição"
+                  value={
+                    detailsTurn.gmResponse.playerStateUpdate?.physicalCondition ||
+                    detailsTurn.snapshot.character.physicalCondition ||
+                    "Intacto"
+                  }
+                  tone="text-slate-200 text-xs"
                 />
               </div>
             </div>

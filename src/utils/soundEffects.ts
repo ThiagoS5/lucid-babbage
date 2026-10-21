@@ -1,7 +1,7 @@
 import type { VisualEffectTrigger } from '../types/jjk';
 
 /**
- * Procedural Web Audio API Sound Synthesizer for Jujutsu Kaisen VTT
+ * Procedural Web Audio API Sound Synthesizer for the Jujutsu Kaisen chronicle.
  * Zero external assets required — works offline & online on Desktop and Mobile.
  */
 class JujutsuAudioEngine {
@@ -24,31 +24,6 @@ class JujutsuAudioEngine {
     } catch {
       return null;
     }
-  }
-
-  /**
-   * Tactile polyhedral 1d20 roll sound
-   */
-  public playDiceRoll() {
-    const ctx = this.getContext();
-    if (!ctx) return;
-    const now = ctx.currentTime;
-
-    [0, 0.045, 0.095].forEach((offset, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'triangle';
-      osc.frequency.setValueAtTime(320 + i * 140, now + offset);
-      osc.frequency.exponentialRampToValueAtTime(110, now + offset + 0.04);
-
-      gain.gain.setValueAtTime(0.14, now + offset);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + offset + 0.04);
-
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now + offset);
-      osc.stop(now + offset + 0.045);
-    });
   }
 
   /**

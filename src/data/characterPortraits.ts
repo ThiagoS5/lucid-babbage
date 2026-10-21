@@ -1,5 +1,5 @@
 /**
- * Official Portrait Registry for Jujutsu Kaisen: Cursed Chronicles VTT
+ * Official Portrait Registry for Jujutsu Kaisen: Cursed Chronicles
  *
  * Includes:
  * 1. The 5 high-resolution ArtStation portraits by KwnBlack (https://www.artstation.com/artwork/9mndGv)

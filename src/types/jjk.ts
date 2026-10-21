@@ -10,12 +10,6 @@ export type VisualEffectTrigger =
   | 'TECHNIQUE_BURNOUT'
   | 'CRITICAL_DAMAGE';
 
-export type TechniqueState =
-  | 'Ativa'
-  | 'Em Uso'
-  | 'Sob Voto Vinculativo'
-  | 'Em Exaustão Pós-Domínio (Burnout)';
-
 export type NpcAttitude = 'Aliado' | 'Neutro' | 'Hostil';
 
 export type ActionMode = 'DO' | 'SAY' | 'TECHNIQUE' | 'STORY';
@@ -30,8 +24,9 @@ export type GeminiModelOption =
 
 export interface NpcInScene {
   name: string;
+  /** Grau é apenas um descritor de prestígio na ficção, não um atributo de jogo. */
   grade: string;
-  hpPercentage: number;
+  /** Estado narrativo livre: ferido, exausto, recuando, derrotado, morto etc. */
   status: string;
   attitude: NpcAttitude;
   visualDescription: string;
@@ -40,41 +35,6 @@ export interface NpcInScene {
 }
 
 export const UNDEVELOPED_MARKER = 'Não desenvolvido ainda';
-
-export type NarrativeAffinityLevel =
-  | 'maestria'
-  | 'afinidade'
-  | 'neutro'
-  | 'inaptidao'
-  | 'nao_desenvolvido';
-
-export interface NarrativeSkillItem {
-  id: string;
-  name: string;
-  category:
-    | 'Combate & Corpo'
-    | 'Jujutsu & Barreiras'
-    | 'Mente & Percepção'
-    | 'Social & Furtividade';
-  level: NarrativeAffinityLevel;
-  narrativeImpact: string;
-  isCustom?: boolean;
-}
-
-export type NarrativePillarTier =
-  | 'Apice'
-  | 'Forte'
-  | 'Padrao'
-  | 'Fraco'
-  | 'NaoDesenvolvido';
-
-export interface NarrativePillarItem {
-  id: string;
-  name: string;
-  abbr: string;
-  tier: NarrativePillarTier;
-  narrativeNote: string;
-}
 
 export interface SheetEvolutionPatch {
   sectionUpdated?: string;
@@ -92,11 +52,8 @@ export interface SheetEvolutionPatch {
   domainExpansion?: string;
   antiDomain?: string;
   unlockRct?: boolean;
-  skillUpdated?: {
-    name: string;
-    newLevel: NarrativeAffinityLevel;
-    reason?: string;
-  };
+  /** Mudança narrativa de prestígio/grau (ex.: reconhecido como Grau 1 após um feito). */
+  grade?: string;
 }
 
 export interface EvolutionHistoryEntry {
@@ -106,17 +63,6 @@ export interface EvolutionHistoryEntry {
   title: string;
   details: string;
   gradeAtTime: string;
-  levelAtTime: number;
-}
-
-export interface CharacterProgression {
-  currentGrade: string;
-  levelInCurrentGrade: number;
-  levelsRequiredForNextGrade: number;
-  nextGrade: string | null;
-  totalCharacterLevel: number;
-  currentXp: number;
-  xpToNextLevel: number;
 }
 
 export interface SessionZeroChatEntry {
@@ -148,15 +94,12 @@ export interface SessionZeroChatEntry {
 }
 
 export interface PlayerStateUpdate {
-  hpPercentage: number;
-  cursedEnergyPercentage: number;
-  outputPercentage: number;
-  physicalCondition: string;
-  techniqueState: TechniqueState;
-  inBlackFlashZone: boolean;
+  /**
+   * Condição física/emocional em linguagem narrativa ("Intacto", "Ferido no
+   * ombro", "Exausto após sustentar o domínio"). Não há HP nem energia medidos.
+   */
+  physicalCondition?: string;
   newInventoryItemOrVow?: string;
-  xpGained?: number;
-  levelUpReason?: string;
   sheetEvolution?: SheetEvolutionPatch;
 }
 
@@ -279,6 +222,7 @@ export interface HeavenlyRestriction {
 
 export interface CharacterSheet {
   name: string;
+  age?: string;
   appearance: string;
   backstory?: string;
   combatStyle?: string;
@@ -299,19 +243,11 @@ export interface CharacterSheet {
   grade: string;
   isHeavenlyRestriction: boolean;
   heavenlyRestriction?: HeavenlyRestriction;
-  hpPercentage: number;
-  cursedEnergyPercentage: number;
-  outputPercentage: number;
   physicalCondition: string;
-  techniqueState: TechniqueState;
-  inBlackFlashZone: boolean;
   technique: CursedTechniqueDetails;
   domainPortal?: DomainPortalConfig;
   inventory: CursedToolItem[];
   bindingVows: BindingVowItem[];
-  narrativePillars?: NarrativePillarItem[];
-  narrativeSkills?: NarrativeSkillItem[];
-  progression?: CharacterProgression;
   exclusiveSheetMarkdown?: string;
   evolutionHistory?: EvolutionHistoryEntry[];
 }
@@ -345,7 +281,6 @@ export interface CampaignTurn {
   playerAction?: {
     mode: ActionMode;
     text: string;
-    diceRoll?: number;
     revealedHandVow?: boolean;
     selectedMove?: string;
   };

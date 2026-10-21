@@ -1,5 +1,10 @@
 # Revisão 4 — Crônica em formato de chat (mobile, tablet e desktop)
 
+> **Documento histórico.** Registra a revisão de 2026-10-20, anterior à
+> remoção do sistema de mesa (atributos, perícias, HP, energia medida, dados,
+> níveis e XP). O app atual é um RPG narrativo; onde este relatório menciona
+> barras de HP/EA ou rolagem de dados, isso já não existe no produto.
+
 > Redesign da tela de narrativa do projeto **Jujutsu Kaisen: Crônicas de Mesa**.
 > Data: 2026-10-20.
 > Objetivo: eliminar a densidade de HUD/logs que impedia ler a narração no

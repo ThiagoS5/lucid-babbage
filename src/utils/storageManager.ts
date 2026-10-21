@@ -4,6 +4,94 @@ import { generateSceneIllustrationSvg } from './svgArtGenerator';
 export const CAMPAIGN_STORAGE_KEY = 'jjk_cursed_chronicles_campaign_v1';
 export const CODEX_STORAGE_KEY = 'jjk_cursed_chronicles_codex_v1';
 
+/**
+ * Saves antigos podem conter campos do sistema de mesa removido (HP, energia,
+ * XP, níveis, perícias, pilares, dados). Remove esses campos na leitura para que
+ * eles nunca voltem à UI nem ao prompt do Mestre.
+ */
+export function migrateCampaignToNarrative(raw: unknown): CampaignState | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const campaign = raw as CampaignState;
+  if (!campaign.character || !Array.isArray(campaign.turns)) return null;
+
+  const legacyCharacterKeys = [
+    'hpPercentage',
+    'cursedEnergyPercentage',
+    'outputPercentage',
+    'techniqueState',
+    'inBlackFlashZone',
+    'progression',
+    'narrativePillars',
+    'narrativeSkills',
+  ];
+
+  const cleanCharacter = (character: unknown) => {
+    if (!character || typeof character !== 'object') return character;
+    const clone = { ...(character as Record<string, unknown>) };
+    for (const key of legacyCharacterKeys) delete clone[key];
+    return clone;
+  };
+
+  const cleanNpc = (npc: unknown) => {
+    if (!npc || typeof npc !== 'object') return npc;
+    const clone = { ...(npc as Record<string, unknown>) };
+    delete clone.hpPercentage;
+    return clone;
+  };
+
+  const cleanWorld = (world: unknown) => {
+    if (!world || typeof world !== 'object') return world;
+    const clone = { ...(world as Record<string, unknown>) };
+    if (Array.isArray(clone.npcsInScene)) clone.npcsInScene = clone.npcsInScene.map(cleanNpc);
+    return clone;
+  };
+
+  const cleanPlayerState = (psu: unknown) => {
+    if (!psu || typeof psu !== 'object') return psu;
+    const clone = { ...(psu as Record<string, unknown>) };
+    for (const key of [
+      'hpPercentage',
+      'cursedEnergyPercentage',
+      'outputPercentage',
+      'techniqueState',
+      'inBlackFlashZone',
+      'xpGained',
+      'levelUpReason',
+    ]) {
+      delete clone[key];
+    }
+    return clone;
+  };
+
+  return {
+    ...campaign,
+    character: cleanCharacter(campaign.character) as CampaignState['character'],
+    world: cleanWorld(campaign.world) as CampaignState['world'],
+    turns: campaign.turns.map((turn) => ({
+      ...turn,
+      playerAction: turn.playerAction
+        ? (() => {
+            const action = { ...(turn.playerAction as unknown as Record<string, unknown>) };
+            delete action.diceRoll;
+            return action;
+          })()
+        : turn.playerAction,
+      gmResponse: {
+        ...turn.gmResponse,
+        playerStateUpdate: cleanPlayerState(turn.gmResponse?.playerStateUpdate),
+        worldStateUpdate: cleanWorld(turn.gmResponse?.worldStateUpdate),
+      },
+      snapshot: turn.snapshot
+        ? {
+            ...turn.snapshot,
+            character: cleanCharacter(turn.snapshot.character) as CampaignState['character'],
+            world: cleanWorld(turn.snapshot.world) as CampaignState['world'],
+          }
+        : turn.snapshot,
+    })),
+  } as CampaignState;
+}
+
 const IDB_NAME = 'jjk_cursed_chronicles_db';
 const IDB_STORE = 'codex_store';
 

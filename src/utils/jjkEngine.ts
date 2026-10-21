@@ -1,206 +1,11 @@
 import {
   UNDEVELOPED_MARKER,
   type StoryCard,
-  type NpcInScene,
-  type CampaignState,
   type CharacterSheet,
-  type CharacterProgression,
   type EvolutionHistoryEntry,
   type SheetEvolutionPatch,
-  type NarrativeAffinityLevel,
-  type NarrativePillarItem,
-  type NarrativePillarTier,
-  type NarrativeSkillItem,
 } from '../types/jjk';
 import { inferStoryCardEra, isStoryCardAllowedForEra } from './storyCardEra';
-
-export interface ParsedNarrativeBlock {
-  id: string;
-  type: 'narrator' | 'character';
-  speaker: string;
-  rawText: string;
-  actionText?: string;
-  spokenQuotes?: string[];
-  npcMatch?: NpcInScene;
-}
-
-/**
- * Parses the theatrical narrative returned by the GM into structured blocks:
- * 1) `*Narrador*: [Texto descritivo rico, sensorial e visceral]`
- * 2) `*Nome do Personagem*: Ação física em itálico "Fala entre aspas"`
- */
-export function parseNarrativeBlocks(narrative: string, npcsInScene: NpcInScene[] = []): ParsedNarrativeBlock[] {
-  if (!narrative || !narrative.trim()) return [];
-
-  const paragraphs = narrative
-    .split(/\n\s*\n|\r\n\s*\r\n/)
-    .map((p) => p.trim())
-    .filter(Boolean);
-
-  const blocks: ParsedNarrativeBlock[] = [];
-
-  paragraphs.forEach((para, idx) => {
-    const lines = para.split(/\n(?=\*[^*\n]+\*\s*:)/).map((l) => l.trim()).filter(Boolean);
-
-    lines.forEach((line, subIdx) => {
-      const match = line.match(/^\*([^*]+)\*\s*:\s*([\s\S]+)$/);
-      if (match) {
-        const speakerRaw = match[1].trim();
-        const body = match[2].trim();
-        const isNarrator = /^narrador$/i.test(speakerRaw);
-
-        if (isNarrator) {
-          blocks.push({
-            id: `block-${idx}-${subIdx}`,
-            type: 'narrator',
-            speaker: 'Narrador',
-            rawText: body,
-          });
-        } else {
-          const quotes: string[] = [];
-          const quoteRegex = /["“]([^"”]+)["”]/g;
-          let qMatch: RegExpExecArray | null;
-          while ((qMatch = quoteRegex.exec(body)) !== null) {
-            quotes.push(qMatch[1].trim());
-          }
-          const actionOnly = body.replace(/["“][^"”]+["”]/g, '').replace(/\s{2,}/g, ' ').trim();
-
-          const npcMatch = npcsInScene.find(
-            (n) =>
-              n.name.toLowerCase() === speakerRaw.toLowerCase() ||
-              n.name.toLowerCase().includes(speakerRaw.toLowerCase()) ||
-              speakerRaw.toLowerCase().includes(n.name.toLowerCase())
-          );
-
-          blocks.push({
-            id: `block-${idx}-${subIdx}`,
-            type: 'character',
-            speaker: speakerRaw,
-            rawText: body,
-            actionText: actionOnly || undefined,
-            spokenQuotes: quotes.length > 0 ? quotes : undefined,
-            npcMatch,
-          });
-        }
-      } else {
-        blocks.push({
-          id: `block-${idx}-${subIdx}`,
-          type: 'narrator',
-          speaker: 'Narrador',
-          rawText: line,
-        });
-      }
-    });
-  });
-
-  return blocks;
-}
-
-/**
- * 1d20 Jujutsu System Dice Roller, Grade Modifier & Outcome Classifier
- */
-export function rollD20(rng: () => number = Math.random): number {
-  return Math.floor(rng() * 20) + 1;
-}
-
-export function calculateGradeModifier(character?: CharacterSheet): {
-  totalMod: number;
-  gradeMod: number;
-  zoneMod: number;
-  vowMod: number;
-  label: string;
-} {
-  if (!character) {
-    return { totalMod: 1, gradeMod: 1, zoneMod: 0, vowMod: 0, label: '+1 (Grau 3)' };
-  }
-  const g = (character.grade || 'Grau 3').toLowerCase();
-  let gradeMod = 1;
-  if (g.includes('especial')) gradeMod = 6;
-  else if (g.includes('semi-grau 1') || g.includes('semi grau 1')) gradeMod = 3;
-  else if (g.includes('grau 1')) gradeMod = 4;
-  else if (g.includes('grau 2')) gradeMod = 2;
-  else if (g.includes('grau 3')) gradeMod = 1;
-  else if (g.includes('grau 4')) gradeMod = 0;
-
-  const zoneMod = character.inBlackFlashZone ? 2 : 0;
-  const activeVowsCount = character.bindingVows.filter((v) => v.active).length;
-  const vowMod = activeVowsCount > 0 ? 2 : 0;
-  const totalMod = gradeMod + zoneMod + vowMod;
-
-  const parts = [`+${gradeMod} (${character.grade})`];
-  if (zoneMod > 0) parts.push(`+${zoneMod} (Zona Kokusen)`);
-  if (vowMod > 0) parts.push(`+${vowMod} (Voto Ativo)`);
-
-  return {
-    totalMod,
-    gradeMod,
-    zoneMod,
-    vowMod,
-    label: parts.join(' '),
-  };
-}
-
-export interface DiceOutcomeInfo {
-  roll: number;
-  modifiedTotal: number;
-  tier: 'CRITICAL_FAIL' | 'PARTIAL' | 'SOLID' | 'CRITICAL_HIT' | 'BLACK_FLASH';
-  title: string;
-  description: string;
-  colorClass: string;
-}
-
-export function getDiceOutcomeInfo(roll: number, modifier = 0): DiceOutcomeInfo {
-  const modifiedTotal = roll + modifier;
-  if (roll <= 1) {
-    return {
-      roll: 1,
-      modifiedTotal,
-      tier: 'CRITICAL_FAIL',
-      title: '1 Natural — Falha Crítica',
-      description: 'Abertura grave na guarda ou falha severa no fluxo de Energia Amaldiçoada.',
-      colorClass: 'text-rose-500 border-rose-500/50 bg-rose-950/40',
-    };
-  }
-  if (roll === 20) {
-    return {
-      roll: 20,
-      modifiedTotal,
-      tier: 'BLACK_FLASH',
-      title: `20 Natural (Total ${modifiedTotal}) — Momento de Clímax`,
-      description:
-        'Sorte máxima: um instante raro em que a cena pode coroar a ação — o Mestre decide se é um Kokusen (Zona de 120%) ou apenas uma virada espetacular.',
-      colorClass: 'text-rose-400 border-rose-500 bg-black shadow-[0_0_20px_rgba(225,29,72,0.5)]',
-    };
-  }
-  if (roll === 19 || modifiedTotal >= 22) {
-    return {
-      roll,
-      modifiedTotal,
-      tier: 'CRITICAL_HIT',
-      title: `${roll} (Total ${modifiedTotal}) — Acerto Crítico`,
-      description: 'Golpe devastador explorando uma brecha vital na defesa inimiga.',
-      colorClass: 'text-purple-400 border-purple-500/50 bg-purple-950/40',
-    };
-  }
-  if (roll <= 9 && modifiedTotal < 12) {
-    return {
-      roll,
-      modifiedTotal,
-      tier: 'PARTIAL',
-      title: `${roll} (Total ${modifiedTotal}) — Sucesso Parcial / Custo Alto`,
-      description: 'A ação ocorre com resistência severa, desgaste de EA ou contra-ataque inimigo.',
-      colorClass: 'text-amber-400 border-amber-500/40 bg-amber-950/30',
-    };
-  }
-  return {
-    roll,
-    modifiedTotal,
-    tier: 'SOLID',
-    title: `${roll} (Total ${modifiedTotal}) — Sucesso Sólido`,
-    description: 'Execução limpa e eficiente proporcional ao Grau do feiticeiro.',
-    colorClass: 'text-sky-400 border-sky-500/40 bg-sky-950/30',
-  };
-}
 
 /**
  * Client-Side RAG Story Card Selector (Zero-Hallucination Lore Injection)
@@ -594,142 +399,6 @@ export function applyNewInventoryItemOrVow(
   };
 }
 
-/**
- * Sanitizes and compacts a CampaignState before saving to Firestore to strictly obey
- * the volumetric limits in firebase-blueprint.json and firestore.rules (< 900,000 chars).
- */
-export function sanitizeCampaignForCloud(state: CampaignState, ownerId: string) {
-  const safeId = state.id.replace(/[^a-zA-Z0-9_\-]/g, '_').slice(0, 120) || 'campaign_default';
-  const charName = (state.character.name || 'Feiticeiro').slice(0, 100);
-  const charGrade = (state.character.grade || 'Grau 3').slice(0, 60);
-  const arc = (state.world.arc || 'Arco Inicial').slice(0, 160);
-  const location = (state.world.location || 'Tóquio').slice(0, 160);
-  const title = `${charName} — ${arc}`.slice(0, 160);
-  const turnCount = Math.min(100000, Math.max(0, state.turns.length));
-
-  const lightweightState: CampaignState = {
-    ...state,
-    character: {
-      ...state.character,
-      avatarUrl: state.character.avatarUrl?.startsWith('data:image/png;base64')
-        ? ''
-        : state.character.avatarUrl,
-    },
-    turns: state.turns.slice(-40).map((t) => ({
-      ...t,
-      sceneImageUrl: t.sceneImageUrl?.startsWith('data:image/png;base64') ? undefined : t.sceneImageUrl,
-    })),
-    npcAvatars: {},
-  };
-
-  let payloadStr = JSON.stringify(lightweightState);
-  if (payloadStr.length > 850000) {
-    lightweightState.turns = lightweightState.turns.slice(-15);
-    lightweightState.customCodex = [];
-    payloadStr = JSON.stringify(lightweightState);
-  }
-
-  return {
-    campaignId: safeId,
-    docData: {
-      ownerId: ownerId.slice(0, 128),
-      title,
-      characterName: charName,
-      characterGrade: charGrade,
-      arc,
-      location,
-      turnCount,
-      campaignPayload: payloadStr,
-    },
-  };
-}
-
-/**
- * === SISTEMA DE NÍVEIS E PROGRESSÃO ENTRE GRAUS JUJUTSU ===
- * Grau 4 -> necessário subir 10 níveis para subir ao Grau 3
- * Grau 3 -> necessário subir 15 níveis para subir ao Grau 2
- * Grau 2 -> necessário subir 20 níveis para subir ao Semi-Grau 1
- * Semi-Grau 1 -> necessário subir 25 níveis para subir ao Grau 1
- * Grau 1 -> necessário subir 30 níveis para subir ao Grau Especial
- */
-export interface GradeProgressionRule {
-  grade: string;
-  levelsRequired: number;
-  nextGrade: string | null;
-  milestoneRewardHint: string;
-}
-
-export const GRADE_PROGRESSION_TIERS: GradeProgressionRule[] = [
-  {
-    grade: 'Grau 4',
-    levelsRequired: 10,
-    nextGrade: 'Grau 3',
-    milestoneRewardHint: 'Refinamento básico de Energia Amaldiçoada e despertar do Lapso / Estilo de Combate.',
-  },
-  {
-    grade: 'Grau 3',
-    levelsRequired: 15,
-    nextGrade: 'Grau 2',
-    milestoneRewardHint: 'Domínio de Extensões da Técnica, Votos Vinculativos táticos e Ferramentas Amaldiçoadas.',
-  },
-  {
-    grade: 'Grau 2',
-    levelsRequired: 20,
-    nextGrade: 'Semi-Grau 1',
-    milestoneRewardHint: 'Defesa Anti-Domínio (Domínio Simples) e maior probabilidade de atingir Kokusen.',
-  },
-  {
-    grade: 'Semi-Grau 1',
-    levelsRequired: 25,
-    nextGrade: 'Grau 1',
-    milestoneRewardHint: 'Despertar de Técnica Amaldiçoada Reversa (RCT), Reversão (Vermelho) ou Domínio Incompleto.',
-  },
-  {
-    grade: 'Grau 1',
-    levelsRequired: 30,
-    nextGrade: 'Grau Especial',
-    milestoneRewardHint: 'Expansão de Domínio Completa (Ryōiki Tenkai) e Técnica Máxima (Uzumaki).',
-  },
-  {
-    grade: 'Grau Especial',
-    levelsRequired: 50,
-    nextGrade: null,
-    milestoneRewardHint: 'Ápice do Jujutsu — Maestria Transcendental e Refinamento de Barreira Divina.',
-  },
-];
-
-export function getGradeProgressionRule(grade?: string): GradeProgressionRule {
-  const g = (grade || 'Grau 4').trim().toLowerCase();
-  const found = GRADE_PROGRESSION_TIERS.find((t) => t.grade.toLowerCase() === g);
-  if (found) return found;
-  if (g.includes('especial')) return GRADE_PROGRESSION_TIERS[5];
-  if (g.includes('semi')) return GRADE_PROGRESSION_TIERS[3];
-  if (g.includes('grau 1')) return GRADE_PROGRESSION_TIERS[4];
-  if (g.includes('grau 2')) return GRADE_PROGRESSION_TIERS[2];
-  if (g.includes('grau 3')) return GRADE_PROGRESSION_TIERS[1];
-  return GRADE_PROGRESSION_TIERS[0];
-}
-
-export function ensureCharacterProgression(character: CharacterSheet): CharacterProgression {
-  const rule = getGradeProgressionRule(character.grade);
-  if (character.progression && character.progression.currentGrade === rule.grade) {
-    return {
-      ...character.progression,
-      levelsRequiredForNextGrade: rule.levelsRequired,
-      nextGrade: rule.nextGrade,
-    };
-  }
-  return {
-    currentGrade: rule.grade,
-    levelInCurrentGrade: character.progression?.levelInCurrentGrade ?? 0,
-    levelsRequiredForNextGrade: rule.levelsRequired,
-    nextGrade: rule.nextGrade,
-    totalCharacterLevel: character.progression?.totalCharacterLevel ?? 1,
-    currentXp: character.progression?.currentXp ?? 0,
-    xpToNextLevel: 100,
-  };
-}
-
 export function isSectionUndeveloped(value?: string | null): boolean {
   if (!value) return true;
   const norm = value.trim().toLowerCase();
@@ -865,424 +534,41 @@ export function inspectCharacterDevelopmentSections(
   ];
 }
 
-export const DEFAULT_NARRATIVE_PILLARS: NarrativePillarItem[] = [
-  {
-    id: 'pillar-vigor',
-    name: 'Vigor & Corpo',
-    abbr: 'Corpo',
-    tier: 'Forte',
-    narrativeNote: 'Potência muscular bruta, resistência a impactos e tolerância à dor em combate.',
-  },
-  {
-    id: 'pillar-agility',
-    name: 'Agilidade & Reflexo',
-    abbr: 'Reflexo',
-    tier: 'Forte',
-    narrativeNote: 'Velocidade de esquiva, reação no milionésimo de segundo e mobilidade acrobática.',
-  },
-  {
-    id: 'pillar-ce',
-    name: 'Controle Espiritual',
-    abbr: 'EA',
-    tier: 'Padrao',
-    narrativeNote: 'Refinamento do fluxo de Energia Amaldiçoada, estabilidade de aura e eficiência.',
-  },
-  {
-    id: 'pillar-intellect',
-    name: 'Intelecto Tático',
-    abbr: 'Mente',
-    tier: 'Padrao',
-    narrativeNote: 'Dedução rápida das regras da técnica inimiga e formulação de contra-medidas.',
-  },
-  {
-    id: 'pillar-instinct',
-    name: 'Instinto & Percepção',
-    abbr: 'Instinto',
-    tier: 'Padrao',
-    narrativeNote: 'Sexto sentido para intenção assassina, leitura de resíduos e emboscadas.',
-  },
-  {
-    id: 'pillar-presence',
-    name: 'Presença & Compostura',
-    abbr: 'Presença',
-    tier: 'Fraco',
-    narrativeNote: 'Tendência a agir pelo impulso ou atrito com a política do Alto Escalão Jujutsu.',
-  },
-];
-
-export const DEFAULT_NARRATIVE_SKILLS: NarrativeSkillItem[] = [
-  {
-    id: 'skill-taijutsu',
-    name: 'Artes Marciais & Taijutsu',
-    category: 'Combate & Corpo',
-    level: 'afinidade',
-    narrativeImpact: 'Golpes corpo-a-corpo fluidos, leitura de guarda e contra-ataques marciais.',
-  },
-  {
-    id: 'skill-weapons',
-    name: 'Manejo de Armas & Ferramentas Amaldiçoadas',
-    category: 'Combate & Corpo',
-    level: 'afinidade',
-    narrativeImpact: 'Sincronia natural ao canalizar Energia Amaldiçoada em lâminas, foices e armas.',
-  },
-  {
-    id: 'skill-acrobatics',
-    name: 'Acrobacia, Esquiva & Parkour Urbano',
-    category: 'Combate & Corpo',
-    level: 'neutro',
-    narrativeImpact: 'Movimentação aérea entre escombros, telhados e ataques de área.',
-  },
-  {
-    id: 'skill-endurance',
-    name: 'Tolerância à Dor & Sobrevivência Extrema',
-    category: 'Combate & Corpo',
-    level: 'afinidade',
-    narrativeImpact: 'Capacidade de continuar lutando mesmo com ferimentos severos sem perder o foco.',
-  },
-  {
-    id: 'skill-ce-control',
-    name: 'Refinamento & Eficiência de Energia Amaldiçoada',
-    category: 'Jujutsu & Barreiras',
-    level: 'neutro',
-    narrativeImpact: 'Evita desperdício de reserva espiritual e estabiliza técnicas de alto custo.',
-  },
-  {
-    id: 'skill-barriers',
-    name: 'Técnicas de Barreira & Cortinas',
-    category: 'Jujutsu & Barreiras',
-    level: 'nao_desenvolvido',
-    narrativeImpact: 'Criação, análise e ruptura de Cortinas, Domínio Simples e barreiras complexas.',
-  },
-  {
-    id: 'skill-tracking',
-    name: 'Percepção de Resíduos & Rastreamento Espiritual',
-    category: 'Jujutsu & Barreiras',
-    level: 'afinidade',
-    narrativeImpact: 'Rastreia assinaturas ocultas de maldições, objetos amaldiçoados e feiticeiros.',
-  },
-  {
-    id: 'skill-tactical-deduction',
-    name: 'Dedução Tática de Técnicas Inimigas',
-    category: 'Mente & Percepção',
-    level: 'afinidade',
-    narrativeImpact: 'Descobre rapidamente condições de ativação, alcance e brechas da técnica rival.',
-  },
-  {
-    id: 'skill-lore',
-    name: 'Erudição Jujutsu, Clãs & Maldições Ancestrais',
-    category: 'Mente & Percepção',
-    level: 'neutro',
-    narrativeImpact: 'Conhecimento histórico sobre as Três Grandes Famílias, Votos e Objetos de Grau Especial.',
-  },
-  {
-    id: 'skill-sixth-sense',
-    name: 'Sexto Sentido & Contra-Emboscada',
-    category: 'Mente & Percepção',
-    level: 'neutro',
-    narrativeImpact: 'Reage instintivamente a ataques furtivos e intenções letais antes do impacto.',
-  },
-  {
-    id: 'skill-medicine',
-    name: 'Anatomia, Primeiros Socorros & Biologia Amaldiçoada',
-    category: 'Mente & Percepção',
-    level: 'neutro',
-    narrativeImpact: 'Estabiliza hemorragias, identifica venenos e compreende pontos vitais.',
-  },
-  {
-    id: 'skill-stealth',
-    name: 'Furtividade & Ocultação de Aura',
-    category: 'Social & Furtividade',
-    level: 'inaptidao',
-    narrativeImpact: 'Fragilidade: Presença espiritual intensa que dificulta infiltrações silenciosas quando sob tensão.',
-  },
-  {
-    id: 'skill-intimidation',
-    name: 'Intimidação & Pressão Espiritual',
-    category: 'Social & Furtividade',
-    level: 'afinidade',
-    narrativeImpact: 'Impõe medo ou hesitação em inimigos através da intensidade do olhar e da aura.',
-  },
-  {
-    id: 'skill-deception',
-    name: 'Diplomacia & Contenção com o Alto Escalão',
-    category: 'Social & Furtividade',
-    level: 'inaptidao',
-    narrativeImpact: 'Fragilidade: Impaciência com burocracia e provocações, gerando atritos dramáticos na história.',
-  },
-];
-
-export interface NarrativeLimitationsCheck {
-  hasFragilePillar: boolean;
-  fragilePillarCount: number;
-  strongOrApexPillarCount: number;
-  apexPillarCount: number;
-  maxStrongOrApexPillars: number;
-  maxApexPillars: number;
-  hasFragileSkill: boolean;
-  fragileSkillCount: number;
-  masterySkillCount: number;
-  maxMasterySkills: number;
-  isValid: boolean;
-  warnings: string[];
-}
-
-export function validateNarrativeLimitations(
-  pillars: NarrativePillarItem[] = [],
-  skills: NarrativeSkillItem[] = []
-): NarrativeLimitationsCheck {
-  const fragilePillarCount = pillars.filter((p) => p.tier === 'Fraco').length;
-  const apexPillarCount = pillars.filter((p) => p.tier === 'Apice').length;
-  const strongOrApexPillarCount = pillars.filter(
-    (p) => p.tier === 'Forte' || p.tier === 'Apice'
-  ).length;
-  const maxStrongOrApexPillars = 3;
-  const maxApexPillars = 1;
-
-  const fragileSkillCount = skills.filter((s) => s.level === 'inaptidao').length;
-  const masterySkillCount = skills.filter((s) => s.level === 'maestria').length;
-  const maxMasterySkills = 3;
-
-  const warnings: string[] = [];
-  if (apexPillarCount > maxApexPillars) {
-    warnings.push(
-      `Sugestão de Equilíbrio: No máximo ${maxApexPillars} Pilar deve ser "★ Ápice Sobre-Humano" (atualmente ${apexPillarCount}).`
-    );
-  }
-  if (strongOrApexPillarCount > maxStrongOrApexPillars) {
-    warnings.push(
-      `Sugestão de Equilíbrio: No máximo ${maxStrongOrApexPillars} Pilares devem ser Ponto Forte / Ápice (atualmente ${strongOrApexPillarCount}).`
-    );
-  }
-  if (masterySkillCount > maxMasterySkills) {
-    warnings.push(
-      `Sugestão de Equilíbrio: No máximo ${maxMasterySkills} Perícias devem começar com "★ Maestria" (atualmente ${masterySkillCount}).`
-    );
-  }
-
-  return {
-    hasFragilePillar: fragilePillarCount >= 1,
-    fragilePillarCount,
-    strongOrApexPillarCount,
-    apexPillarCount,
-    maxStrongOrApexPillars,
-    maxApexPillars,
-    hasFragileSkill: fragileSkillCount >= 1,
-    fragileSkillCount,
-    masterySkillCount,
-    maxMasterySkills,
-    isValid:
-      apexPillarCount <= maxApexPillars &&
-      strongOrApexPillarCount <= maxStrongOrApexPillars &&
-      masterySkillCount <= maxMasterySkills,
-    warnings,
-  };
-}
-
-export function enforceMandatoryLimitationsOnPillars(
-  pillars: NarrativePillarItem[]
-): NarrativePillarItem[] {
-  const source =
-    pillars && pillars.length > 0
-      ? pillars.map((p) => ({ ...p }))
-      : DEFAULT_NARRATIVE_PILLARS.map((p) => ({ ...p }));
-
-  // 1. Cap Ápice at 1 and Total Strong/Apex at 3
-  let apexSeen = 0;
-  let strongSeen = 0;
-  for (let i = 0; i < source.length; i++) {
-    if (source[i].tier === 'Apice') {
-      apexSeen++;
-      if (apexSeen > 1) {
-        source[i].tier = 'Forte';
-      }
-    }
-    if (source[i].tier === 'Forte' || source[i].tier === 'Apice') {
-      strongSeen++;
-      if (strongSeen > 3) {
-        source[i].tier = 'Padrao';
-      }
-    }
-  }
-
-  return source;
-}
-
-export function enforceMandatoryLimitationsOnSkills(
-  skills: NarrativeSkillItem[]
-): NarrativeSkillItem[] {
-  const source =
-    skills && skills.length > 0
-      ? skills.map((s) => ({ ...s }))
-      : DEFAULT_NARRATIVE_SKILLS.map((s) => ({ ...s }));
-
-  // 1. Cap Maestria at 3
-  let masterySeen = 0;
-  for (let i = 0; i < source.length; i++) {
-    if (source[i].level === 'maestria') {
-      masterySeen++;
-      if (masterySeen > 3) {
-        source[i].level = 'afinidade';
-      }
-    }
-  }
-
-  return source;
-}
-
-export function ensureNarrativePillars(character: CharacterSheet): NarrativePillarItem[] {
-  return enforceMandatoryLimitationsOnPillars(character.narrativePillars || []);
-}
-
-export function ensureNarrativeSkills(character: CharacterSheet): NarrativeSkillItem[] {
-  return enforceMandatoryLimitationsOnSkills(character.narrativeSkills || []);
-}
-
-export function getAffinityLevelMeta(level: NarrativeAffinityLevel): {
-  label: string;
-  shortLabel: string;
-  symbol: string;
-  badgeClass: string;
-  narrativeRule: string;
-} {
-  switch (level) {
-    case 'maestria':
-      return {
-        label: 'Maestria (Ajuda Decisivamente)',
-        shortLabel: 'Maestria',
-        symbol: '★',
-        badgeClass:
-          'bg-amber-950/70 border-amber-400/80 text-amber-200 shadow-[0_0_10px_rgba(245,158,11,0.25)]',
-        narrativeRule:
-          'AJUDA DECISIVAMENTE NA HISTÓRIA: O personagem executa façanhas extraordinárias e percebe detalhes cruciais automaticamente nesta área.',
-      };
-    case 'afinidade':
-      return {
-        label: 'Afinidade (Ajuda na História)',
-        shortLabel: 'Afinidade',
-        symbol: '●',
-        badgeClass: 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300',
-        narrativeRule:
-          'AJUDA NA HISTÓRIA: O personagem tem treinamento sólido e vantagem narrativa natural quando age com esta perícia.',
-      };
-    case 'inaptidao':
-      return {
-        label: 'Inaptidão / Ponto Fraco (Prejudica)',
-        shortLabel: 'Prejudica',
-        symbol: '▼',
-        badgeClass: 'bg-rose-950/70 border-rose-500/70 text-rose-300',
-        narrativeRule:
-          'PREJUDICA NA HISTÓRIA: O personagem sofre complicações dramáticas, falhas de execução ou desvantagens narrativas quando depende desta perícia.',
-      };
-    case 'nao_desenvolvido':
-      return {
-        label: 'Não desenvolvido ainda (Latente)',
-        shortLabel: 'Não desenv.',
-        symbol: '🔒',
-        badgeClass: 'bg-purple-950/50 border-purple-500/50 text-purple-300',
-        narrativeRule:
-          'NÃO DESENVOLVIDO AINDA: Habilidade inexperiente ou adormecida que pode despertar durante a campanha.',
-      };
-    case 'neutro':
-    default:
-      return {
-        label: 'Neutro (Desempenho Comum)',
-        shortLabel: 'Neutro',
-        symbol: '○',
-        badgeClass: 'bg-[#07070a] border-slate-700 text-slate-400',
-        narrativeRule: 'DESEMPENHO PADRÃO: Sem facilidade especial nem complicação extra.',
-      };
-  }
-}
-
-export function cycleAffinityLevel(current: NarrativeAffinityLevel): NarrativeAffinityLevel {
-  const order: NarrativeAffinityLevel[] = [
-    'neutro',
-    'afinidade',
-    'maestria',
-    'inaptidao',
-    'nao_desenvolvido',
-  ];
-  const idx = order.indexOf(current);
-  return order[(idx + 1) % order.length];
-}
-
-export function cyclePillarTier(current: NarrativePillarTier): NarrativePillarTier {
-  const order: NarrativePillarTier[] = [
-    'Padrao',
-    'Forte',
-    'Apice',
-    'Fraco',
-    'NaoDesenvolvido',
-  ];
-  const idx = order.indexOf(current);
-  return order[(idx + 1) % order.length];
-}
-
-export function getPillarTierMeta(tier: NarrativePillarTier): {
-  label: string;
-  badgeClass: string;
-} {
-  switch (tier) {
-    case 'Apice':
-      return {
-        label: '★ Ápice Sobre-Humano',
-        badgeClass: 'border-amber-400 bg-amber-950/60 text-amber-200',
-      };
-    case 'Forte':
-      return {
-        label: '● Ponto Forte',
-        badgeClass: 'border-emerald-500/70 bg-emerald-950/40 text-emerald-300',
-      };
-    case 'Fraco':
-      return {
-        label: '▼ Fragilidade',
-        badgeClass: 'border-rose-500/70 bg-rose-950/50 text-rose-300',
-      };
-    case 'NaoDesenvolvido':
-      return {
-        label: '🔒 Não desenv.',
-        badgeClass: 'border-purple-500/60 bg-purple-950/40 text-purple-300',
-      };
-    case 'Padrao':
-    default:
-      return {
-        label: '○ Padrão',
-        badgeClass: 'border-slate-700 bg-[#07070a] text-slate-300',
-      };
-  }
-}
-
 /**
  * Generates the Exclusive Living Character Sheet Markdown (`exclusiveSheetMarkdown`)
  * which is consulted by the AI GM on every turn and automatically updated whenever
  * the character levels up, promotes Grade, or unlocks an undeveloped section.
  */
+/**
+ * Monta a Ficha Exclusiva Viva em Markdown. É um documento de ficção para o
+ * Mestre: personalidade, técnica, limites e histórico. Não existem atributos,
+ * perícias, HP, energia, níveis ou XP — o Mestre decide o peso dramático.
+ */
 export function buildExclusiveCharacterSheetMarkdown(character: CharacterSheet): string {
-  const prog = ensureCharacterProgression(character);
   const sections = inspectCharacterDevelopmentSections(character);
   const undevelopedList = sections.filter((s) => s.isUndeveloped);
   const developedList = sections.filter((s) => !s.isUndeveloped);
-  const pillars = ensureNarrativePillars(character);
-  const skills = ensureNarrativeSkills(character);
-  const helpfulSkills = skills.filter((s) => s.level === 'maestria' || s.level === 'afinidade');
-  const hinderingSkills = skills.filter((s) => s.level === 'inaptidao');
-  const latentSkills = skills.filter((s) => s.level === 'nao_desenvolvido');
   const history = character.evolutionHistory || [];
 
   const hr = character.heavenlyRestriction;
   const hrLine = hr && hr.type !== 'nenhuma'
-    ? `SIM — ${hr.type === 'fisica' ? 'Física Absoluta (Zero EA)' : hr.type === 'espiritual' ? 'Espiritual Extrema (Corpo Frágil / EA Ampliada)' : 'Parcial (Troca Intermediária)'}`
+    ? `SIM — ${
+        hr.type === 'fisica'
+          ? 'Física Absoluta (corpo sobre-humano, sem energia amaldiçoada)'
+          : hr.type === 'espiritual'
+          ? 'Espiritual Extrema (corpo frágil / percepção espiritual ampliada)'
+          : 'Parcial (troca intermediária)'
+      }`
     : 'Não';
 
   return `# 📜 FICHA EXCLUSIVA VIVA DO PERSONAGEM (RPG NARRATIVO JUJUTSU): ${character.name.toUpperCase()}
-- **Gatilhos (Keys):** ${character.name.toLowerCase()}, ficha exclusiva, perícias, afinidades, ${character.clan.toLowerCase()}, ${character.technique.name.toLowerCase()}, evolução, nível, grau
-- **Grau Designado Atual:** ${character.grade} (Modificador de Grau: ${calculateGradeModifier(character).label})
-- **Progressão na Categoria (${prog.currentGrade}):** Nível **${prog.levelInCurrentGrade} / ${prog.levelsRequiredForNextGrade}** na categoria para promoção a **${prog.nextGrade || 'Ápice do Grau Especial'}** (Nível Total de Feiticeiro: ${prog.totalCharacterLevel} · XP Atual: ${prog.currentXp}/${prog.xpToNextLevel})
+> **Orientação ao Mestre:** esta ficha é referência de ficção, não uma ficha de mesa. Não há atributos, perícias, HP, energia amaldiçoada medida, dados, níveis ou XP. Decida o que acontece pela lógica da cena, pelos limites da técnica e pelas escolhas do jogador. O personagem enfraquece, se fere ou morre quando a história exigir — e o mesmo vale para os inimigos.
+- **Grau Atual (prestígio na ficção):** ${character.grade}
+- **Condição Física/Emocional:** ${character.physicalCondition || 'Intacto'}
 - **Facção / Origem:** ${character.faction} · **Clã / Antecedente:** ${character.clan}
 - **Clã (Linhagem):** ${character.clanStatus || 'Independente'} — ${character.clanTrait || 'Sem traço genético definido'} | ${character.clanTradition || 'Tradição a definir na campanha.'}
 - **Filosofia / Alinhamento Jujutsu:** ${character.alignmentPhilosophy || 'Pragmático / Leal aos Aliados'}
 - **Restrição Celestial (Tenshin Jubaku):** ${hrLine}${hr && hr.type !== 'nenhuma' ? ` — Preço: ${hr.price || 'a definir'} | Benefício: ${hr.benefit || 'a definir'}` : ''}
-- **Estado Vital e Clínico:** HP ${Math.round(character.hpPercentage)}% (${character.physicalCondition}) | Reserva de EA: ${Math.round(character.cursedEnergyPercentage)}% | Output: ${Math.round(character.outputPercentage)}%
 
 ## 1. Identidade, Psicologia e Estilo Marcial
 - **Aparência Física e Aura:** ${character.appearance || UNDEVELOPED_MARKER}
@@ -1293,99 +579,57 @@ export function buildExclusiveCharacterSheetMarkdown(character: CharacterSheet):
 - **História de Origem Completa:** ${character.backstory || UNDEVELOPED_MARKER}
 - **Estilo de Combate & Taijutsu:** ${character.combatStyle || UNDEVELOPED_MARKER}
 
-## 2. Pilares de Aptidão & Sistema de Perícias Narrativas (100% Narrativo — Sem Cálculo Matemático)
-> **INSTRUÇÃO AO MESTRE DE JOGO:** Este sistema de perícias é **totalmente narrativo**. NÃO faça somas matemáticas extras para perícias; em vez disso, faça com que as **Maestrias e Afinidades AJUDEM organicamente** o jogador na narração das cenas (dando percepções automáticas, facilidade de execução e vantagem tática descritiva), e faça com que as **Inaptidões / Fragilidades PREJUDIQUEM ou criem complicações dramáticas** quando a cena exigir aquela perícia!
-
-### Pilares Fundamentais do Feiticeiro:
-${pillars
-  .map((p) => `- **${p.name} (${p.abbr}):** [${getPillarTierMeta(p.tier).label}] — ${p.narrativeNote}`)
-  .join('\n')}
-
-### ★ Perícias que AJUDAM o Personagem na História (Maestrias & Afinidades):
-${
-  helpfulSkills.length === 0
-    ? '- Nenhuma afinidade destacada ainda.'
-    : helpfulSkills
-        .map(
-          (s) =>
-            `- **[${s.level === 'maestria' ? '★ MAESTRIA ESPECIALISTA' : '● AFINIDADE PROFICIENTE'}] ${s.name}** (*${s.category}*): ${s.narrativeImpact}`
-        )
-        .join('\n')
-}
-
-### ▼ Perícias que PREJUDICAM o Personagem na História (Inaptidões & Pontos Fracos):
-${
-  hinderingSkills.length === 0
-    ? '- Nenhuma inaptidão crítica registrada.'
-    : hinderingSkills
-        .map(
-          (s) =>
-            `- **[▼ INAPTIDÃO / PONTO FRACO — DEVE PREJUDICAR NA NARRAÇÃO] ${s.name}** (*${s.category}*): ${s.narrativeImpact}`
-        )
-        .join('\n')
-}
-
-### 🔒 Perícias "Não desenvolvido ainda" (Podem Despertar na Campanha):
-${
-  latentSkills.length === 0
-    ? '- Nenhuma perícia marcada como não desenvolvida.'
-    : latentSkills.map((s) => `- **[🔒 NÃO DESENVOLVIDO AINDA] ${s.name}** (*${s.category}*): ${s.narrativeImpact}`).join('\n')
-}
-
-## 3. Técnica Amaldiçoada Inata & Extensões
+## 2. Técnica Amaldiçoada Inata & Extensões
 - **Nome da Técnica Inata:** ${character.technique.name || UNDEVELOPED_MARKER}
 - **Funcionamento e Regras:** ${character.technique.description || UNDEVELOPED_MARKER}
 - **Condições de Ativação / Limitações:** ${character.technique.activationConditions || 'Padrão'}
 - **Lapso (Aplicação Padrão / Azul):** ${character.technique.lapse || UNDEVELOPED_MARKER}
 - **Reversão da Técnica (Energia Positiva / Vermelho):** ${character.technique.reversal || UNDEVELOPED_MARKER}
-- **Técnica Máxima (Output Supremo):** ${character.technique.maximum || UNDEVELOPED_MARKER}
+- **Técnica Máxima (Aplicação Suprema):** ${character.technique.maximum || UNDEVELOPED_MARKER}
 - **Técnica Amaldiçoada Reversa (RCT):** ${
     character.technique.hasRct
-      ? 'Desenvolvida (Cura Celular com Energia Positiva)'
+      ? 'Desenvolvida (cura com energia positiva)'
       : character.technique.rctStatus || UNDEVELOPED_MARKER
   }
 - **Defesa Anti-Domínio:** ${character.technique.antiDomain || UNDEVELOPED_MARKER}
 - **Expansão de Domínio (Ryōiki Tenkai):** ${character.technique.domainExpansion || UNDEVELOPED_MARKER}
 
-## 4. Seções "Não desenvolvido ainda" (Ganchos de Despertar na História)
+## 3. Seções "Não desenvolvido ainda" (ganchos de despertar na história)
 ${
   undevelopedList.length === 0
-    ? '- Todas as seções principais já foram desenvolvidas! O personagem pode refinar suas técnicas e barreiras.'
+    ? '- Todas as seções principais já foram desenvolvidas.'
     : undevelopedList
         .map(
           (u) =>
-            `- **[NÃO DESENVOLVIDO AINDA]** ${u.label}: O Mestre deve observar o treinamento, combates de vida ou morte, Kokusens e subidas de Nível/Grau para despertar e preencher esta habilidade na ficha exclusiva.`
+            `- **[NÃO DESENVOLVIDO AINDA]** ${u.label}: pode despertar em treino, trauma, combate de vida ou morte ou escolha dramática — nunca por acumular pontos.`
         )
         .join('\n')
 }
 
-## 5. Habilidades Já Consolidadas (${developedList.length}/${sections.length})
+## 4. Habilidades Já Consolidadas (${developedList.length}/${sections.length})
 ${developedList.map((d) => `- **[DESENVOLVIDO]** ${d.label}: ${d.currentValue}`).join('\n')}
 
-## 6. Arsenal Amaldiçoado & Votos Vinculativos
+## 5. Arsenal Amaldiçoado & Votos Vinculativos
 - **Arsenal Equipado:** ${
     character.inventory.length > 0
       ? character.inventory.map((i) => `${i.name} (${i.grade}: ${i.effect})`).join(' | ')
-      : UNDEVELOPED_MARKER
+      : 'Nenhum equipamento inicial.'
   }
 - **Votos Vinculativos:** ${
     character.bindingVows.length > 0
       ? character.bindingVows
           .map((v) => `${v.name} [${v.active ? 'Ativo' : 'Inativo'}] (${v.condition} => ${v.bonus})`)
           .join(' | ')
-      : UNDEVELOPED_MARKER
+      : 'Nenhum voto inicial.'
   }
 
-## 7. Histórico de Modificações e Evoluções na Campanha
+## 6. Histórico de Modificações e Evoluções na Campanha
 ${
   history.length === 0
     ? '- [Criação Inicial]: Ficha Exclusiva gerada ao finalizar a criação do personagem.'
     : history
         .slice(-12)
-        .map(
-          (h) =>
-            `- [Turno #${h.turnNumber} · ${h.gradeAtTime} (Nível ${h.levelAtTime})]: **${h.title}** — ${h.details}`
-        )
+        .map((h) => `- [Turno #${h.turnNumber} · ${h.gradeAtTime}]: **${h.title}** — ${h.details}`)
         .join('\n')
 }`;
 }
@@ -1399,13 +643,10 @@ export function buildExclusiveCharacterStoryCard(character: CharacterSheet): Sto
       character.name.toLowerCase(),
       'ficha exclusiva',
       'meu personagem',
-      'perícias',
-      'afinidades',
       character.clan.toLowerCase(),
       character.technique.name.toLowerCase(),
       'não desenvolvido ainda',
       'evolução',
-      'nível',
     ].filter(Boolean),
     type: 'character',
     value: markdown,
@@ -1414,98 +655,24 @@ export function buildExclusiveCharacterStoryCard(character: CharacterSheet): Sto
 }
 
 /**
- * Applies XP gained in the turn, processes level-ups within the current Grade category,
- * promotes the character to the next Grade when `levelInCurrentGrade >= levelsRequiredForNextGrade`
- * (e.g. Grau 4: 10 levels -> Grau 3: 15 levels -> Grau 2), and applies any narrative
- * modifications (`sheetEvolution`) to the character's Exclusive Sheet!
+ * Aplica mudanças narrativas à Ficha Exclusiva (despertar de técnica, novo
+ * estilo, mudança de prestígio/grau, cicatriz etc.). Não concede XP nem sobe
+ * níveis: a evolução é decidida pela ficção.
  */
-export function applyXpAndSheetEvolution(
+export function applySheetEvolution(
   character: CharacterSheet,
   turnNumber: number,
-  xpGainedRaw?: number,
-  levelUpReason?: string,
   sheetEvolution?: SheetEvolutionPatch
 ): {
   updatedCharacter: CharacterSheet;
   notifications: string[];
 } {
   const notifications: string[] = [];
-  let nextChar: CharacterSheet = {
+  const nextChar: CharacterSheet = {
     ...character,
-    progression: ensureCharacterProgression(character),
-    narrativePillars: ensureNarrativePillars(character),
-    narrativeSkills: ensureNarrativeSkills(character),
     evolutionHistory: [...(character.evolutionHistory || [])],
   };
 
-  // 1. Process XP & Leveling within Grade Category
-  const xpGained = Math.max(0, Math.min(1000, Math.round(Number(xpGainedRaw ?? 0))));
-  if (xpGained > 0 && nextChar.progression) {
-    let prog = { ...nextChar.progression };
-    prog.currentXp += xpGained;
-
-    let levelsEarnedNow = 0;
-    while (prog.currentXp >= prog.xpToNextLevel) {
-      prog.currentXp -= prog.xpToNextLevel;
-      prog.levelInCurrentGrade += 1;
-      prog.totalCharacterLevel += 1;
-      levelsEarnedNow += 1;
-
-      // Check if reached the required levels in the current Grade category to promote to Next Grade!
-      if (
-        prog.nextGrade &&
-        prog.levelInCurrentGrade >= prog.levelsRequiredForNextGrade
-      ) {
-        const previousGrade = prog.currentGrade;
-        const promotedGrade = prog.nextGrade;
-        const newRule = getGradeProgressionRule(promotedGrade);
-
-        prog.currentGrade = newRule.grade;
-        prog.levelInCurrentGrade = prog.levelInCurrentGrade - prog.levelsRequiredForNextGrade;
-        prog.levelsRequiredForNextGrade = newRule.levelsRequired;
-        prog.nextGrade = newRule.nextGrade;
-        nextChar.grade = newRule.grade;
-
-        const promoMsg = `PROMOÇÃO DE GRAU OFICIAL! ${nextChar.name} completou os níveis de ${previousGrade} e ascendeu para ${promotedGrade}!`;
-        notifications.push(promoMsg);
-        nextChar.evolutionHistory = [
-          ...(nextChar.evolutionHistory || []),
-          {
-            id: `evo-grade-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-            turnNumber,
-            timestamp: new Date().toISOString(),
-            title: `Promoção de Categoria: ${previousGrade} → ${promotedGrade}`,
-            details: `${promoMsg} (${levelUpReason || 'Evolução comprovada em combate'})`,
-            gradeAtTime: promotedGrade,
-            levelAtTime: prog.totalCharacterLevel,
-          },
-        ];
-      }
-    }
-
-    if (levelsEarnedNow > 0 && notifications.length === 0) {
-      const lvlMsg = `Nível Subiu! +${levelsEarnedNow} Nível em ${prog.currentGrade} (${prog.levelInCurrentGrade}/${prog.levelsRequiredForNextGrade} para ${prog.nextGrade || 'Maestria'}) — ${
-        levelUpReason || `+${xpGained} XP`
-      }`;
-      notifications.push(lvlMsg);
-      nextChar.evolutionHistory = [
-        ...(nextChar.evolutionHistory || []),
-        {
-          id: `evo-lvl-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-          turnNumber,
-          timestamp: new Date().toISOString(),
-          title: `Avanço para Nível ${prog.levelInCurrentGrade}/${prog.levelsRequiredForNextGrade} (${prog.currentGrade})`,
-          details: levelUpReason || `Experiência de combate acumulada (+${xpGained} XP).`,
-          gradeAtTime: prog.currentGrade,
-          levelAtTime: prog.totalCharacterLevel,
-        },
-      ];
-    }
-
-    nextChar.progression = prog;
-  }
-
-  // 2. Process Story Modifications & Awakening of "Não desenvolvido ainda" sections
   if (sheetEvolution) {
     const cleanStr = (v?: string) =>
       v && v.trim() && v.trim().toLowerCase() !== 'nenhum' && v.trim().toLowerCase() !== 'vazio'
@@ -1526,6 +693,10 @@ export function applyXpAndSheetEvolution(
     if (cleanStr(sheetEvolution.combatStyle) && sheetEvolution.combatStyle !== nextChar.combatStyle) {
       nextChar.combatStyle = cleanStr(sheetEvolution.combatStyle)!;
       changedFields.push('Estilo de Combate');
+    }
+    if (cleanStr(sheetEvolution.grade) && sheetEvolution.grade !== nextChar.grade) {
+      nextChar.grade = cleanStr(sheetEvolution.grade)!;
+      changedFields.push(`Grau (${nextChar.grade})`);
     }
     if (cleanStr(sheetEvolution.techniqueName) && sheetEvolution.techniqueName !== nextTech.name) {
       nextTech.name = cleanStr(sheetEvolution.techniqueName)!;
@@ -1573,32 +744,8 @@ export function applyXpAndSheetEvolution(
       nextTech.rctStatus = 'Desenvolvido';
       changedFields.push('Técnica Amaldiçoada Reversa (RCT)');
     }
-    if (sheetEvolution.skillUpdated && sheetEvolution.skillUpdated.name) {
-      const targetName = sheetEvolution.skillUpdated.name.toLowerCase();
-      const existingSkills = ensureNarrativeSkills(nextChar);
-      const foundIdx = existingSkills.findIndex((s) =>
-        s.name.toLowerCase().includes(targetName)
-      );
-      if (foundIdx >= 0) {
-        existingSkills[foundIdx] = {
-          ...existingSkills[foundIdx],
-          level: sheetEvolution.skillUpdated.newLevel,
-        };
-      } else {
-        existingSkills.push({
-          id: `skill-${Date.now()}`,
-          name: sheetEvolution.skillUpdated.name,
-          category: 'Jujutsu & Barreiras',
-          level: sheetEvolution.skillUpdated.newLevel,
-          narrativeImpact:
-            sheetEvolution.skillUpdated.reason || 'Perícia evoluída durante a campanha.',
-        });
-      }
-      nextChar.narrativeSkills = existingSkills;
-      changedFields.push(`Perícia (${sheetEvolution.skillUpdated.name})`);
-    }
 
-    // Also support generic sectionUpdated + newValue if the AI populated those
+    // Compatibilidade: o Mestre pode devolver sectionUpdated + newValue.
     const secKey = cleanStr(sheetEvolution.sectionUpdated)?.toLowerCase();
     const secVal = cleanStr(sheetEvolution.newValue);
     if (secKey && secVal && changedFields.length === 0) {
@@ -1633,8 +780,8 @@ export function applyXpAndSheetEvolution(
     nextChar.technique = nextTech;
 
     if (changedFields.length > 0) {
-      const evoSummary = `Ficha Exclusiva Atualizada (${changedFields.join(', ')}): ${
-        cleanStr(sheetEvolution.reason) || cleanStr(sheetEvolution.newValue) || 'Despertar durante a história!'
+      const evoSummary = `Ficha Exclusiva atualizada (${changedFields.join(', ')}): ${
+        cleanStr(sheetEvolution.reason) || cleanStr(sheetEvolution.newValue) || 'Mudança consolidada na história.'
       }`;
       notifications.push(evoSummary);
       nextChar.evolutionHistory = [
@@ -1643,19 +790,17 @@ export function applyXpAndSheetEvolution(
           id: `evo-sheet-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           turnNumber,
           timestamp: new Date().toISOString(),
-          title: `Despertar / Alteração na Ficha: ${changedFields.join(', ')}`,
+          title: `Mudança na Ficha: ${changedFields.join(', ')}`,
           details:
             cleanStr(sheetEvolution.reason) ||
             cleanStr(sheetEvolution.newValue) ||
             'Evolução orgânica registrada pelo Mestre.',
           gradeAtTime: nextChar.grade,
-          levelAtTime: nextChar.progression?.totalCharacterLevel || 1,
         },
       ];
     }
   }
 
-  // Regenerate the Exclusive Sheet Markdown so it stays 100% up-to-date
   nextChar.exclusiveSheetMarkdown = buildExclusiveCharacterSheetMarkdown(nextChar);
 
   return {
@@ -1663,5 +808,3 @@ export function applyXpAndSheetEvolution(
     notifications,
   };
 }
-
-

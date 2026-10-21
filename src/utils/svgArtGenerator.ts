@@ -1,5 +1,5 @@
 /**
- * Portrait & Scene Artwork Resolver for Jujutsu Kaisen: Cursed Chronicles VTT.
+ * Portrait & Scene Artwork Resolver for Jujutsu Kaisen: Cursed Chronicles.
  *
  * 1. Canonical Jujutsu Kaisen characters resolve directly to:
  *    - The 5 ArtStation portraits (/portraits/artstation/*.png) for Kento Nanami, Ryomen Sukuna, Satoru Gojo, Choso, and Suguru Geto.
@@ -27,7 +27,7 @@ function hashString(str: string): number {
  * Generates a rich, deterministic generic anime portrait for Exclusive Narrative Characters
  * (non-canonical NPCs, custom Cursed Spirits, Curse Users, Shikigami, Civilians, or Player OCs).
  */
-export function generateExclusiveNarrativePortraitSvg(
+function generateExclusiveNarrativePortraitSvg(
   name: string,
   roleOrContext: string = ''
 ): string {

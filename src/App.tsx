@@ -1,4 +1,4 @@
-import React, { lazy, Suspense, useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
 import {
   ActionMode,
   CampaignState,
@@ -14,11 +14,9 @@ import {
 import { INITIAL_STORY_CARDS, CANONICAL_TECHNIQUES, STARTING_ARCS } from './data/initialCodex';
 import {
   applyNewInventoryItemOrVow,
-  applyXpAndSheetEvolution,
+  applySheetEvolution,
   buildExclusiveCharacterSheetMarkdown,
   buildExclusiveCharacterStoryCard,
-  ensureCharacterProgression,
-  rollD20,
   selectActiveStoryCardsForTurn,
 } from './utils/jjkEngine';
 import {
@@ -28,20 +26,21 @@ import {
 import {
   CAMPAIGN_STORAGE_KEY,
   loadCustomCodexSafe,
+  migrateCampaignToNarrative,
   saveCampaignStateSafe,
   saveCustomCodexSafe,
 } from './utils/storageManager';
-import { LeftSorcererSheet } from './components/LeftSorcererSheet';
-import { ChatNarrativeStage } from './components/ChatNarrativeStage';
-import { RightWorldRadar } from './components/RightWorldRadar';
+import { HomePage } from './components/HomePage';
+import { CodexPage } from './components/CodexPage';
+import { SettingsPage } from './components/SettingsPage';
+import { CharacterProfilePage } from './components/CharacterProfilePage';
+import { ChroniclePage } from './components/ChroniclePage';
+import { EditorialDialog } from './components/EditorialDialog';
 
-// Code-splitting: a ficha (com a galeria de retratos) e o painel de sistema
-// só baixam quando o jogador realmente abre cada um.
+// Code-splitting: a ficha (com a galeria de retratos) só baixa
+// quando o jogador realmente abre.
 const CharacterWizard = lazy(() =>
   import('./components/CharacterWizard').then((m) => ({ default: m.CharacterWizard }))
-);
-const SystemAndCloudPanel = lazy(() =>
-  import('./components/SystemAndCloudPanel').then((m) => ({ default: m.SystemAndCloudPanel }))
 );
 import { jjkAudio } from './utils/soundEffects';
 import {
@@ -54,20 +53,13 @@ import {
 } from './services/geminiService';
 import {
   BookOpen,
-  User,
-  Eye,
-  BookMarked,
   Settings,
-  Dices,
-  Cloud,
-  PanelLeftClose,
-  PanelLeftOpen,
-  PanelRightClose,
-  PanelRightOpen,
-  Volume2,
-  VolumeX,
-  X,
+  Home,
+  Feather,
+  Archive,
 } from 'lucide-react';
+
+type AppView = 'home' | 'chronicle' | 'character' | 'codex' | 'settings';
 
 function createInitialAutostartCampaign(): CampaignState {
   // A demo de autostart (URL ?autostart=1) narra a abertura canônica de
@@ -75,19 +67,27 @@ function createInitialAutostartCampaign(): CampaignState {
   const defaultArc = STARTING_ARCS.find((a) => a.id === 'sendai-2018') ?? STARTING_ARCS[0];
   const character: CharacterSheet = {
     name: 'Ren Fushiguro',
+    age: '16',
     appearance:
       'Jovem feiticeiro da Escola Técnica de Tóquio em uniforme escuro de gola alta, energia amaldiçoada azul-elétrica crepitando nos punhos.',
+    backstory:
+      'Cresceu em Adachi ouvindo que o céu de Shinjuku tinha sido um acidente. Entrou na escola depois de ver uma maldição devorar o vizinho — e desde então trata cada exorcismo como uma dívida pessoal.',
+    combatStyle:
+      'Controle de distância média, leitura de terreno e vetores; prefere encurralar a maldição a trocar golpes no aberto.',
+    alignmentPhilosophy: 'Proteger quem não pode lutar, mesmo quando a escola manda recuar.',
+    personalityTraits: 'Teimoso, atento, fala pouco quando está com medo.',
+    ideals: 'Ninguém deveria morrer porque a burocracia demorou.',
+    bonds: 'A mãe, que ainda acha que ele estuda em um colégio interno.',
+    flaws: 'Confunde teimosia com coragem.',
+    clanTrait: 'Sombras líquidas que respondem ao medo antes da técnica.',
+    clanTradition: 'Uma linhagem menor que sobreviveu escondendo o próprio nome.',
+    clanStatus: 'Independente',
     avatarUrl: generateCanonicalPortraitSvg('Ren Fushiguro'),
     faction: 'Feiticeiro Jujutsu (Escola Técnica de Tóquio)',
     clan: 'Clã Zenin / Independente',
     grade: 'Grau 4',
     isHeavenlyRestriction: false,
-    hpPercentage: 100,
-    cursedEnergyPercentage: 100,
-    outputPercentage: 100,
-    physicalCondition: 'Intacto — Pronto para Exorcismo',
-    techniqueState: 'Ativa',
-    inBlackFlashZone: false,
+    physicalCondition: 'Intacto — Pronto para o primeiro exorcismo',
     technique: CANONICAL_TECHNIQUES[0],
     inventory: [
       {
@@ -103,7 +103,7 @@ function createInitialAutostartCampaign(): CampaignState {
         id: 'vow-reveal',
         name: 'Revelar a Própria Mão',
         condition: 'Explicar o funcionamento da Técnica Inata ao oponente.',
-        bonus: '+20% de Output de Energia Amaldiçoada na rodada.',
+        bonus: 'A técnica se torna mais eficaz na ficção porque o oponente agora conhece (e pode explorar) o seu funcionamento.',
         active: false,
       },
     ],
@@ -113,13 +113,11 @@ function createInitialAutostartCampaign(): CampaignState {
         turnNumber: 1,
         timestamp: new Date().toISOString(),
         title: 'Ficha Exclusiva Inicializada',
-        details: 'Ficha Exclusiva inicializada no Grau 4 (0/10 níveis para Grau 3).',
+        details: 'Ficha Exclusiva inicializada no Grau 4 como ponto de partida narrativo.',
         gradeAtTime: 'Grau 4',
-        levelAtTime: 1,
       },
     ],
   };
-  character.progression = ensureCharacterProgression(character);
   character.exclusiveSheetMarkdown = buildExclusiveCharacterSheetMarkdown(character);
 
   const world: WorldStateUpdate = {
@@ -139,7 +137,6 @@ function createInitialAutostartCampaign(): CampaignState {
     startingArcTitle: defaultArc.title,
     npcsInScene: defaultArc.initialNpcs.map((n) => ({
       ...n,
-      hpPercentage: 100,
       avatarUrl: generateCanonicalPortraitSvg(n.name),
     })),
   };
@@ -150,9 +147,9 @@ function createInitialAutostartCampaign(): CampaignState {
     timestamp: new Date().toISOString(),
     gmResponse: {
       engineLog: [
-        '1. Checagem de Escala de Poder: Ren Fushiguro (Grau 4) & Megumi Fushiguro (Grau 2) vs. Espírito Amaldiçoado do Pátio (Grau 2) — Cobertura tática aliada equilibra a diferença de Grau.',
-        '2. Checagem de Técnica (Lore Check): Técnica das Dez Sombras ativa (Cães Divinos invocados via sombras líquidas | Reserva de EA: 100% | Output: 100%).',
-        '3. Psicologia & Estratégia Oculta do NPC: Megumi Fushiguro atua de forma analítica e pragmática para conter a ameaça e proteger o perímetro; a Maldição age por instinto voraz atraída pelo Dedo de Sukuna.',
+        '1. A cena estabelece o pátio da Escola Sugisawa sob a Cortina, com o Dedo de Sukuna como isca e uma maldição de Grau 2 atraída pela pressão espiritual.',
+        '2. Megumi quer conter a criatura e proteger o perímetro; a maldição age por fome e instinto, sem perceber que está sendo encurralada.',
+        '3. Fica em suspenso se o jogador vai atacar de imediato, coordenar com Megumi ou tentar entender por que o dedo está ali.',
       ].join('\n'),
       activeStoryCards: [
         'Megumi Fushiguro — Usuário das Dez Sombras',
@@ -171,18 +168,13 @@ function createInitialAutostartCampaign(): CampaignState {
       nanoBananaAnimePrompt:
         '🍌 [Solicitação da IA para o Nano Banana — Gráficos Oficiais do Anime Jujutsu Kaisen (Estúdio MAPPA)]: Quadro 16:9 em cel-shading retratando Megumi Fushiguro preparando o selo dos Cães Divinos ao lado de Ren Fushiguro sob a lua carmesim no pátio da Escola Sugisawa, enfrentando o Espírito Amaldiçoado de múltiplos olhos cercado por miasma roxo e faíscas azuis.',
       playerStateUpdate: {
-        hpPercentage: 100,
-        cursedEnergyPercentage: 100,
-        outputPercentage: 100,
-        physicalCondition: 'Intacto — Pronto para Exorcismo',
-        techniqueState: 'Ativa',
-        inBlackFlashZone: false,
+        physicalCondition: 'Intacto — Pronto para o primeiro exorcismo',
       },
       worldStateUpdate: world,
       suggestedActions: [
         'Invocar as Dez Sombras (Nue) em sincronia com Fushiguro para eletrocutar a maldição',
-        'Concentrar Energia Amaldiçoada na Katana e avançar visando um Kokusen no núcleo da maldição',
-        'Revelar a Própria Mão explicando minha técnica para ganhar +20% de Output imediato',
+        'Concentrar Energia Amaldiçoada na Katana e avançar visando o núcleo da maldição',
+        'Revelar a Própria Mão explicando minha técnica para mudar o equilíbrio da cena',
       ],
     },
     sceneImageUrl: generateSceneIllustrationSvg(defaultArc.location),
@@ -222,7 +214,7 @@ export default function App() {
   const [campaign, setCampaign] = useState<CampaignState | null>(() => {
     try {
       const saved = localStorage.getItem(CAMPAIGN_STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) return migrateCampaignToNarrative(JSON.parse(saved));
     } catch {
       // Ignore storage error
     }
@@ -235,34 +227,18 @@ export default function App() {
   const [customCodex, setCustomCodex] = useState<StoryCard[]>([]);
   const [serverCodexCards, setServerCodexCards] = useState<StoryCard[]>([]);
 
-  const [viewMode, setViewMode] = useState<'wizard' | 'vtt'>(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('autostart=1')) {
-      return 'vtt';
-    }
-    try {
-      const saved = localStorage.getItem(CAMPAIGN_STORAGE_KEY);
-      if (saved) return 'vtt';
-    } catch {
-      // Ignore
-    }
-    return 'wizard';
-  });
-
-  // Mobile 5-Tab Navigation State
-  const [mobileTab, setMobileTab] = useState<'cronica' | 'ficha' | 'radar' | 'codice' | 'sistema'>('cronica');
-
-  // Desktop Collapsible Sidebars & Modals
-  const [leftSidebarOpen, setLeftSidebarOpen] = useState(true);
-  const [rightSidebarOpen, setRightSidebarOpen] = useState(true);
-  const [showSystemModal, setShowSystemModal] = useState(false);
+  const [appView, setAppView] = useState<AppView>(() =>
+    typeof window !== 'undefined' && window.location.search.includes('autostart=1')
+      ? 'chronicle'
+      : 'home'
+  );
+  const [isCreatingCharacter, setIsCreatingCharacter] = useState(false);
   const [lightboxData, setLightboxData] = useState<{ url: string; caption: string } | null>(null);
 
   // Settings & Tactical State
   const [model, setModel] = useState<GeminiModelOption>('gemini-3.8-flash');
   const [fontSize, setFontSize] = useState<FontSizeOption>('medium');
   const [autoGenerateImages, setAutoGenerateImages] = useState(false);
-  const [autoRollDice, setAutoRollDice] = useState(false);
-  const [currentDiceRoll, setCurrentDiceRoll] = useState<number>(15);
   const [sfxEnabled, setSfxEnabled] = useState<boolean>(true);
   const [customApiKey, setCustomApiKey] = useState<string>(() => {
     try {
@@ -288,10 +264,6 @@ export default function App() {
   const [rateLimitNotice, setRateLimitNotice] = useState<string | null>(null);
   const [recentLootNotification, setRecentLootNotification] = useState<string | null>(null);
   const [geminiReport, setGeminiReport] = useState<GeminiConnectionReport | null>(null);
-
-  // Cloud Auth & Auto-Save State
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [lastCloudSyncIso, setLastCloudSyncIso] = useState<string | null>(null);
 
   const handleRefreshGeminiStatus = useCallback(async () => {
     const report = await validateGeminiConnection(model);
@@ -356,49 +328,19 @@ export default function App() {
         ? `Avanço contra ${cleanName} concentrando Energia Amaldiçoada para atacar sua guarda!`
         : `Olho diretamente para ${cleanName} e digo: "`;
     setExternalActionDraft({ mode, text: draftText, id: Date.now() });
-    setMobileTab('cronica');
+    setAppView('chronicle');
   }, []);
 
-  // Sync document.body.dataset.state for Ultra Mode verification
+  // Sync document.body.dataset.state for verification
   useEffect(() => {
-    document.body.dataset.state = viewMode === 'vtt' ? 'playing' : 'title';
-  }, [viewMode]);
+    document.body.dataset.state = appView === 'chronicle' ? 'playing' : 'title';
+  }, [appView]);
 
-  // Firebase é carregado sob demanda: o SDK (~centenas de KB) não entra no
-  // bundle inicial da crônica. O chunk é buscado depois do primeiro paint.
-  useEffect(() => {
-    // Só baixa o SDK do Firebase quando o jogador abre o painel de nuvem.
-    if (!showSystemModal && mobileTab !== 'sistema') return;
-    let cancelled = false;
-    let unsubscribe: (() => void) | undefined;
-    import('./services/firebaseClient')
-      .then(({ subscribeToAuth }) => {
-        if (cancelled) return;
-        unsubscribe = subscribeToAuth((user) => {
-          setUserEmail(user?.email || null);
-        });
-      })
-      .catch(() => {
-        // Sem Firebase disponível: campanha local continua funcionando.
-      });
-    return () => {
-      cancelled = true;
-      unsubscribe?.();
-    };
-  }, [showSystemModal, mobileTab]);
-
-  // 5MB-Safe Auto-save to localStorage (campaign without codex) and Cloud (Firebase Firestore)
+  // Auto-save local da crônica (sem codex, que é guardado à parte).
   useEffect(() => {
     if (!campaign) return;
     saveCampaignStateSafe(campaign);
-
-    if (userEmail) {
-      import('./services/firebaseClient')
-        .then(({ saveCampaignToCloud }) => saveCampaignToCloud(campaign))
-        .then(() => setLastCloudSyncIso(new Date().toISOString()))
-        .catch(() => {});
-    }
-  }, [campaign, userEmail]);
+  }, [campaign]);
 
   const handleImportCodexCards = useCallback((newCards: StoryCard[]) => {
     setCustomCodex((prev) => {
@@ -419,7 +361,7 @@ export default function App() {
 
   const allCodexCards: StoryCard[] = [
     ...(campaign?.character ? [buildExclusiveCharacterStoryCard(campaign.character)] : []),
-    ...INITIAL_STORY_CARDS,
+    ...INITIAL_STORY_CARDS.map((card) => ({ ...card, source: card.source ?? 'initial' })),
     ...serverCodexCards,
     ...customCodex,
   ];
@@ -524,9 +466,9 @@ export default function App() {
       timestamp: new Date().toISOString(),
       gmResponse: {
         engineLog: [
-          `1. Checagem de Escala de Poder: ${character.name} (${character.grade}) vs. ${firstNpc ? `${firstNpc.name} (${firstNpc.grade})` : 'Presença Amaldiçoada no Perímetro'} — Avaliação de iniciativa e distância tática.`,
-          `2. Checagem de Técnica (Lore Check): ${character.technique.name} pronta (Reserva de EA: ${character.isHeavenlyRestriction ? '0% — Restrição Celestial' : `${character.cursedEnergyPercentage}%`} | Output: ${character.outputPercentage}%).`,
-          `3. Psicologia & Estratégia Oculta do NPC: ${firstNpc ? `${firstNpc.name} (${firstNpc.attitude}) mantém postura fiel à sua personalidade canônica em ${initialWorld.location}` : 'Anomalia amaldiçoada espreita nas sombras aguardando brecha na guarda'}.`,
+          `1. A cena abre em ${initialWorld.location}, com ${firstNpc ? `${firstNpc.name} (${firstNpc.grade})` : 'uma presença amaldiçoada'} já em cena.`,
+          `2. ${character.name} carrega ${character.technique.name}; a técnica tem limites claros e um custo dramático que a cena pode cobrar.`,
+          `3. ${firstNpc ? `${firstNpc.name} age conforme sua personalidade e seus próprios objetivos` : 'Algo espreita nas sombras, aguardando a primeira brecha'}; o que ficará em suspenso é a reação do jogador.`,
         ].join('\n'),
         activeStoryCards: matchedCards.map((c) => c.title),
         activeCardRuleSummary: `${character.technique.name}: ${character.technique.lapse || character.technique.description}`,
@@ -549,18 +491,13 @@ export default function App() {
         combatSceneImageQuestion: `A cena inicial em ${initialWorld.location} começou! Deseja que o Mestre faça uma descrição detalhada solicitando ao Nano Banana uma imagem do início desta cena com os mesmos gráficos do anime?`,
         nanoBananaAnimePrompt: `🍌 [Solicitação da IA para o Nano Banana — Gráficos Oficiais do Anime Jujutsu Kaisen (MAPPA)]: Quadro 16:9 em cel-shading retratando ${character.name} (${character.appearance}) canalizando ${character.technique.name} em ${initialWorld.location} diante de ${firstNpc?.name || 'uma ameaça amaldiçoada'}.`,
         playerStateUpdate: {
-          hpPercentage: character.hpPercentage,
-          cursedEnergyPercentage: character.cursedEnergyPercentage,
-          outputPercentage: character.outputPercentage,
           physicalCondition: character.physicalCondition,
-          techniqueState: character.techniqueState,
-          inBlackFlashZone: false,
         },
         worldStateUpdate: initialWorld,
         suggestedActions: [
           `Usar ${character.technique.name} para sondar e pressionar a ameaça na área`,
           `Dialogar com ${firstNpc?.name || 'os presentes'} para coordenar uma formação tática`,
-          `Concentrar Energia Amaldiçoada nos punhos e avançar buscando um Kokusen`,
+          `Mudar o ritmo da cena e forçar uma abertura`,
         ],
       },
       sceneImageUrl: generateSceneIllustrationSvg(`${initialWorld.location} ${startingArcTitle}`),
@@ -583,8 +520,8 @@ export default function App() {
     };
 
     setCampaign(newCampaign);
-    setViewMode('vtt');
-    setMobileTab('cronica');
+    setAppView('chronicle');
+    setIsCreatingCharacter(false);
     setIsSubmittingTurn(true);
 
     try {
@@ -599,7 +536,6 @@ export default function App() {
         actionMode: 'STORY',
         // O Turno #1 não é uma ação do jogador: a cena vai no contrato, não no campo de ação.
         actionText: 'Abrir a campanha: narrar o Turno #1 a partir da cena de abertura.',
-        diceRoll: 15,
         revealedHandVow: false,
         isOpening: true,
         startingArcTitle,
@@ -636,7 +572,6 @@ export default function App() {
           activeBarrierOrDomain: wsu.activeBarrierOrDomain || initialWorld.activeBarrierOrDomain,
           npcsInScene: (wsu.npcsInScene || initialWorld.npcsInScene).map((n: NpcInScene) => ({
             ...n,
-            hpPercentage: typeof n.hpPercentage === 'number' ? n.hpPercentage : 100,
             avatarUrl: n.avatarUrl || generateCanonicalPortraitSvg(n.name),
           })),
         };
@@ -692,13 +627,6 @@ export default function App() {
     setIsSubmittingTurn(true);
     setRateLimitNotice(null);
 
-    const rollUsed = autoRollDice ? rollD20() : currentDiceRoll;
-    if (autoRollDice) {
-      if (rollUsed === 20) jjkAudio.playBlackFlash();
-      else jjkAudio.playDiceRoll();
-    }
-    setCurrentDiceRoll(rollUsed);
-
     // RAG Client-Side Search: Top 8 to 12 Story Cards matching current scene context
     const searchContext = [
       text,
@@ -727,9 +655,9 @@ export default function App() {
       .slice(-8)
       .map(
         (t) =>
-          `Turno #${t.turnNumber}:\nAção do Jogador (${t.playerAction?.mode || 'ABERTURA'}, d20=${
-            t.playerAction?.diceRoll ?? '-'
-          }): ${t.playerAction?.text || 'Início da Cena'}\nMestre: ${t.gmResponse.narrative}`
+          `Turno #${t.turnNumber}:\nAção do Jogador (${t.playerAction?.mode || 'ABERTURA'}): ${
+            t.playerAction?.text || 'Início da Cena'
+          }\nMestre: ${t.gmResponse.narrative}`
       )
       .join('\n---\n');
 
@@ -740,7 +668,6 @@ export default function App() {
         world: campaign.world,
         actionMode: mode,
         actionText: text,
-        diceRoll: rollUsed,
         revealedHandVow,
         ragContext,
         activeCards: matchedCards.map((c) => c.title),
@@ -811,14 +738,7 @@ export default function App() {
 
       let updatedCharacter: CharacterSheet = {
         ...campaign.character,
-        hpPercentage: Math.max(0, Math.min(100, Number(psu.hpPercentage ?? campaign.character.hpPercentage))),
-        cursedEnergyPercentage: campaign.character.isHeavenlyRestriction
-          ? 0
-          : Math.max(0, Math.min(100, Number(psu.cursedEnergyPercentage ?? campaign.character.cursedEnergyPercentage))),
-        outputPercentage: Number(psu.outputPercentage ?? campaign.character.outputPercentage),
         physicalCondition: psu.physicalCondition || campaign.character.physicalCondition,
-        techniqueState: psu.techniqueState || campaign.character.techniqueState,
-        inBlackFlashZone: Boolean(psu.inBlackFlashZone),
         bindingVows: revealedHandVow
           ? campaign.character.bindingVows.map((v) =>
               v.name.toLowerCase().includes('revelar') ? { ...v, active: true } : v
@@ -835,18 +755,10 @@ export default function App() {
         }
       }
 
-      // Item #5: Apply XP, Level Progression within Current Grade, and Exclusive Character Sheet Evolution
-      const xpToGrant =
-        typeof psu.xpGained === 'number'
-          ? psu.xpGained
-          : rollUsed === 20 || gmData.visualEffectTrigger === 'BLACK_FLASH'
-          ? 70
-          : 35;
-      const evolutionResult = applyXpAndSheetEvolution(
+      // Item #5: apply narrative changes to the Living Sheet (no XP, no levels)
+      const evolutionResult = applySheetEvolution(
         updatedCharacter,
         campaign.turns.length + 1,
-        xpToGrant,
-        psu.levelUpReason,
         psu.sheetEvolution
       );
       updatedCharacter = evolutionResult.updatedCharacter;
@@ -860,18 +772,13 @@ export default function App() {
         location: wsu.location || campaign.world.location,
         arc: wsu.arc || campaign.world.arc,
         activeBarrierOrDomain: wsu.activeBarrierOrDomain || 'Nenhum',
-        npcsInScene: (wsu.npcsInScene || []).map((n: NpcInScene) => {
-          const hp = typeof n.hpPercentage === 'number' ? Math.max(0, Math.min(100, n.hpPercentage)) : 100;
-          return {
-            ...n,
-            hpPercentage: hp,
-            status: hp === 0 ? 'Exorcizado / Derrotado (0% HP)' : n.status,
-            avatarUrl:
-              campaign.npcAvatars[n.name] ||
-              n.avatarUrl ||
-              generateCanonicalPortraitSvg(n.name),
-          };
-        }),
+        npcsInScene: (wsu.npcsInScene || []).map((n: NpcInScene) => ({
+          ...n,
+          avatarUrl:
+            campaign.npcAvatars[n.name] ||
+            n.avatarUrl ||
+            generateCanonicalPortraitSvg(n.name),
+        })),
       };
 
       const newTurnId = `turn-${Date.now()}`;
@@ -882,7 +789,6 @@ export default function App() {
         playerAction: {
           mode,
           text,
-          diceRoll: rollUsed,
           revealedHandVow,
         },
         gmResponse: gmData,
@@ -917,6 +823,12 @@ export default function App() {
       if (autoGenerateImages || userRequestedImageInText) {
         handleGenerateTurnImage(newTurnId, gmData.imagePrompt, gmData.visualEffectTrigger);
       }
+    } catch (error) {
+      setRateLimitNotice(
+        error instanceof Error
+          ? `Não foi possível concluir o turno: ${error.message}`
+          : 'Não foi possível concluir o turno. Tente novamente.'
+      );
     } finally {
       setIsSubmittingTurn(false);
       setStreamingNarrative('');
@@ -1073,604 +985,337 @@ export default function App() {
           setCustomCodex(parsed.customCodex);
           saveCustomCodexSafe(parsed.customCodex);
         }
-        setCampaign({ ...parsed, customCodex: [] });
-        setViewMode('vtt');
+        const migrated = migrateCampaignToNarrative({ ...parsed, customCodex: [] });
+        if (migrated) setCampaign(migrated);
+        setAppView('chronicle');
       }
     } catch {
       // Invalid file
     }
   };
 
-  if (viewMode === 'wizard' || !campaign) {
-    return (
-      <Suspense fallback={<FullScreenLoader label="Abrindo a ficha de feiticeiro..." />}>
-      <>
-        <CharacterWizard
-          onStartCampaign={handleStartNewCampaignFromWizard}
-          onImportJsonFile={handleImportJsonFile}
-          hasExistingCampaign={Boolean(campaign)}
-          onResumeExisting={() => setViewMode('vtt')}
-          onOpenCloudModal={() => setShowSystemModal(true)}
-          cloudUserEmail={userEmail}
-          customApiKey={customApiKey}
-          geminiReport={geminiReport || undefined}
-        />
-
-        {showSystemModal && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div className="w-full max-w-3xl rounded-2xl bg-[#120e0b] border border-amber-500/25 shadow-2xl overflow-hidden">
-              <SystemAndCloudPanel
-                campaign={campaign}
-                model={model}
-                onChangeModel={setModel}
-                fontSize={fontSize}
-                onChangeFontSize={setFontSize}
-                onExportJson={handleExportJson}
-                onImportJsonFile={handleImportJsonFile}
-                onStartNewCampaign={() => setShowSystemModal(false)}
-                onLoadCloudCampaign={(loaded) => {
-                  setCampaign(loaded);
-                  setViewMode('vtt');
-                }}
-                userEmail={userEmail}
-                lastCloudSyncIso={lastCloudSyncIso}
-                onCloseModal={() => setShowSystemModal(false)}
-                customApiKey={customApiKey}
-                onChangeCustomApiKey={handleChangeCustomApiKey}
-                sfxEnabled={sfxEnabled}
-                onToggleSfx={handleToggleSfx}
-                geminiReport={geminiReport}
-                onRefreshGeminiStatus={handleRefreshGeminiStatus}
-              />
-            </div>
-          </div>
-        )}
-      </>
-      </Suspense>
-    );
-  }
-
-  const isNarrativeFocusMode = !leftSidebarOpen && !rightSidebarOpen;
-
-  const handleToggleNarrativeFocusMode = () => {
-    if (isNarrativeFocusMode) {
-      setLeftSidebarOpen(true);
-      setRightSidebarOpen(true);
-    } else {
-      setLeftSidebarOpen(false);
-      setRightSidebarOpen(false);
+  const handleNavigate = (view: AppView) => {
+    if (view === 'character' && campaign) setIsCreatingCharacter(false);
+    if (view === 'chronicle' && !campaign) {
+      setIsCreatingCharacter(true);
+      setAppView('character');
+      return;
     }
+    setAppView(view);
   };
 
-  return (
-    <div className="h-[100dvh] w-full flex flex-col tabletop-surface text-[#efe6d5] overflow-hidden">
-      {/* Desktop Top Header (>= 1024px) */}
-      <header className="hidden lg:flex items-center justify-between gap-6 px-5 py-2.5 bg-[#110d0b]/95 border-b border-amber-500/25 shrink-0 shadow-lg">
-        {/* Zone 1: Left Sheet Toggle + Tabletop Title */}
-        <div className="flex items-center gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
-            aria-label={leftSidebarOpen ? 'Recolher Grimório do Feiticeiro' : 'Abrir Grimório do Feiticeiro'}
-            title={leftSidebarOpen ? 'Recolher Ficha' : 'Abrir Ficha'}
-            className="px-2.5 py-1.5 rounded-lg bg-[#1a1410] border border-amber-500/30 text-amber-200/80 hover:text-amber-100 hover:border-amber-400 flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
-          >
-            {leftSidebarOpen ? <PanelLeftClose className="w-4 h-4 text-amber-400" /> : <PanelLeftOpen className="w-4 h-4 text-amber-400" />}
-            <span>Ficha</span>
-          </button>
-          <span className="font-display text-base font-bold tracking-wider text-amber-100 whitespace-nowrap">
-            JUJUTSU KAISEN · SEGUIMENTO
-          </span>
-        </div>
+  const handleNewCharacter = () => {
+    setIsCreatingCharacter(true);
+    setAppView('character');
+  };
 
-        {/* Zone 2: Tabletop Narrative Controls */}
-        <nav className="flex items-center gap-4 text-xs font-medium text-amber-200/75">
-          <button
-            type="button"
-            onClick={handleToggleNarrativeFocusMode}
-            className={`px-3 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 ${
-              isNarrativeFocusMode
-                ? 'bg-amber-600/30 border-amber-400 text-amber-100 font-semibold shadow-[0_0_12px_rgba(245,158,11,0.25)]'
-                : 'bg-[#17120e] border-amber-500/25 text-amber-200/80 hover:text-white'
-            }`}
-            title="Ocultar ou exibir painéis laterais para leitura fluida de tela cheia"
-          >
-            <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span>{isNarrativeFocusMode ? 'Sair do Foco Narrativo' : 'Modo Foco Narrativo'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewMode('wizard')}
-            className="hover:text-amber-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            Editar Ficha / Sessão Zero
-          </button>
-          <button
-            type="button"
-            onClick={handleExportJson}
-            className="hover:text-amber-100 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            Exportar Crônica (.json)
-          </button>
-        </nav>
+  const handleDeleteCampaign = () => {
+    if (!campaign) return;
+    const confirmed =
+      typeof window === 'undefined' ||
+      window.confirm('Apagar esta crônica? O personagem, os turnos e a memória serão removidos.');
+    if (!confirmed) return;
+    try {
+      localStorage.removeItem(CAMPAIGN_STORAGE_KEY);
+    } catch {
+      // Ignore storage failure
+    }
+    setCampaign(null);
+    setAppView('home');
+    setIsCreatingCharacter(false);
+  };
 
-        {/* Zone 3: SFX Toggle + Cloud + Right Sidebar Toggle */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <button
-            type="button"
-            onClick={handleToggleSfx}
-            aria-label={sfxEnabled ? 'Desativar efeitos sonoros' : 'Ativar efeitos sonoros'}
-            title={sfxEnabled ? 'Efeitos Sonoros Ativos (Kokusen / Domínio / Dados)' : 'Efeitos Sonoros Silenciados'}
-            className={`p-1.5 rounded-lg border cursor-pointer ${
-              sfxEnabled
-                ? 'bg-[#17120e] border-emerald-500/40 text-emerald-400 hover:text-emerald-300'
-                : 'bg-[#17120e] border-slate-800 text-slate-500 hover:text-slate-300'
-            }`}
-          >
-            {sfxEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowSystemModal(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-600 text-amber-50 text-xs font-semibold flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer border border-amber-400/40"
-          >
-            <Cloud className="w-3.5 h-3.5" />
-            <span>{userEmail ? 'Mesa Sincronizada' : 'Mesa & Nuvem'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setRightSidebarOpen(!rightSidebarOpen)}
-            aria-label={rightSidebarOpen ? 'Recolher Escudo do Mestre' : 'Abrir Escudo do Mestre'}
-            title={rightSidebarOpen ? 'Recolher Escudo do Mestre' : 'Abrir Escudo do Mestre (Dados & Códice)'}
-            className="px-2.5 py-1.5 rounded-lg bg-[#1a1410] border border-amber-500/30 text-amber-200/80 hover:text-amber-100 hover:border-amber-400 flex items-center gap-1.5 text-xs font-medium cursor-pointer transition-all"
-          >
-            <span>Escudo & Dados</span>
-            {rightSidebarOpen ? <PanelRightClose className="w-4 h-4 text-amber-400" /> : <PanelRightOpen className="w-4 h-4 text-amber-400" />}
-          </button>
-        </div>
-      </header>
+  const navItems: { id: AppView; label: string; icon: typeof Home }[] = [
+    { id: 'home', label: 'Início', icon: Home },
+    { id: 'chronicle', label: 'Mesa', icon: BookOpen },
+    { id: 'character', label: 'Ficha', icon: Feather },
+    { id: 'codex', label: 'Códice', icon: Archive },
+    { id: 'settings', label: 'Ajustes', icon: Settings },
+  ];
 
-      {/* Mobile Mini-Header: só nas abas de ficha/radar. A crônica tem header próprio. */}
-      {mobileTab !== 'cronica' && (
-      <header className="lg:hidden safe-top flex items-center justify-between gap-2 px-3 py-2 bg-[#110d0b]/95 border-b border-amber-500/25 shrink-0">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="font-display text-xs font-bold text-white break-words leading-tight">
-              {campaign.character.name}
-            </span>
-            <span className="text-[10px] text-purple-400 font-semibold shrink-0">
-              {campaign.character.grade}
-            </span>
-          </div>
-          <div className="text-[10px] text-slate-400 break-words leading-tight">
-            {campaign.world.location}
-          </div>
-        </div>
+  const contextLabel =
+    appView === 'home'
+      ? 'Crônica narrativa'
+      : appView === 'chronicle'
+      ? campaign
+        ? `Em andamento · ${campaign.character.name}`
+        : 'Crônica narrativa'
+      : appView === 'character'
+      ? campaign && !isCreatingCharacter
+        ? 'Ficha do feiticeiro'
+        : 'Nova ficha'
+      : appView === 'codex'
+      ? `${allCodexCards.length} verbetes`
+      : 'Preferências';
 
-        {/* Mini HP & CE Bars + Quick 1d20 button */}
-        <div className="flex items-center gap-2.5 shrink-0">
-          <div className="w-16 space-y-1">
-            <div className="flex justify-between text-[9px] font-mono-tabular">
-              <span className="text-emerald-400">HP</span>
-              <span>{Math.round(campaign.character.hpPercentage)}%</span>
-            </div>
-            <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-emerald-500"
-                style={{ width: `${campaign.character.hpPercentage}%` }}
-              />
-            </div>
-          </div>
+  const renderContent = () => {
+    if (appView === 'home') {
+      return (
+        <HomePage
+          hasCampaign={Boolean(campaign)}
+          characterName={campaign?.character.name}
+          onStartCharacter={handleNewCharacter}
+          onContinue={() => setAppView('chronicle')}
+          onOpenCodex={() => setAppView('codex')}
+        />
+      );
+    }
 
-          <div className="w-16 space-y-1">
-            <div className="flex justify-between text-[9px] font-mono-tabular">
-              <span className="text-sky-400">EA</span>
-              <span>{Math.round(campaign.character.cursedEnergyPercentage)}%</span>
-            </div>
-            <div className="h-1.5 bg-slate-900 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-sky-400"
-                style={{ width: `${campaign.character.cursedEnergyPercentage}%` }}
-              />
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              const r = rollD20();
-              if (r === 20) jjkAudio.playBlackFlash();
-              else jjkAudio.playDiceRoll();
-              setCurrentDiceRoll(r);
-            }}
-            aria-label="Rolar 1d20 rápido"
-            className="px-2 py-1 rounded-lg bg-[#080605] border border-amber-500/50 text-amber-400 font-mono-tabular text-xs font-bold flex items-center gap-1 cursor-pointer"
-          >
-            <Dices className="w-3.5 h-3.5" />
-            <span>{currentDiceRoll}</span>
-          </button>
-        </div>
-      </header>
-      )}
-
-      {/* Main Content Area: 3 Columns on Desktop (>=1024px) | Active Tab on Mobile (<1024px) */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
-        {/* Desktop Left Column */}
-        {leftSidebarOpen && (
-          <div className="hidden lg:block w-[320px] shrink-0 h-full">
-            <LeftSorcererSheet
-              character={campaign.character}
-              onUpdateCharacter={(updated) =>
-                setCampaign({ ...campaign, character: updated })
-              }
-              onRegeneratePortrait={handleRegeneratePlayerPortrait}
-              isRegeneratingPortrait={isRegeneratingPortrait}
-              lastVfx={activeVfx}
-              activeBarrierOrDomain={campaign.world.activeBarrierOrDomain}
-              onToggleDomainInWorld={(domainLabel) => {
-                setCampaign({
-                  ...campaign,
-                  world: {
-                    ...campaign.world,
-                    activeBarrierOrDomain: domainLabel,
-                  },
-                });
-                if (/expansão de domínio/i.test(domainLabel)) {
-                  triggerVfxEffect('DOMAIN_GOJO');
-                }
-              }}
-            />
-          </div>
-        )}
-
-        {/* Desktop Center Column */}
-        <div className="hidden lg:block flex-1 min-w-0 h-full">
-          <ChatNarrativeStage
-            character={campaign.character}
-            world={campaign.world}
-            turns={campaign.turns}
-            npcAvatars={campaign.npcAvatars}
-            fontSize={fontSize}
-            autoGenerateImages={autoGenerateImages}
-            onToggleAutoGenerateImages={() => setAutoGenerateImages(!autoGenerateImages)}
-            onGenerateTurnImage={handleGenerateTurnImage}
-            isGeneratingImageForTurn={isGeneratingImageForTurn}
-            onOpenLightbox={(url, caption) => setLightboxData({ url, caption })}
-            onSubmitAction={handleSubmitAction}
-            isSubmittingTurn={isSubmittingTurn}
-            streamingNarrative={streamingNarrative}
-            onEditTurnNarrative={(turnId, newText) => {
-              setCampaign({
-                ...campaign,
-                turns: campaign.turns.map((t) =>
-                  t.id === turnId
-                    ? { ...t, gmResponse: { ...t.gmResponse, narrative: newText } }
-                    : t
-                ),
-              });
-            }}
-            onRetryLastTurn={handleRetryLastTurn}
-            onRewindToTurn={(turnIdx) => {
-              const target = campaign.turns[turnIdx];
-              if (!target) return;
-              setCampaign({
-                ...campaign,
-                character: target.snapshot.character,
-                world: target.snapshot.world,
-                turns: campaign.turns.slice(0, turnIdx + 1),
-              });
-            }}
-            activeVfx={activeVfx}
-            rateLimitNotice={rateLimitNotice}
-            onDismissRateLimitNotice={() => setRateLimitNotice(null)}
-            onSwitchToLiteAndRetry={() => {
-              setModel('gemini-3.5-flash-lite');
-              setRateLimitNotice(null);
-            }}
-            recentLootNotification={recentLootNotification}
-            onDismissLootNotification={() => setRecentLootNotification(null)}
-            externalActionDraft={externalActionDraft}
-            apiKeyState={geminiReport?.state || 'CHECKING'}
-            onOpenSystemModal={() => setShowSystemModal(true)}
-            model={model}
-            onChangeModel={setModel}
-            onChangeFontSize={setFontSize}
-            sfxEnabled={sfxEnabled}
-            onToggleSfx={handleToggleSfx}
-            currentDiceRoll={currentDiceRoll}
-            autoRollDice={autoRollDice}
-            onToggleAutoRoll={() => setAutoRollDice(!autoRollDice)}
-            onManualRollDice={() => {
-              const r = rollD20();
-              if (r === 20) jjkAudio.playBlackFlash();
-              else jjkAudio.playDiceRoll();
-              setCurrentDiceRoll(r);
-              return r;
-            }}
-            onResetCampaign={() => setViewMode('wizard')}
-          />
-        </div>
-
-        {/* Desktop Right Column */}
-        {rightSidebarOpen && (
-          <div className="hidden lg:block w-[340px] shrink-0 h-full">
-            <RightWorldRadar
-              character={campaign.character}
-              world={campaign.world}
-              npcAvatars={campaign.npcAvatars}
-              onGenerateNpcAvatar={handleGenerateNpcAvatar}
-              generatingNpcName={generatingNpcName}
-              currentDiceRoll={currentDiceRoll}
-              autoRollDice={autoRollDice}
-              onToggleAutoRollDice={() => setAutoRollDice(!autoRollDice)}
-              onManualRollDice={setCurrentDiceRoll}
-              codexCards={allCodexCards}
-              onImportCodexCards={handleImportCodexCards}
-              memories={campaign.memories}
-              onSummarizeMemory={handleSummarizeMemory}
-              isSummarizingMemory={isSummarizingMemory}
-              onQuickTargetNpc={handleQuickTargetNpc}
-            />
-          </div>
-        )}
-
-        {/* Mobile Full-Screen Active Tab (< 1024px) */}
-        <div className="lg:hidden tablet-drawer relative flex-1 w-full h-full overflow-y-auto md:overflow-hidden">
-          <div className={mobileTab === 'cronica' ? 'tablet-center h-full' : 'tablet-center hidden md:block h-full'}>
-            <ChatNarrativeStage
-              character={campaign.character}
-              world={campaign.world}
-              turns={campaign.turns}
-              npcAvatars={campaign.npcAvatars}
-              fontSize={fontSize}
-              autoGenerateImages={autoGenerateImages}
-              onToggleAutoGenerateImages={() => setAutoGenerateImages(!autoGenerateImages)}
-              onGenerateTurnImage={handleGenerateTurnImage}
-              isGeneratingImageForTurn={isGeneratingImageForTurn}
-              onOpenLightbox={(url, caption) => setLightboxData({ url, caption })}
-              onSubmitAction={handleSubmitAction}
-              isSubmittingTurn={isSubmittingTurn}
-              streamingNarrative={streamingNarrative}
-              onEditTurnNarrative={(turnId, newText) => {
-                setCampaign({
-                  ...campaign,
-                  turns: campaign.turns.map((t) =>
-                    t.id === turnId
-                      ? { ...t, gmResponse: { ...t.gmResponse, narrative: newText } }
-                      : t
-                  ),
-                });
-              }}
-              onRetryLastTurn={handleRetryLastTurn}
-              onRewindToTurn={(turnIdx) => {
-                const target = campaign.turns[turnIdx];
-                if (!target) return;
-                setCampaign({
-                  ...campaign,
-                  character: target.snapshot.character,
-                  world: target.snapshot.world,
-                  turns: campaign.turns.slice(0, turnIdx + 1),
-                });
-              }}
-              activeVfx={activeVfx}
-              rateLimitNotice={rateLimitNotice}
-              onDismissRateLimitNotice={() => setRateLimitNotice(null)}
-              onSwitchToLiteAndRetry={() => {
-                setModel('gemini-3.5-flash-lite');
-                setRateLimitNotice(null);
-              }}
-              recentLootNotification={recentLootNotification}
-              onDismissLootNotification={() => setRecentLootNotification(null)}
-              externalActionDraft={externalActionDraft}
-              apiKeyState={geminiReport?.state || 'CHECKING'}
-              onOpenSystemModal={() => setMobileTab('sistema')}
-              model={model}
-              onChangeModel={setModel}
-              onChangeFontSize={setFontSize}
-              sfxEnabled={sfxEnabled}
-              onToggleSfx={handleToggleSfx}
-              currentDiceRoll={currentDiceRoll}
-              autoRollDice={autoRollDice}
-              onToggleAutoRoll={() => setAutoRollDice(!autoRollDice)}
-              onManualRollDice={() => {
-                const r = rollD20();
-                if (r === 20) jjkAudio.playBlackFlash();
-                else jjkAudio.playDiceRoll();
-                setCurrentDiceRoll(r);
-                return r;
-              }}
-              onResetCampaign={() => setViewMode('wizard')}
-            />
-          </div>
-
-          {mobileTab === 'ficha' && (
-            <LeftSorcererSheet
-              character={campaign.character}
-              onUpdateCharacter={(updated) =>
-                setCampaign({ ...campaign, character: updated })
-              }
-              onRegeneratePortrait={handleRegeneratePlayerPortrait}
-              isRegeneratingPortrait={isRegeneratingPortrait}
-              lastVfx={activeVfx}
-              activeBarrierOrDomain={campaign.world.activeBarrierOrDomain}
-              onToggleDomainInWorld={(domainLabel) => {
-                setCampaign({
-                  ...campaign,
-                  world: {
-                    ...campaign.world,
-                    activeBarrierOrDomain: domainLabel,
-                  },
-                });
-                if (/expansão de domínio/i.test(domainLabel)) {
-                  triggerVfxEffect('DOMAIN_GOJO');
-                }
-                setMobileTab('cronica');
-              }}
-            />
-          )}
-
-          {mobileTab === 'radar' && (
-            <RightWorldRadar
-              character={campaign.character}
-              world={campaign.world}
-              npcAvatars={campaign.npcAvatars}
-              onGenerateNpcAvatar={handleGenerateNpcAvatar}
-              generatingNpcName={generatingNpcName}
-              currentDiceRoll={currentDiceRoll}
-              autoRollDice={autoRollDice}
-              onToggleAutoRollDice={() => setAutoRollDice(!autoRollDice)}
-              onManualRollDice={setCurrentDiceRoll}
-              codexCards={allCodexCards}
-              onImportCodexCards={handleImportCodexCards}
-              memories={campaign.memories}
-              onSummarizeMemory={handleSummarizeMemory}
-              isSummarizingMemory={isSummarizingMemory}
-              onQuickTargetNpc={handleQuickTargetNpc}
-              forceTab="radar"
-            />
-          )}
-
-          {mobileTab === 'codice' && (
-            <RightWorldRadar
-              character={campaign.character}
-              world={campaign.world}
-              npcAvatars={campaign.npcAvatars}
-              onGenerateNpcAvatar={handleGenerateNpcAvatar}
-              generatingNpcName={generatingNpcName}
-              currentDiceRoll={currentDiceRoll}
-              autoRollDice={autoRollDice}
-              onToggleAutoRollDice={() => setAutoRollDice(!autoRollDice)}
-              onManualRollDice={setCurrentDiceRoll}
-              codexCards={allCodexCards}
-              onImportCodexCards={handleImportCodexCards}
-              memories={campaign.memories}
-              onSummarizeMemory={handleSummarizeMemory}
-              isSummarizingMemory={isSummarizingMemory}
-              onQuickTargetNpc={handleQuickTargetNpc}
-              forceTab="codex"
-            />
-          )}
-
-          {mobileTab === 'sistema' && (
-            <Suspense fallback={<div className="p-6 text-xs text-slate-300">Carregando painel de sistema...</div>}>
-            <SystemAndCloudPanel
-              campaign={campaign}
-              model={model}
-              onChangeModel={setModel}
-              fontSize={fontSize}
-              onChangeFontSize={setFontSize}
-              onExportJson={handleExportJson}
+    if (appView === 'character') {
+      if (!campaign || isCreatingCharacter) {
+        return (
+          <Suspense fallback={<FullScreenLoader label="Abrindo a ficha de feiticeiro..." />}>
+            <CharacterWizard
+              onStartCampaign={handleStartNewCampaignFromWizard}
               onImportJsonFile={handleImportJsonFile}
-              onStartNewCampaign={() => setViewMode('wizard')}
-              onLoadCloudCampaign={(loaded) => {
-                setCampaign(loaded);
-                setMobileTab('cronica');
-              }}
-              userEmail={userEmail}
-              lastCloudSyncIso={lastCloudSyncIso}
+              hasExistingCampaign={Boolean(campaign)}
+              onResumeExisting={() => setAppView('chronicle')}
+              onOpenCloudModal={() => setAppView('settings')}
               customApiKey={customApiKey}
-              onChangeCustomApiKey={handleChangeCustomApiKey}
-              sfxEnabled={sfxEnabled}
-              onToggleSfx={handleToggleSfx}
-              geminiReport={geminiReport}
-              onRefreshGeminiStatus={handleRefreshGeminiStatus}
+              geminiReport={geminiReport || undefined}
             />
-            </Suspense>
+          </Suspense>
+        );
+      }
+      return (
+        <CharacterProfilePage
+          campaign={campaign}
+          onContinue={() => setAppView('chronicle')}
+          onNewCharacter={handleNewCharacter}
+          onOpenCodex={() => setAppView('codex')}
+        />
+      );
+    }
+
+    if (appView === 'codex') {
+      return <CodexPage cards={allCodexCards} onImportCodexCards={handleImportCodexCards} />;
+    }
+
+    if (appView === 'settings') {
+      return (
+        <SettingsPage
+          campaign={campaign}
+          model={model}
+          onChangeModel={setModel}
+          fontSize={fontSize}
+          onChangeFontSize={setFontSize}
+          autoGenerateImages={autoGenerateImages}
+          onToggleAutoImages={() => setAutoGenerateImages(!autoGenerateImages)}
+          sfxEnabled={sfxEnabled}
+          onToggleSfx={handleToggleSfx}
+          customApiKey={customApiKey}
+          onChangeCustomApiKey={handleChangeCustomApiKey}
+          geminiReport={geminiReport}
+          onRefreshGeminiStatus={handleRefreshGeminiStatus}
+          onExportJson={handleExportJson}
+          onImportJsonFile={handleImportJsonFile}
+          onNewCharacter={handleNewCharacter}
+          onDeleteCampaign={handleDeleteCampaign}
+          onOpenChronicle={() => setAppView('chronicle')}
+          memoriesCount={campaign?.memories.length || 0}
+          isSummarizingMemory={isSummarizingMemory}
+          onSummarizeMemory={handleSummarizeMemory}
+        />
+      );
+    }
+
+    if (!campaign) {
+      return (
+        <HomePage
+          hasCampaign={false}
+          onStartCharacter={handleNewCharacter}
+          onContinue={() => setAppView('home')}
+          onOpenCodex={() => setAppView('codex')}
+        />
+      );
+    }
+
+    return (
+      <ChroniclePage
+        campaign={campaign}
+        codexCards={allCodexCards}
+        model={model}
+        fontSize={fontSize}
+        autoGenerateImages={autoGenerateImages}
+        onToggleAutoGenerateImages={() => setAutoGenerateImages(!autoGenerateImages)}
+        onGenerateTurnImage={handleGenerateTurnImage}
+        isGeneratingImageForTurn={isGeneratingImageForTurn}
+        onOpenLightbox={(url, caption) => setLightboxData({ url, caption })}
+        onSubmitAction={handleSubmitAction}
+        isSubmittingTurn={isSubmittingTurn}
+        streamingNarrative={streamingNarrative}
+        onEditTurnNarrative={(turnId, newText) => {
+          setCampaign((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  turns: prev.turns.map((turn) =>
+                    turn.id === turnId
+                      ? { ...turn, gmResponse: { ...turn.gmResponse, narrative: newText } }
+                      : turn
+                  ),
+                }
+              : prev
+          );
+        }}
+        onRetryLastTurn={handleRetryLastTurn}
+        onRewindToTurn={(turnIdx) => {
+          if (!campaign) return;
+          const target = campaign.turns[turnIdx];
+          if (!target) return;
+          setCampaign({
+            ...campaign,
+            character: target.snapshot.character,
+            world: target.snapshot.world,
+            turns: campaign.turns.slice(0, turnIdx + 1),
+          });
+        }}
+        activeVfx={activeVfx}
+        rateLimitNotice={rateLimitNotice}
+        onDismissRateLimitNotice={() => setRateLimitNotice(null)}
+        onSwitchToLiteAndRetry={() => {
+          setModel('gemini-3.5-flash-lite');
+          setRateLimitNotice(null);
+        }}
+        recentLootNotification={recentLootNotification}
+        onDismissLootNotification={() => setRecentLootNotification(null)}
+        externalActionDraft={externalActionDraft}
+        apiKeyState={geminiReport?.state || 'CHECKING'}
+        onOpenSettings={() => setAppView('settings')}
+        onChangeModel={setModel}
+        onChangeFontSize={setFontSize}
+        sfxEnabled={sfxEnabled}
+        onToggleSfx={handleToggleSfx}
+        onResetCampaign={handleNewCharacter}
+        onUpdateCharacter={(updated) =>
+          setCampaign((prev) => (prev ? { ...prev, character: updated } : prev))
+        }
+        onRegeneratePortrait={handleRegeneratePlayerPortrait}
+        isRegeneratingPortrait={isRegeneratingPortrait}
+        onGenerateNpcAvatar={handleGenerateNpcAvatar}
+        generatingNpcName={generatingNpcName}
+        onSummarizeMemory={handleSummarizeMemory}
+        isSummarizingMemory={isSummarizingMemory}
+        onQuickTargetNpc={handleQuickTargetNpc}
+        onOpenCharacter={() => handleNavigate('character')}
+        onOpenCodex={() => setAppView('codex')}
+        onSetActiveBarrierOrDomain={(label) =>
+          setCampaign((prev) =>
+            prev ? { ...prev, world: { ...prev.world, activeBarrierOrDomain: label } } : prev
+          )
+        }
+      />
+    );
+  };
+
+  const shell = (
+    <div className="editorial-shell flex h-[100dvh] flex-col overflow-hidden">
+      <header className="editorial-topbar flex shrink-0 items-center justify-between gap-4 px-4 md:px-5">
+        <div className="flex min-w-0 items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setAppView('home')}
+            className="editorial-logo-mark"
+            aria-label="Ir para o início"
+          >
+            呪
+          </button>
+          <div className="min-w-0">
+            <div className="editorial-eyebrow text-[8px]">Jujutsu Kaisen</div>
+            <button
+              type="button"
+              onClick={() => setAppView('home')}
+              className="editorial-serif block truncate text-[15px] leading-tight text-[#e7ddcb]"
+            >
+              Crônicas do Seguimento
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="editorial-eyebrow text-[8px] sm:hidden">
+            {appView === 'character'
+              ? campaign && !isCreatingCharacter
+                ? 'Ficha'
+                : 'Nova ficha'
+              : navItems.find((item) => item.id === appView)?.label}
+          </span>
+          <span className="editorial-eyebrow hidden text-[8px] sm:block">{contextLabel}</span>
+          {campaign && appView !== 'character' && (
+            <button type="button" onClick={handleNewCharacter} className="editorial-link hidden md:block">
+              Nova ficha
+            </button>
           )}
         </div>
+      </header>
+
+      <div className="flex min-h-0 flex-1">
+        <aside className="editorial-rail hidden shrink-0 flex-col md:flex" aria-label="Navegação principal">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = appView === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleNavigate(item.id)}
+                data-active={active ? 'true' : 'false'}
+                className="editorial-rail-button"
+                aria-label={item.label}
+                title={item.label}
+              >
+                <Icon className="h-[18px] w-[18px]" strokeWidth={1.4} />
+              </button>
+            );
+          })}
+        </aside>
+
+        <main
+          className={
+            'min-w-0 flex-1 ' +
+            (appView === 'chronicle' || appView === 'codex' ? 'overflow-hidden' : 'overflow-y-auto')
+          }
+        >
+          {renderContent()}
+        </main>
       </div>
 
-      {/* Mobile Native-App Bottom Navigation Bar (5 Tabs, min-height 48px) */}
-      <nav
-        aria-label="Navegação Principal Mobile"
-        className="lg:hidden safe-bottom grid grid-cols-5 items-center bg-[#110d0b]/95 border-t border-amber-500/25 shrink-0"
-      >
-        {(
-          [
-            { id: 'cronica', label: 'Crônica', icon: BookOpen },
-            { id: 'ficha', label: 'Ficha', icon: User },
-            { id: 'radar', label: 'Radar', icon: Eye },
-            { id: 'codice', label: 'Códice', icon: BookMarked },
-            { id: 'sistema', label: 'Sistema', icon: Settings },
-          ] as const
-        ).map((tab) => {
-          const Icon = tab.icon;
-          const isActive = mobileTab === tab.id;
+      <nav className="editorial-mobile-nav grid shrink-0 grid-cols-5 md:hidden" aria-label="Navegação principal">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          const active = appView === item.id;
           return (
             <button
-              key={tab.id}
+              key={item.id}
               type="button"
-              onClick={() => setMobileTab(tab.id)}
-              className={`min-h-[52px] flex flex-col items-center justify-center gap-0.5 transition-colors cursor-pointer ${
-                isActive ? 'text-amber-300 bg-amber-500/10' : 'text-amber-200/55 hover:text-amber-100'
-              }`}
+              onClick={() => handleNavigate(item.id)}
+              data-active={active ? 'true' : 'false'}
+              className="editorial-mobile-nav-item"
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <Icon className="h-[17px] w-[17px]" strokeWidth={1.4} />
+              <span>{item.label}</span>
             </button>
           );
         })}
       </nav>
 
-      {/* Desktop System & Cloud Modal */}
-      {showSystemModal && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-          <div className="w-full max-w-3xl rounded-2xl bg-[#120e0b] border border-amber-500/25 shadow-2xl overflow-hidden">
-            <Suspense fallback={<div className="p-6 text-xs text-slate-300">Carregando painel de sistema...</div>}>
-            <SystemAndCloudPanel
-              campaign={campaign}
-              model={model}
-              onChangeModel={setModel}
-              fontSize={fontSize}
-              onChangeFontSize={setFontSize}
-              onExportJson={handleExportJson}
-              onImportJsonFile={handleImportJsonFile}
-              onStartNewCampaign={() => setViewMode('wizard')}
-              onLoadCloudCampaign={(loaded) => setCampaign(loaded)}
-              userEmail={userEmail}
-              lastCloudSyncIso={lastCloudSyncIso}
-              onCloseModal={() => setShowSystemModal(false)}
-              customApiKey={customApiKey}
-              onChangeCustomApiKey={handleChangeCustomApiKey}
-              sfxEnabled={sfxEnabled}
-              onToggleSfx={handleToggleSfx}
-              geminiReport={geminiReport}
-              onRefreshGeminiStatus={handleRefreshGeminiStatus}
-            />
-            </Suspense>
-          </div>
-        </div>
-      )}
-
-      {/* Scene Lightbox Modal */}
-      {lightboxData && (
-        <div
-          onClick={() => setLightboxData(null)}
-          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex flex-col items-center justify-center p-4"
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            className="max-w-5xl w-full space-y-3"
-          >
-            <div className="flex items-center justify-between text-xs text-slate-300">
-              <span className="font-display font-bold">{lightboxData.caption}</span>
-              <button
-                type="button"
-                onClick={() => setLightboxData(null)}
-                className="p-1.5 rounded-lg bg-slate-800 text-white cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <img
-              src={lightboxData.url}
-              alt={lightboxData.caption}
-              referrerPolicy="no-referrer"
-              className="w-full rounded-2xl border border-slate-700 shadow-2xl"
-            />
-          </div>
-        </div>
-      )}
+      <EditorialDialog
+        open={Boolean(lightboxData)}
+        title={lightboxData?.caption || 'Imagem da cena'}
+        eyebrow="Frame da crônica"
+        onClose={() => setLightboxData(null)}
+      >
+        {lightboxData && (
+          <img
+            src={lightboxData.url}
+            alt={lightboxData.caption}
+            referrerPolicy="no-referrer"
+            className="w-full border border-[rgba(201,169,106,0.22)]"
+          />
+        )}
+      </EditorialDialog>
     </div>
   );
+
+  return shell;
 }

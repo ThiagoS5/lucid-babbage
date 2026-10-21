@@ -83,7 +83,6 @@ export interface TurnRequestPayload {
   world: WorldStateUpdate;
   actionMode: ActionMode;
   actionText: string;
-  diceRoll: number;
   revealedHandVow: boolean;
   ragContext: string;
   activeCards: string[];
@@ -175,6 +174,7 @@ export async function streamNarrativeTurn(
   let buf = '';
 
   let finalResult: StreamTurnResult = { ok: false, reason: 'STREAM_CLOSED' };
+  let terminal = false;
 
   const handleEvent = (eventName: string, dataStr: string) => {
     let data: Record<string, unknown>;
@@ -186,6 +186,7 @@ export async function streamNarrativeTurn(
     if (eventName === 'delta' && typeof data.text === 'string') {
       onDelta(data.text);
     } else if (eventName === 'done') {
+      terminal = true;
       finalResult = {
         ok: true,
         data: data.data as GmTurnResponse,
@@ -194,6 +195,7 @@ export async function streamNarrativeTurn(
         apiKeyState: (data.apiKeyState as ApiKeyHealthState) || 'VALID',
       };
     } else if (eventName === 'error') {
+      terminal = true;
       finalResult = {
         ok: false,
         reason: typeof data.reason === 'string' ? data.reason : 'ERROR',
@@ -202,10 +204,7 @@ export async function streamNarrativeTurn(
     }
   };
 
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += decoder.decode(value, { stream: true });
+  const processBuffer = () => {
     let sepIdx: number;
     while ((sepIdx = buf.indexOf('\n\n')) !== -1) {
       const block = buf.slice(0, sepIdx);
@@ -220,9 +219,69 @@ export async function streamNarrativeTurn(
         handleEvent(eventName, dataLines.join('\n'));
       }
     }
-  }
+  };
 
-  return finalResult;
+  // Se o servidor terminar de gerar mas a conexão não fechar, não podemos
+  // deixar a UI presa em "gerando". O evento terminal encerra na hora; um
+  // watchdog cobre queda silenciosa da conexão.
+  const STALL_MS = 45_000;
+
+  try {
+    while (!terminal) {
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const timeout = new Promise<'timeout'>((resolve) => {
+        timer = setTimeout(() => resolve('timeout'), STALL_MS);
+      });
+      const readPromise = reader.read();
+      // Evita rejeição não tratada se o cancelamento acontecer após o timeout.
+      readPromise.catch(() => {});
+      const read = await Promise.race([readPromise, timeout]);
+      if (timer) clearTimeout(timer);
+
+      if (read === 'timeout') {
+        try {
+          await reader.cancel();
+        } catch {
+          // Reader already closed.
+        }
+        return finalResult.ok
+          ? finalResult
+          : {
+              ok: false,
+              reason: 'STREAM_STALL',
+              errorMessage: 'A conexão de streaming ficou inativa. Tentando o modo não-streaming.',
+            };
+      }
+
+      if (read.done) break;
+
+      buf += decoder.decode(read.value, { stream: true });
+      processBuffer();
+
+      if (terminal) {
+        try {
+          await reader.cancel();
+        } catch {
+          // Reader already closed.
+        }
+        return finalResult;
+      }
+    }
+
+    // Último bloco sem delimitador final.
+    if (!terminal && buf.trim()) {
+      buf += '\n\n';
+      processBuffer();
+    }
+
+    return finalResult;
+  } finally {
+    try {
+      reader.releaseLock();
+    } catch {
+      // Lock already released or stream cancelled.
+    }
+  }
 }
 
 export interface ImageGenerationPayload {

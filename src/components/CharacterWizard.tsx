@@ -6,9 +6,6 @@ import {
   DomainBarrierType,
   DomainPortalConfig,
   DomainPortalStyle,
-  NarrativeAffinityLevel,
-  NarrativePillarItem,
-  NarrativeSkillItem,
   SessionZeroChatEntry,
   UNDEVELOPED_MARKER,
   WorldStateUpdate,
@@ -20,22 +17,8 @@ import {
   STARTING_ARCS,
 } from '../data/startingArcs';
 import {
-  DEFAULT_NARRATIVE_PILLARS,
-  DEFAULT_NARRATIVE_SKILLS,
-  GRADE_PROGRESSION_TIERS,
   buildExclusiveCharacterSheetMarkdown,
-  cycleAffinityLevel,
-  cyclePillarTier,
-  enforceMandatoryLimitationsOnPillars,
-  enforceMandatoryLimitationsOnSkills,
-  ensureCharacterProgression,
-  ensureNarrativePillars,
-  ensureNarrativeSkills,
-  getAffinityLevelMeta,
-  getGradeProgressionRule,
-  getPillarTierMeta,
   isSectionUndeveloped,
-  validateNarrativeLimitations,
 } from '../utils/jjkEngine';
 import { generateCanonicalPortraitSvg } from '../utils/svgArtGenerator';
 import { FEATURED_PORTRAIT_GALLERY, WIKI_PORTRAIT_FILES } from '../data/characterPortraits';
@@ -73,6 +56,7 @@ import {
   Skull,
   User,
   Info,
+  ArrowRight,
 } from 'lucide-react';
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -280,8 +264,9 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   customApiKey,
   geminiReport,
 }) => {
-  // Identity and D&D 5e Header Fields
+  // Identity and narrative header fields
   const [name, setName] = useState('Ren Fushiguro');
+  const [age, setAge] = useState('16');
   const [customClan, setCustomClan] = useState('Clã Zenin / Independente');
   const [selectedFactionIdx, setSelectedFactionIdx] = useState(0);
   const [selectedGrade, setSelectedGrade] = useState('Grau 4');
@@ -327,7 +312,7 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     'Explicar abertamente o funcionamento da Técnica Inata ao inimigo em combate.'
   );
   const [customVowBonus, setCustomVowBonus] = useState(
-    '+20% de Output imediato de Energia Amaldiçoada e eficácia da técnica.'
+    'A técnica se torna mais eficaz na ficção porque o oponente agora conhece (e pode explorar) o seu funcionamento.'
   );
   const [extraVows, setExtraVows] = useState<{ name: string; condition: string; bonus: string }[]>([]);
   const [newVowName, setNewVowName] = useState('');
@@ -345,29 +330,6 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   const [clanTrait, setClanTrait] = useState('');
   const [clanTradition, setClanTradition] = useState('');
   const [clanStatus, setClanStatus] = useState('Clã Independente');
-
-  // 6 Narrative Pillars (D&D 5e Ability Shields)
-  const [pillars, setPillars] = useState<NarrativePillarItem[]>(() =>
-    DEFAULT_NARRATIVE_PILLARS.map((p) => ({ ...p }))
-  );
-
-  // 14+ Narrative Skills & Affinities (100% Narrative, No Math)
-  const [skills, setSkills] = useState<NarrativeSkillItem[]>(() =>
-    DEFAULT_NARRATIVE_SKILLS.map((s) => ({ ...s }))
-  );
-  const [skillCategoryFilter, setSkillCategoryFilter] = useState<
-    'all' | 'Combate & Corpo' | 'Jujutsu & Barreiras' | 'Mente & Percepção' | 'Social & Furtividade'
-  >('all');
-  const [isAddingCustomSkill, setIsAddingCustomSkill] = useState(false);
-  const [customSkillName, setCustomSkillName] = useState('');
-  const [customSkillCategory, setCustomSkillCategory] = useState<
-    'Combate & Corpo' | 'Jujutsu & Barreiras' | 'Mente & Percepção' | 'Social & Furtividade'
-  >('Combate & Corpo');
-  const [customSkillDesc, setCustomSkillDesc] = useState('');
-  const [customSkillAffinity, setCustomSkillAffinity] = useState<NarrativeAffinityLevel>('afinidade');
-
-  // Responsive Layout Mode for Mobile & Tablet (< lg)
-  const [mobileSheetTab, setMobileSheetTab] = useState<'all' | 'pillars' | 'technique' | 'roleplay'>('all');
 
   // Technique & Domain Portal
   const [techniqueMode, setTechniqueMode] = useState<'canon' | 'custom'>('custom');
@@ -407,12 +369,17 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     hasRct: false,
     rctStatus: UNDEVELOPED_MARKER,
     activationConditions:
-      'Exige tocar a superfície ou o ar com a palma da mão antes de gravar um vetor; explicar a regra do atraso cinético amplia o Output em +20%.',
+      'Exige tocar a superfície ou o ar com a palma da mão antes de gravar um vetor; explicar a regra do atraso cinético torna a técnica mais previsível — e mais perigosa quando o oponente acredita tê-la entendido.',
   });
   const [isGeneratingTech, setIsGeneratingTech] = useState(false);
 
   // Arsenal & Starting Arc
-  const [selectedToolIdx, setSelectedToolIdx] = useState(2);
+  const [selectedToolId, setSelectedToolId] = useState('tool-katana');
+  const [toolMode, setToolMode] = useState<'none' | 'canon' | 'custom'>('canon');
+  const [customToolName, setCustomToolName] = useState('');
+  const [customToolGrade, setCustomToolGrade] = useState('Grau 3');
+  const [customToolEffect, setCustomToolEffect] = useState('');
+  const [startWithVow, setStartWithVow] = useState(true);
  const [selectedArcIdx, setSelectedArcIdx] = useState(0);
   const [customArcDescription, setCustomArcDescription] = useState(
     () => DEFAULT_STARTING_ARC.scene
@@ -427,10 +394,12 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   const [isEvaluatingSessionZero, setIsEvaluatingSessionZero] = useState(false);
   const [sessionZeroStatus, setSessionZeroStatus] = useState<'IDLE' | 'NEEDS_BALANCING' | 'BALANCED_READY'>('IDLE');
   const [latestProposedPatch, setLatestProposedPatch] = useState<SessionZeroChatEntry['proposedCharacterPatch'] | null>(null);
-  const [patchedTool, setPatchedTool] = useState<{ name: string; grade: string; effect: string } | null>(null);
+
+  const canonicalTools = INITIAL_TOOLS.filter((tool) => tool.id !== 'tool-undeveloped');
+  const selectedCanonicalTool =
+    canonicalTools.find((tool) => tool.id === selectedToolId) ?? canonicalTools[0];
 
   const currentFaction = FACTIONS[selectedFactionIdx];
-  const currentGradeRule = getGradeProgressionRule(selectedGrade);
 
   const handleFactionChange = (idx: number) => {
     setSelectedFactionIdx(idx);
@@ -512,16 +481,27 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
         bonds,
         flaws,
         alignmentPhilosophy,
-        narrativePillars: pillars,
-        narrativeSkills: skills,
         customConcept,
         technique: customTechnique,
-        vow: {
-          name: customVowName,
-          condition: customVowCondition,
-          bonus: customVowBonus,
-        },
-        tool: INITIAL_TOOLS[selectedToolIdx],
+        vow: startWithVow
+          ? {
+              name: customVowName,
+              condition: customVowCondition,
+              bonus: customVowBonus,
+            }
+          : null,
+        tool:
+          toolMode === 'none'
+            ? null
+            : toolMode === 'custom'
+            ? customToolName.trim()
+              ? {
+                  name: customToolName.trim(),
+                  grade: customToolGrade.trim() || 'Grau 3',
+                  effect: customToolEffect.trim() || 'Ferramenta criada pelo jogador.',
+                }
+              : null
+            : selectedCanonicalTool,
       };
 
       const data = await evaluateSessionZero({
@@ -568,16 +548,19 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     if (patch.appearance) setAppearance(patch.appearance);
     if (patch.backstory) setBackstory(patch.backstory);
     if (patch.combatStyle) setCombatStyle(patch.combatStyle);
-    if (patch.vowName) setCustomVowName(patch.vowName);
+    if (patch.vowName) {
+      setStartWithVow(true);
+      setCustomVowName(patch.vowName);
+    }
     if (patch.vowCondition) setCustomVowCondition(patch.vowCondition);
     if (patch.vowBonus) setCustomVowBonus(patch.vowBonus);
     if (patch.toolName) {
-      setSelectedToolIdx(-1);
-      setPatchedTool({
-        name: patch.toolName,
-        grade: patch.toolGrade || 'Grau 3',
-        effect: patch.toolEffect || 'Ferramenta Amaldiçoada proposta pelo Mestre na Sessão Zero.',
-      });
+      setToolMode('custom');
+      setCustomToolName(patch.toolName);
+      setCustomToolGrade(patch.toolGrade || 'Grau 3');
+      setCustomToolEffect(
+        patch.toolEffect || 'Ferramenta Amaldiçoada proposta pelo Mestre na Sessão Zero.'
+      );
     }
     if (patch.technique) {
       setTechniqueMode('custom');
@@ -697,48 +680,9 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     }
   };
 
-  const handleTogglePillar = (pillarId: string) => {
-    setPillars((prev) =>
-      prev.map((p) => (p.id === pillarId ? { ...p, tier: cyclePillarTier(p.tier) } : p))
-    );
-  };
-
-  const handleCycleSkillAffinity = (skillId: string) => {
-    setSkills((prev) =>
-      prev.map((s) => (s.id === skillId ? { ...s, level: cycleAffinityLevel(s.level) } : s))
-    );
-  };
-
-  const handleAutoFixLimitations = () => {
-    setPillars((prev) => enforceMandatoryLimitationsOnPillars(prev));
-    setSkills((prev) => enforceMandatoryLimitationsOnSkills(prev));
-  };
-
-  const handleAddCustomSkill = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customSkillName.trim()) return;
-    const newSkill: NarrativeSkillItem = {
-      id: `custom-skill-${Date.now()}`,
-      name: customSkillName.trim(),
-      category: customSkillCategory,
-      level: customSkillAffinity,
-      narrativeImpact: customSkillDesc.trim() || 'Perícia narrativa personalizada criada na ficha.',
-      isCustom: true,
-    };
-    setSkills((prev) => [...prev, newSkill]);
-    setCustomSkillName('');
-    setCustomSkillDesc('');
-    setIsAddingCustomSkill(false);
-  };
-
-  const limitationsCheck = validateNarrativeLimitations(pillars, skills);
-
   const handleStart = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-
-    const enforcedPillars = enforceMandatoryLimitationsOnPillars(pillars);
-    const enforcedSkills = enforceMandatoryLimitationsOnSkills(skills);
 
     const baseTechnique: CursedTechniqueDetails = currentFaction.isHr
       ? CANONICAL_TECHNIQUES[5]
@@ -767,7 +711,22 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
           : domainPortal,
     };
 
-    const chosenToolRaw = patchedTool ?? (selectedToolIdx >= 0 ? INITIAL_TOOLS[selectedToolIdx] : null);
+    const customToolRaw =
+      toolMode === 'custom' && customToolName.trim()
+        ? {
+            name: customToolName.trim(),
+            grade: customToolGrade.trim() || 'Grau 3',
+            effect:
+              customToolEffect.trim() ||
+              'Ferramenta amaldiçoada criada pelo jogador para esta crônica.',
+          }
+        : null;
+    const chosenToolRaw =
+      toolMode === 'none'
+        ? null
+        : toolMode === 'custom'
+        ? customToolRaw
+        : selectedCanonicalTool ?? null;
     const chosenTool: CursedToolItem | null = chosenToolRaw
       ? {
           id: 'tool-chosen',
@@ -779,36 +738,11 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
       : null;
     const chosenArc = STARTING_ARCS[selectedArcIdx];
 
-    const initialInventory: CursedToolItem[] = isSectionUndeveloped(chosenTool?.name) || !chosenTool
-      ? [
-          {
-            id: 'item-undeveloped-tool',
-            name: UNDEVELOPED_MARKER,
-            grade: 'Em Desenvolvimento',
-            effect: 'Ferramenta Amaldiçoada principal ainda não definida — será despertada ou conquistada na campanha.',
-            equipped: false,
-          },
-          {
-            id: 'item-talisman',
-            name: 'Talismã de Cortina Básica',
-            grade: 'Utilitário Jujutsu',
-            effect: 'Permite erguer uma Cortina (Tobari) para ocultar o combate de civis.',
-            equipped: true,
-          },
-        ]
-      : [
-          chosenTool,
-          {
-            id: 'item-talisman',
-            name: 'Talismã de Cortina Básica',
-            grade: 'Utilitário Jujutsu',
-            effect: 'Permite erguer uma Cortina (Tobari) para ocultar o combate de civis.',
-            equipped: true,
-          },
-        ];
+    const initialInventory: CursedToolItem[] = chosenTool ? [chosenTool] : [];
 
     const baseCharacter: CharacterSheet = {
       name: name.trim(),
+      age: age.trim() || undefined,
       appearance: appearance.trim() || UNDEVELOPED_MARKER,
       backstory: backstory.trim() || UNDEVELOPED_MARKER,
       combatStyle: combatStyle.trim() || UNDEVELOPED_MARKER,
@@ -824,8 +758,6 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
       ideals: ideals.trim() || UNDEVELOPED_MARKER,
       bonds: bonds.trim() || UNDEVELOPED_MARKER,
       flaws: flaws.trim() || UNDEVELOPED_MARKER,
-      narrativePillars: enforcedPillars,
-      narrativeSkills: enforcedSkills,
       isHeavenlyRestriction: currentFaction.isHr || heavenlyRestriction.type !== 'nenhuma',
       heavenlyRestriction:
         heavenlyRestriction.type !== 'nenhuma'
@@ -835,52 +767,46 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
               benefit: heavenlyRestriction.benefit.trim() || 'A definir',
             }
           : undefined,
-      hpPercentage: 100,
-      cursedEnergyPercentage:
-        currentFaction.isHr || heavenlyRestriction.type === 'fisica' ? 0 : 100,
-      outputPercentage: 100,
-      physicalCondition: 'Intacto — Pronto para Exorcismo',
-      techniqueState: 'Ativa',
-      inBlackFlashZone: false,
+      physicalCondition: 'Intacto — Pronto para o primeiro exorcismo',
       technique: chosenTechnique,
       inventory: initialInventory,
-      bindingVows: [
-        {
-          id: 'vow-reveal-hand',
-          name: customVowName.trim() || UNDEVELOPED_MARKER,
-          condition:
-            customVowCondition.trim() ||
-            'Explicar abertamente o funcionamento da Técnica Inata ao inimigo em combate.',
-          bonus:
-            customVowBonus.trim() ||
-            '+20% de Output imediato de Energia Amaldiçoada e eficácia da técnica.',
-          active: false,
-        },
-        ...extraVows.map((v, i) => ({
-          id: `vow-extra-${i}-${Date.now()}`,
-          name: v.name.trim() || 'Voto Vinculativo',
-          condition: v.condition.trim() || 'Condição a definir.',
-          bonus: v.bonus.trim() || 'Bônus a definir.',
-          active: false,
-        })),
-      ],
+      bindingVows: startWithVow
+        ? [
+            {
+              id: 'vow-reveal-hand',
+              name: customVowName.trim() || UNDEVELOPED_MARKER,
+              condition:
+                customVowCondition.trim() ||
+                'Explicar abertamente o funcionamento da Técnica Inata ao inimigo em combate.',
+              bonus:
+                customVowBonus.trim() ||
+                'A técnica se torna mais eficaz na ficção porque o oponente agora conhece (e pode explorar) o seu funcionamento.',
+              active: false,
+            },
+            ...extraVows.map((v, i) => ({
+              id: `vow-extra-${i}-${Date.now()}`,
+              name: v.name.trim() || 'Voto Vinculativo',
+              condition: v.condition.trim() || 'Condição a definir.',
+              bonus: v.bonus.trim() || 'Bônus a definir.',
+              active: false,
+            })),
+          ]
+        : [],
       evolutionHistory: [
         {
           id: `evo-init-${Date.now()}`,
           turnNumber: 1,
           timestamp: new Date().toISOString(),
-          title: `Criação da Ficha Oficial de Mesa (${selectedGrade})`,
+          title: `Criação da Ficha Oficial (${selectedGrade})`,
           details:
             sessionZeroChat.length > 0
-              ? `Personagem avaliado e nivelado na Sessão Zero com o Mestre IA. Início em ${selectedGrade} (${currentGradeRule.levelsRequired} níveis para ${currentGradeRule.nextGrade || 'Maestria'}).`
-              : `Ficha Exclusiva inicializada em ${selectedGrade} (${currentGradeRule.levelsRequired} níveis para ${currentGradeRule.nextGrade || 'Maestria'}).`,
+              ? `Personagem conversado com o Mestre na Sessão Zero. Início em ${selectedGrade}, com espaço para despertar o que ainda é semente.`
+              : `Ficha Exclusiva inicializada em ${selectedGrade} como ponto de partida narrativo.`,
           gradeAtTime: selectedGrade,
-          levelAtTime: 1,
         },
       ],
     };
 
-    baseCharacter.progression = ensureCharacterProgression(baseCharacter);
     baseCharacter.exclusiveSheetMarkdown = buildExclusiveCharacterSheetMarkdown(baseCharacter);
 
     const openingScene = customArcDescription.trim() || chosenArc.scene;
@@ -906,7 +832,6 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
       startingArcTitle: chosenArc.title,
       npcsInScene: chosenArc.initialNpcs.map((n) => ({
         ...n,
-        hpPercentage: 100,
         avatarUrl: generateCanonicalPortraitSvg(n.name),
       })),
     };
@@ -944,16 +869,6 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
     );
   };
 
-  // Skill stats for quick display
-  const helpingSkillsCount = skills.filter((s) => s.level === 'maestria' || s.level === 'afinidade').length;
-  const hinderingSkillsCount = skills.filter((s) => s.level === 'inaptidao').length;
-  const undevelopedSkillsCount = skills.filter((s) => s.level === 'nao_desenvolvido').length;
-
-  const filteredSkills = skills.filter((s) => {
-    if (skillCategoryFilter === 'all') return true;
-    return s.category === skillCategoryFilter;
-  });
-
   const selectedArc = STARTING_ARCS[selectedArcIdx] ?? STARTING_ARCS[0];
   const arcsByEra = STARTING_ARC_ERAS.map((era) => ({
     ...era,
@@ -961,393 +876,213 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
   }));
 
   return (
-    <div className="min-h-[100dvh] w-full overflow-y-auto rpg-tabletop-desk text-slate-100 px-3 py-6 md:px-8 md:py-10 font-sans safe-bottom">
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Top Control Bar */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-amber-950/60 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-950/70 border border-amber-500/50 flex items-center justify-center text-amber-400 shadow-[0_0_15px_rgba(217,119,6,0.2)]">
-              <ScrollText className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 text-[10px] tracking-[0.2em] uppercase text-amber-400 font-display font-bold">
-                <span>Jujutsu Kaisen · Ficha de Feiticeiro</span>
-              </div>
-              <h1 className="font-display text-2xl md:text-3xl font-extrabold tracking-wider text-amber-100 drop-shadow">
-                MESTRE DE JUJUTSU KAISEN
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            {hasExistingCampaign && (
-              <button
-                type="button"
-                onClick={onResumeExisting}
-                className="px-3.5 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer shadow-[0_0_15px_rgba(2,132,199,0.3)]"
-              >
-                <Play className="w-3.5 h-3.5" />
-                Retomar Campanha
-              </button>
-            )}
-
-            <button
-              type="button"
-              onClick={onOpenCloudModal}
-              className="px-3.5 py-2 rounded-lg bg-[#0d0b09] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-2 whitespace-nowrap cursor-pointer"
-              title="Abrir Diagnóstico da Chave Gemini IA, Configurações de Sistema e Saves na Nuvem"
-            >
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  geminiReport?.state === 'VALID'
-                    ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'
-                    : 'bg-amber-400'
-                }`}
-              />
-              <Cloud className="w-3.5 h-3.5 text-sky-400" />
-              <span>
-                {cloudUserEmail ? `Sistema & Nuvem (${cloudUserEmail.split('@')[0]})` : 'Sistema, IA & Nuvem'}
-              </span>
+    <div className="editorial-page max-w-[960px]">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
+        <div className="min-w-0">
+          <div className="editorial-eyebrow">Ficha de personagem</div>
+          <h1 className="editorial-page-title mt-4">Quem entra na história?</h1>
+          <p className="editorial-body mt-5 max-w-[620px]">
+            Preencha como uma ficha de papel. Escreva livremente: o Mestre lê
+            cada linha e a usa na história. Só o nome é obrigatório.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap lg:justify-end">
+          {hasExistingCampaign && (
+            <button type="button" onClick={onResumeExisting} className="editorial-button editorial-button--ghost">
+              <Play className="h-3.5 w-3.5" />
+              Retomar crônica
             </button>
-
-            <label className="px-3.5 py-2 rounded-lg bg-[#0d0b09] hover:bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium transition-colors flex items-center gap-1.5 whitespace-nowrap cursor-pointer">
-              <FolderOpen className="w-3.5 h-3.5 text-amber-400" />
-              <span>Importar Save (.json)</span>
-              <input
-                type="file"
-                accept=".json"
-                className="visually-hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) onImportJsonFile(file);
-                }}
-              />
-            </label>
-          </div>
-        </header>
-
-        {/* Intelligent Session Zero & Presets Bar */}
-        <section aria-labelledby="sz-heading" className="bg-gradient-to-r from-[#0e0b09] via-[#12111d] to-[#0e0b09] border border-amber-500/40 rounded-2xl p-4 md:p-5 space-y-3 shadow-[0_0_25px_rgba(217,119,6,0.1)]">
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
-            <div className="space-y-0.5">
-              <div id="sz-heading" className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-amber-300">
-                <Scale className="w-4 h-4 text-amber-400" />
-                <span>Sessão Zero & Equilíbrio de Força · Nivelamento Inteligente com Mestre IA</span>
-              </div>
-              <p className="text-xs text-slate-400 max-w-3xl leading-relaxed">
-                Você pode deixar seções em aberto com <span className="text-amber-300 font-semibold">"Não desenvolvido ainda"</span> para despertar em combate. O Mestre IA nivela ideias apelonas com Votos Vinculativos e perguntas táticas.
-              </p>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button
-                type="button"
-                onClick={handleMarkAdvancedAsUndeveloped}
-                className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 text-xs font-medium transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <Lock className="w-3.5 h-3.5 text-amber-400" />
-                <span>Marcar Avançadas "Não desenvolvido ainda"</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleRunSessionZero()}
-                disabled={isEvaluatingSessionZero}
-                className="px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-[0_0_15px_rgba(217,119,6,0.35)] transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <MessageSquare className="w-3.5 h-3.5" />
-                <span>
-                  {isEvaluatingSessionZero ? 'Mestre Avaliando...' : '⚖️ Nivelar com Mestre IA'}
-                </span>
-              </button>
-            </div>
-          </div>
-
-          {/* Session Zero Chat Entries */}
-          {sessionZeroChat.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-slate-800/80 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
-                    <MessageSquare className="w-3.5 h-3.5 text-sky-400" />
-                    Diálogo da Sessão Zero
-                  </span>
-                  {sessionZeroStatus && (
-                    <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${
-                        sessionZeroStatus === 'BALANCED_READY'
-                          ? 'bg-emerald-950/60 border-emerald-500/60 text-emerald-300'
-                          : 'bg-amber-950/60 border-amber-500/60 text-amber-300'
-                      }`}
-                    >
-                      {sessionZeroStatus === 'BALANCED_READY'
-                        ? '✓ Ficha Nivelada & Pronta'
-                        : '⚖️ Em Nivelamento'}
-                    </span>
-                  )}
-                </div>
-
-                {latestProposedPatch && (
-                  <button
-                    type="button"
-                    onClick={() => handleApplyProposedPatch(latestProposedPatch)}
-                    className="px-3 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Aplicar Proposta do Mestre na Ficha</span>
-                  </button>
-                )}
-              </div>
-
-              <div className="max-h-60 overflow-y-auto space-y-2.5 pr-1">
-                {sessionZeroChat.map((entry) => (
-                  <div
-                    key={entry.id}
-                    className={`p-3 rounded-xl border text-xs leading-relaxed ${
-                      entry.sender === 'gm'
-                        ? 'bg-[#080605] border-amber-500/40 text-slate-200'
-                        : 'bg-sky-950/30 border-sky-500/40 text-sky-100 ml-4'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-[11px] uppercase tracking-wider text-amber-300">
-                        {entry.sender === 'gm' ? '🎭 Mestre de Jogo' : `🗣️ ${name}`}
-                      </span>
-                      {entry.designatedInitialGrade && (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950/80 border border-amber-500/40 text-amber-200">
-                          Grau Sugerido: {entry.designatedInitialGrade}
-                        </span>
-                      )}
-                    </div>
-                    {entry.powerScaleWarning && (
-                      <div className="mb-1.5 p-1.5 rounded bg-amber-950/40 border border-amber-500/40 text-amber-200 text-[11px]">
-                        <strong>⚠️ Alerta:</strong> {entry.powerScaleWarning}
-                      </div>
-                    )}
-                    <div className="whitespace-pre-line">{entry.text}</div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Player Reply Input */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={sessionZeroReplyInput}
-                  onChange={(e) => setSessionZeroReplyInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
-                      e.preventDefault();
-                      if (sessionZeroReplyInput.trim() && !isEvaluatingSessionZero) {
-                        handleRunSessionZero();
-                      }
-                    }
-                  }}
-                  placeholder="Responda ou proponha um Voto Vinculativo ao Mestre..."
-                  className="flex-1 px-3 py-1.5 rounded-lg bg-[#080605] border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500"
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRunSessionZero()}
-                  disabled={isEvaluatingSessionZero || !sessionZeroReplyInput.trim()}
-                  className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white text-xs font-semibold flex items-center gap-1 cursor-pointer"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                  <span>Enviar</span>
-                </button>
-              </div>
-            </div>
           )}
-        </section>
+          <label className="editorial-link flex cursor-pointer items-center gap-1.5 whitespace-nowrap border border-[rgba(201,169,106,0.25)] px-3 py-2">
+            <FolderOpen className="h-3.5 w-3.5" />
+            Importar save
+            <input
+              type="file"
+              accept=".json"
+              className="hidden"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                if (file) onImportJsonFile(file);
+                event.target.value = '';
+              }}
+            />
+          </label>
+          <button type="button" onClick={onOpenCloudModal} className="editorial-link flex items-center gap-1.5 whitespace-nowrap border border-[rgba(201,169,106,0.25)] px-3 py-2">
+            <Cloud className="h-3.5 w-3.5" />
+            Sistema
+            <span
+              className={
+                'ml-1 inline-block h-1.5 w-1.5 rounded-full ' +
+                (geminiReport?.state === 'VALID' ? 'bg-[#8fbf8a]' : 'bg-[#b99b63]')
+              }
+            />
+          </button>
+        </div>
+      </div>
 
-        {/* =========================================================================
-            THE OFFICIAL JUJUTSU SORCERER CHARACTER SHEET
-           ========================================================================= */}
-        <form onSubmit={handleStart} className="dnd5e-sheet-surface space-y-6">
-          {/* 1. D&D 5E OFFICIAL HEADER BLOCK */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 pb-4 border-b border-amber-500/30">
-            {/* Left Block: Character Name & Crest */}
-            <div className="lg:col-span-5 flex flex-col sm:flex-row items-center gap-4">
-              <div className="relative group shrink-0">
-                <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl overflow-hidden border-2 border-amber-500/60 shadow-[0_0_20px_rgba(217,119,6,0.25)] bg-[#080605]">
-                  <img
-                    src={avatarUrl}
-                    alt={name}
-                    fetchPriority="high"
-                    referrerPolicy="no-referrer"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+      <form onSubmit={handleStart} className="mt-12 space-y-7">
+        <section className="editorial-section">
+          <div className="editorial-section-head">
+            <span className="editorial-numeral">I</span>
+            <h2 className="editorial-section-title">Identidade</h2>
+            <span className="h-px flex-1 bg-[rgba(201,169,106,0.18)]" />
+          </div>
+
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
+            <div className="shrink-0">
+              <img
+                src={avatarUrl}
+                alt={name || 'Retrato do feiticeiro'}
+                referrerPolicy="no-referrer"
+                className="h-28 w-28 border border-[rgba(201,169,106,0.25)] object-cover"
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                <label className="editorial-link cursor-pointer">
+                  <Upload className="mr-1 inline h-3 w-3" />
+                  Foto
+                  <input type="file" accept="image/*" className="hidden" onChange={handleUploadOwnPhoto} />
+                </label>
+                <button type="button" onClick={handleGenerateAvatar} disabled={isGeneratingAvatar} className="editorial-link">
+                  <Sparkles className="mr-1 inline h-3 w-3" />
+                  {isGeneratingAvatar ? 'Gerando...' : 'Retrato IA'}
+                </button>
                 <button
                   type="button"
-                  onClick={() => setShowPortraitGallery(!showPortraitGallery)}
-                  className="absolute bottom-1 right-1 p-1 rounded bg-[#080605]/90 border border-slate-700 text-slate-200 hover:text-white"
-                  title="Galeria de Portraits"
-                  aria-expanded={showPortraitGallery}
-                  aria-controls="portrait-gallery-panel"
+                  onClick={() => setShowPortraitGallery((value) => !value)}
+                  className="editorial-link"
                 >
-                  <ImageIcon className="w-3.5 h-3.5" />
-                  <span className="visually-hidden">Alternar Galeria de Portraits</span>
+                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                  Galeria
                 </button>
               </div>
-
-              <div className="w-full space-y-1">
-                <label className="block text-[10px] tracking-widest uppercase font-bold text-amber-400" htmlFor="char-name-dnd5e">
-                  NOME DO PERSONAGEM
-                </label>
-                <input
-                  id="char-name-dnd5e"
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Ex: Ren Fushiguro, Aoi Takeda..."
-                  className="w-full px-3 py-2 rounded-lg bg-[#080605] border border-amber-500/50 font-display text-lg font-bold text-white tracking-wide focus:outline-none focus:border-amber-400"
-                />
-
-                <div className="flex flex-wrap items-center gap-1.5 pt-1">
-                  <label className="py-1 px-2.5 rounded bg-emerald-950/50 hover:bg-emerald-900/60 border border-emerald-500/50 text-[10px] font-semibold text-emerald-300 transition-colors flex items-center gap-1 cursor-pointer">
-                    <Upload className="w-3 h-3 shrink-0" />
-                    <span className="truncate max-w-[120px]">
-                      {uploadedPhotoName ? uploadedPhotoName : 'Sua Foto'}
-                    </span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleUploadOwnPhoto}
-                      className="visually-hidden"
-                    />
-                  </label>
-
-                  <button
-                    type="button"
-                    onClick={handleGenerateAvatar}
-                    disabled={isGeneratingAvatar}
-                    className="py-1 px-2.5 rounded bg-slate-800 hover:bg-slate-700 border border-slate-600 text-[10px] font-medium text-sky-300 transition-colors flex items-center gap-1 cursor-pointer"
-                  >
-                    <Sparkles className="w-3 h-3 shrink-0" />
-                    <span>{isGeneratingAvatar ? 'Gerando...' : 'Retrato IA'}</span>
-                  </button>
-                </div>
-              </div>
+              {uploadedPhotoName && (
+                <p className="editorial-muted mt-1 max-w-[120px] truncate font-sans text-[9px]">
+                  {uploadedPhotoName}
+                </p>
+              )}
             </div>
 
-            {/* Right Block: 2x3 D&D 5e Framed Identity Grid */}
-            <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
-              {/* Box 1: Facção / Classe */}
-              <div className="dnd5e-framed-box">
-                <div className="dnd5e-section-caption !mt-0 !pt-0 !border-t-0 mb-1.5 pb-1 border-b border-amber-700/20">
-                  CLASSE / FACÇÃO
-                </div>
-                <select
-                  value={selectedFactionIdx}
-                  onChange={(e) => handleFactionChange(Number(e.target.value))}
-                  className="w-full bg-transparent text-xs font-bold text-white border-none focus:outline-none"
-                  title="Facção e Classe Jujutsu"
-                >
-                  {FACTIONS.map((f, idx) => (
-                    <option key={f.id} value={idx} className="bg-[#0d0b09] text-white">
-                      {f.id}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Box 2: Clã / Antecedente */}
-              <div className="dnd5e-framed-box">
-                <div className="dnd5e-section-caption !mt-0 !pt-0 !border-t-0 mb-1.5 pb-1 border-b border-amber-700/20">
-                  CLÃ / ANTECEDENTE
-                </div>
-                <input
-                  type="text"
-                  value={customClan}
-                  onChange={(e) => setCustomClan(e.target.value)}
-                  placeholder="Clã ou Origem..."
-                  className="w-full bg-transparent text-xs font-bold text-sky-300 border-none focus:outline-none"
-                />
-              </div>
-
-              {/* Box 3: Grau & Níveis */}
-              <div className="dnd5e-framed-box">
-                <div className="dnd5e-section-caption !mt-0 !pt-0 !border-t-0 mb-1.5 pb-1 border-b border-amber-700/20">
-                  GRAU & ESCADA DE NÍVEIS
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-1">
+            <div className="min-w-0 flex-1 space-y-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label>
+                  <span className="editorial-label">Nome</span>
+                  <input
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="Ex.: Kaito Mori"
+                    className="editorial-input"
+                    required
+                  />
+                </label>
+                <label>
+                  <span className="editorial-label">Idade</span>
+                  <input
+                    value={age}
+                    onChange={(event) => setAge(event.target.value)}
+                    placeholder="Ex.: 17"
+                    className="editorial-input"
+                  />
+                </label>
+                <label>
+                  <span className="editorial-label">Grau de feiticeiro</span>
                   <select
                     value={selectedGrade}
-                    onChange={(e) => setSelectedGrade(e.target.value)}
-                    className="bg-transparent text-xs font-bold text-amber-300 border-none focus:outline-none"
+                    onChange={(event) => setSelectedGrade(event.target.value)}
+                    className="editorial-select"
                   >
-                    {GRADES.map((g) => (
-                      <option key={g} value={g} className="bg-[#0d0b09] text-white">
-                        {g}
+                    {GRADES.map((grade) => (
+                      <option key={grade} value={grade}>
+                        {grade}
                       </option>
                     ))}
                   </select>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-950 border border-amber-500/40 text-amber-200 font-semibold whitespace-nowrap">
-                    +{currentGradeRule.levelsRequired} nv
-                  </span>
-                </div>
+                </label>
+                <label>
+                  <span className="editorial-label">Clã / Antecedente</span>
+                  <input
+                    value={customClan}
+                    onChange={(event) => setCustomClan(event.target.value)}
+                    placeholder="Ex.: Clã Zenin, independente..."
+                    className="editorial-input"
+                  />
+                </label>
               </div>
 
-              {/* Box 4: Técnica Inata */}
-              <div className="dnd5e-framed-box">
-                <div className="dnd5e-section-caption !mt-0 !pt-0 !border-t-0 mb-1.5 pb-1 border-b border-amber-700/20">
-                  TÉCNICA INATA
-                </div>
-                <div className="text-xs font-bold text-amber-300 break-words leading-snug">
-                  {techniqueMode === 'canon'
-                    ? CANONICAL_TECHNIQUES[selectedCanonIdx].name
-                    : customTechnique.name || 'Técnica Original'}
-                </div>
-              </div>
+              <label>
+                <span className="editorial-label">Facção</span>
+                <select
+                  value={selectedFactionIdx}
+                  onChange={(event) => handleFactionChange(Number(event.target.value))}
+                  className="editorial-select"
+                >
+                  {FACTIONS.map((faction, index) => (
+                    <option key={faction.id} value={index}>
+                      {faction.id}
+                    </option>
+                  ))}
+                </select>
+              </label>
 
-              {/* Box 6: Experiência & Sessão Zero */}
-              <div className="dnd5e-framed-box">
-                <div className="dnd5e-section-caption !mt-0 !pt-0 !border-t-0 mb-1.5 pb-1 border-b border-amber-700/20">
-                  EXPERIÊNCIA / SESSÃO ZERO
-                </div>
-                <div className="flex flex-wrap items-center justify-between gap-1 text-xs font-bold">
-                  <span className="text-emerald-300">Nível 1 (0 / 100 XP)</span>
-                  <span className="text-[10px] text-slate-400 font-normal">
-                    {sessionZeroStatus === 'BALANCED_READY' ? '⚖️ Nivelada' : 'Sessão 0'}
-                  </span>
-                </div>
-              </div>
+              <label>
+                <span className="editorial-label">Aparência</span>
+                <textarea
+                  value={appearance}
+                  onChange={(event) => setAppearance(event.target.value)}
+                  placeholder="Rosto, postura, cicatrizes, o que se nota primeiro."
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+
+              <label>
+                <span className="editorial-label">História</span>
+                <textarea
+                  value={backstory}
+                  onChange={(event) => setBackstory(event.target.value)}
+                  placeholder="De onde você vem? Como conheceu as maldições? O que perdeu no caminho?"
+                  className="editorial-textarea"
+                  rows={5}
+                />
+              </label>
+
+              <label>
+                <span className="editorial-label">Motivação</span>
+                <textarea
+                  value={ideals}
+                  onChange={(event) => setIdeals(event.target.value)}
+                  placeholder="O que o mantém de pé quando tudo pesa?"
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
             </div>
           </div>
 
-          {/* Portrait Gallery Drawer (if toggled) */}
           {showPortraitGallery && (
-            <div id="portrait-gallery-panel" className="p-3.5 rounded-xl bg-[#080605] border border-amber-500/40 space-y-2.5">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-amber-300">
-                  Galeria de Portraits Oficiais (ArtStation & 318 Personagens Canônicos)
-                </span>
+            <div className="mt-6 border-t border-[rgba(201,169,106,0.18)] pt-4">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <span className="editorial-label">Galeria de retratos</span>
                 <input
-                  type="text"
                   value={portraitSearch}
-                  onChange={(e) => setPortraitSearch(e.target.value)}
-                  placeholder="Buscar portrait (ex: Aoi, Gojo, Nanami, Sukuna, Choso, Geto)..."
-                  className="px-2.5 py-1 rounded bg-[#0d0b09] border border-slate-700 text-xs text-white focus:outline-none focus:border-amber-500 w-full sm:w-64"
+                  onChange={(event) => setPortraitSearch(event.target.value)}
+                  placeholder="Buscar retrato..."
+                  className="editorial-input sm:max-w-[260px]"
                 />
               </div>
-
-              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2 max-h-44 overflow-y-auto pr-1">
+              <div className="mt-3 grid max-h-52 grid-cols-4 gap-2 overflow-y-auto pr-1 sm:grid-cols-8">
                 {(portraitSearch.trim()
                   ? [
                       ...FEATURED_PORTRAIT_GALLERY.filter((item) =>
                         item.label.toLowerCase().includes(portraitSearch.toLowerCase())
                       ),
-                      ...WIKI_PORTRAIT_FILES.filter((f) =>
-                        f.toLowerCase().includes(portraitSearch.toLowerCase())
+                      ...WIKI_PORTRAIT_FILES.filter((file) =>
+                        file.toLowerCase().includes(portraitSearch.toLowerCase())
                       )
                         .slice(0, 32)
-                        .map((f) => ({
-                          id: `wiki-file-${f}`,
-                          label: f.replace(/P(__.*)?\.png$/i, '').replace(/_/g, ' '),
-                          category: 'wiki_sorcerer' as const,
-                          url: `/portraits/wiki/${f}`,
+                        .map((file) => ({
+                          id: `wiki-${file}`,
+                          label: file.replace(/P(__.*)?\.png$/i, '').replace(/_/g, ' '),
+                          url: `/portraits/wiki/${file}`,
                         })),
                     ]
                   : FEATURED_PORTRAIT_GALLERY
@@ -1359,1088 +1094,663 @@ export const CharacterWizard: React.FC<CharacterWizardProps> = ({
                       setAvatarUrl(item.url);
                       setUploadedPhotoName(null);
                     }}
-                    className={`p-1 rounded-lg border text-center transition-all cursor-pointer ${
-                      avatarUrl === item.url
-                        ? 'border-amber-400 bg-amber-950/40'
-                        : 'border-slate-800 bg-[#0d0b09] hover:border-slate-600'
-                    }`}
+                    className={
+                      'border p-1 text-left transition-colors ' +
+                      (avatarUrl === item.url
+                        ? 'border-[#c9a96a]'
+                        : 'border-[rgba(255,255,255,0.08)] hover:border-[rgba(201,169,106,0.4)]')
+                    }
                   >
-                    <img
-                      src={item.url}
-                      alt={item.label}
-                      loading="lazy"
-                      className="w-full aspect-square object-cover rounded"
-                    />
-                    <div className="text-[9px] text-slate-300 break-words leading-tight mt-1">{item.label}</div>
+                    <img src={item.url} alt={item.label} loading="lazy" className="aspect-square w-full object-cover" />
+                    <span className="editorial-muted mt-1 block truncate font-sans text-[8px]">{item.label}</span>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* =========================================================================
-              2. THE TABLETOP BODY (RESPONSIVE: MOBILE, TABLET & WEB)
-             ========================================================================= */}
-          {/* Responsive Mobile / Tablet Tab Switcher (< lg) */}
-          <div className="lg:hidden flex items-center gap-1.5 p-1 rounded-xl bg-[#0b0907] border border-slate-800 overflow-x-auto no-scrollbar">
-            <button
-              type="button"
-              onClick={() => setMobileSheetTab('all')}
-              className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
-                mobileSheetTab === 'all'
-                  ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.4)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              👁️ Ficha Completa
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileSheetTab('pillars')}
-              className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
-                mobileSheetTab === 'pillars'
-                  ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.4)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              🛡️ 1. Pilares & Perícias
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileSheetTab('technique')}
-              className={`px-3 py-2 rounded-lg text-xs font-semibold whitespace-nowrap cursor-pointer transition-all ${
-                mobileSheetTab === 'technique'
-                  ? 'bg-amber-600 text-white shadow-[0_0_12px_rgba(217,119,6,0.4)]'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              ⚔️ 2. Grimório & Início
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* -----------------------------------------------------------------
-                COLUMN 1 (LEFT, col-span-5):
-                - Os 6 Pilares de Aptidão (D&D 5e Ability Shields)
-                - Quadro de Perícias & Afinidades Narrativas (100% Narrativo, Sem Math)
-               ----------------------------------------------------------------- */}
-            <div
-              className={`${
-                mobileSheetTab === 'pillars' || mobileSheetTab === 'all' ? 'block' : 'hidden'
-              } lg:block lg:col-span-5 space-y-5 min-w-0`}
-            >
-              {/* Os 6 Pilares de Aptidão */}
-              <div className="dnd5e-framed-box space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider font-display">
-                    <Shield className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Pilares de Aptidão Jujutsu</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400">Clique para alternar</span>
-                </div>
-
-                {/* Mandatory Tabletop Limitation Banner */}
-                <div
-                  className={`p-2.5 rounded-lg border text-[11px] leading-snug space-y-1.5 ${
-                    limitationsCheck.isValid
-                      ? 'bg-emerald-950/25 border-emerald-500/40 text-emerald-200'
-                      : 'bg-amber-950/40 border-amber-500/60 text-amber-200'
-                  }`}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <span className="font-bold uppercase tracking-wider text-[10px] flex items-center gap-1">
-                      <Scale className="w-3.5 h-3.5 shrink-0" />
-                      {limitationsCheck.isValid
-                        ? '✓ Limitações de Mesa Respeitadas'
-                        : '⚠️ Regra de Limitação Narrativa'}
-                    </span>
-                    {!limitationsCheck.isValid && (
-                      <button
-                        type="button"
-                        onClick={handleAutoFixLimitations}
-                        className="px-2 py-0.5 rounded bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold cursor-pointer shrink-0"
-                      >
-                        Equilibrar Agora
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-slate-300 leading-relaxed">
-                    Obrigatoriamente pelo menos <strong>1 Pilar</strong> deve ser{' '}
-                    <span className="text-amber-300 font-semibold">▼ Fragilidade</span> (atual:{' '}
-                    <strong>{limitationsCheck.fragilePillarCount}</strong>) e no máximo{' '}
-                    <strong>3 Pilares</strong> como Ponto Forte/Ápice (atual:{' '}
-                    <strong>{limitationsCheck.strongOrApexPillarCount}/3</strong>).
-                  </p>
-                  {!limitationsCheck.isValid && limitationsCheck.warnings.length > 0 && (
-                    <ul className="list-disc list-inside text-[10px] text-amber-300 space-y-0.5">
-                      {limitationsCheck.warnings.map((w, i) => (
-                        <li key={i}>{w}</li>
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {pillars.map((pillar) => {
-                    const meta = getPillarTierMeta(pillar.tier);
-                    return (
-                      <button
-                        key={pillar.id}
-                        type="button"
-                        onClick={() => handleTogglePillar(pillar.id)}
-                        className={`rpg-ability-box text-left transition-all cursor-pointer group w-full ${
-                          pillar.tier === 'Fraco'
-                            ? 'border-amber-500/70 bg-amber-950/20'
-                            : 'hover:border-amber-400'
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2 w-full">
-                          <span className="rpg-ability-title">{pillar.name}</span>
-                          <span className="rpg-ability-subpill px-2 py-0.5 shrink-0">
-                            {pillar.abbr || 'JJK'}
-                          </span>
-                        </div>
-                        <div className={`rpg-ability-tier w-full ${meta.badgeClass}`}>
-                          {meta.label}
-                        </div>
-                        <p className="text-[10px] text-slate-400 leading-snug break-words">
-                          {pillar.narrativeNote}
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Quadro de Perícias & Afinidades Narrativas */}
-              <div className="dnd5e-framed-box space-y-3">
-                <div className="flex flex-col gap-1 border-b border-amber-500/20 pb-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider font-display">
-                      <Compass className="w-4 h-4 text-amber-400 shrink-0" />
-                      <span>Perícias & Afinidades Narrativas</span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsAddingCustomSkill(true)}
-                      className="px-2.5 py-1 rounded bg-amber-950/60 hover:bg-amber-900 border border-amber-500/40 text-[10px] font-semibold text-amber-200 flex items-center gap-1 cursor-pointer shrink-0"
-                    >
-                      <Plus className="w-3 h-3" />
-                      <span>Nova Perícia</span>
-                    </button>
-                  </div>
-                  <p className="text-[11px] text-slate-400 leading-relaxed">
-                    <span className="text-amber-300 font-semibold">100% Narrativo · Sem soma matemática.</span> Afinidades ajudam diretamente na história e pelo menos <strong>1 Inaptidão (▼)</strong> gera complicações dramáticas.
-                  </p>
-                </div>
-
-                {/* Legend & Stats */}
-                <div className="flex flex-wrap items-center justify-between gap-2 text-[10px] bg-[#080605] p-2.5 rounded-lg border border-slate-800">
-                  <span className="text-emerald-400 font-bold">🟢 Ajuda: {helpingSkillsCount}</span>
-                  <span className="text-amber-400 font-bold">🔴 Fragilidades: {hinderingSkillsCount} (mín. 1)</span>
-                  <span className="text-amber-400 font-bold">🔒 Não desenv.: {undevelopedSkillsCount}</span>
-                </div>
-
-                {/* Category Filter Tabs */}
-                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
-                  {[
-                    { id: 'all', label: 'Todas' },
-                    { id: 'Combate & Corpo', label: 'Combate' },
-                    { id: 'Jujutsu & Barreiras', label: 'Jujutsu' },
-                    { id: 'Mente & Percepção', label: 'Mente' },
-                    { id: 'Social & Furtividade', label: 'Social' },
-                  ].map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setSkillCategoryFilter(tab.id as typeof skillCategoryFilter)}
-                      className={`px-2.5 py-1 rounded border transition-colors cursor-pointer ${
-                        skillCategoryFilter === tab.id
-                          ? 'bg-amber-600/30 border-amber-500 text-amber-200 font-bold'
-                          : 'bg-[#080605] border-slate-800 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Interactive Skills List - Fits mobile, tablet, and desktop cleanly */}
-                <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
-                  {filteredSkills.map((skill) => {
-                    const meta = getAffinityLevelMeta(skill.level);
-                    return (
-                      <div
-                        key={skill.id}
-                        className="rpg-skill-row group cursor-pointer"
-                        onClick={() => handleCycleSkillAffinity(skill.id)}
-                      >
-                        <div className="flex items-start justify-between gap-2 w-full">
-                          <div className="flex items-start gap-2 min-w-0 flex-1">
-                            {/* D&D 5e Bubble Icon */}
-                            <div
-                              className={`rpg-bubble mt-0.5 ${
-                                skill.level === 'maestria'
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-400'
-                                  : skill.level === 'afinidade'
-                                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-400'
-                                  : skill.level === 'inaptidao'
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500'
-                                  : skill.level === 'nao_desenvolvido'
-                                  ? 'bg-amber-500/20 text-amber-300 border-amber-500'
-                                  : 'bg-transparent text-slate-500 border-slate-700'
-                              }`}
-                            >
-                              {meta.symbol}
-                            </div>
-
-                            {/* Full Skill Name without truncation */}
-                            <div className="min-w-0 flex-1">
-                              <div className="text-xs font-semibold text-slate-100 group-hover:text-amber-200 leading-snug break-words">
-                                {skill.name}
-                              </div>
-                              <div className="text-[10px] text-amber-500/80 font-medium">
-                                {skill.category}
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Affinity Badge */}
-                          <div
-                            className={`px-2 py-0.5 rounded text-[10px] font-bold border shrink-0 whitespace-nowrap ${meta.badgeClass}`}
-                          >
-                            {meta.shortLabel}
-                          </div>
-                        </div>
-
-                        {/* Full Narrative Impact text */}
-                        <p className="text-[11px] text-slate-400 leading-relaxed break-words pl-7">
-                          {skill.narrativeImpact}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Add Custom Narrative Skill Modal / Form */}
-                {isAddingCustomSkill && (
-                  <div className="p-3 rounded-lg bg-[#080605] border border-amber-500/50 space-y-2 text-xs">
-                    <div className="font-bold text-amber-300">Criar Perícia Narrativa Personalizada</div>
-                    <input
-                      type="text"
-                      value={customSkillName}
-                      onChange={(e) => setCustomSkillName(e.target.value)}
-                      placeholder="Nome da Perícia (ex: Esgrima com Foice, Pilotagem, Investigação)..."
-                      className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-white text-xs"
-                    />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <select
-                        value={customSkillCategory}
-                        onChange={(e) =>
-                          setCustomSkillCategory(e.target.value as typeof customSkillCategory)
-                        }
-                        className="px-2 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-200 text-xs"
-                      >
-                        <option value="Combate & Corpo">Combate & Corpo</option>
-                        <option value="Jujutsu & Barreiras">Jujutsu & Barreiras</option>
-                        <option value="Mente & Percepção">Mente & Percepção</option>
-                        <option value="Social & Furtividade">Social & Furtividade</option>
-                      </select>
-
-                      <select
-                        value={customSkillAffinity}
-                        onChange={(e) =>
-                          setCustomSkillAffinity(e.target.value as NarrativeAffinityLevel)
-                        }
-                        className="px-2 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-200 text-xs font-bold"
-                      >
-                        <option value="maestria">★ Maestria (Ajuda Muito)</option>
-                        <option value="afinidade">● Afinidade (Ajuda)</option>
-                        <option value="neutro">○ Neutro (Padrão)</option>
-                        <option value="inaptidao">▼ Inaptidão (Prejudica)</option>
-                        <option value="nao_desenvolvido">🔒 Não desenvolvido ainda</option>
-                      </select>
-                    </div>
-
-                    <textarea
-                      rows={2}
-                      value={customSkillDesc}
-                      onChange={(e) => setCustomSkillDesc(e.target.value)}
-                      placeholder="Como essa perícia atua narrativamente na história..."
-                      className="w-full px-2.5 py-1.5 rounded bg-[#0d0b09] border border-slate-700 text-slate-300 text-xs leading-relaxed"
-                    />
-
-                    <div className="flex items-center justify-end gap-2 pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setIsAddingCustomSkill(false)}
-                        className="px-2.5 py-1 rounded bg-slate-800 text-slate-300 text-xs hover:bg-slate-700 cursor-pointer"
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleAddCustomSkill}
-                        className="px-3 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold cursor-pointer"
-                      >
-                        Salvar Perícia
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* -----------------------------------------------------------------
-                COLUMN 2 (RIGHT, col-span-7):
-                - Vitais de Combate Trio (Guarda, Reação, Output)
-                - Grimório da Técnica Inata (Lapso, Reversão, Máxima, RCT, Anti-Domínio)
-                - Arsenal & Ferramentas Amaldiçoadas
-                - Portal de Expansão de Domínio
-                - Arco Cronológico & Cena de Início da Campanha (Campo Grande)
-               ----------------------------------------------------------------- */}
-            <div
-              className={`${
-                mobileSheetTab === 'technique' || mobileSheetTab === 'all' ? 'block' : 'hidden'
-              } lg:block lg:col-span-7 space-y-5 min-w-0`}
-            >
-              {/* Painel de Atributos Táticos */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div className="dnd5e-framed-box text-center">
-                  <div className="text-sm sm:text-base font-display font-bold text-sky-400 break-words">
-                    {currentFaction.isHr ? 'SOBRE-HUMANA' : 'REFORÇO EA'}
-                  </div>
-                  <div className="dnd5e-section-caption">GUARDA & DEFESA</div>
-                </div>
-
-                <div className="dnd5e-framed-box text-center">
-                  <div className="text-sm sm:text-base font-display font-bold text-amber-400 break-words">
-                    {selectedGrade.includes('Especial') || selectedGrade.includes('1') ? 'INSTANTÂNEA' : 'ÁGIL'}
-                  </div>
-                  <div className="dnd5e-section-caption">REAÇÃO & PERCEPÇÃO</div>
-                </div>
-
-                <div className="dnd5e-framed-box text-center">
-                  <div className="text-sm sm:text-base font-display font-bold text-amber-400 break-words">
-                    {heavenlyRestriction.type === 'fisica' || currentFaction.isHr ? '0% EA' : '100% EA'}
-                  </div>
-                  <div className="dnd5e-section-caption">OUTPUT BASE</div>
-                </div>
-              </div>
-
-              {/* Grimório da Técnica Inata */}
-              <div className="dnd5e-framed-box space-y-3.5">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider">
-                    <Sword className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Grimório da Técnica Inata</span>
-                  </div>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => setTechniqueMode('custom')}
-                      className={`px-2.5 py-1 rounded text-[10px] font-semibold cursor-pointer ${
-                        techniqueMode === 'custom'
-                          ? 'bg-amber-600 text-white'
-                          : 'bg-[#080605] text-slate-400'
-                      }`}
-                    >
-                      Original
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTechniqueMode('canon')}
-                      className={`px-2.5 py-1 rounded text-[10px] font-semibold cursor-pointer ${
-                        techniqueMode === 'canon'
-                          ? 'bg-sky-600 text-white'
-                          : 'bg-[#080605] text-slate-400'
-                      }`}
-                    >
-                      Canônica
-                    </button>
-                  </div>
-                </div>
-
-                {techniqueMode === 'canon' ? (
-                  <div className="space-y-2">
-                    <select
-                      value={selectedCanonIdx}
-                      onChange={(e) => setSelectedCanonIdx(Number(e.target.value))}
-                      className="w-full px-2.5 py-2 rounded-lg bg-[#080605] border border-slate-700 text-xs text-white"
-                    >
-                      {CANONICAL_TECHNIQUES.map((t, idx) => (
-                        <option key={t.name} value={idx}>
-                          {t.name}
-                        </option>
-                      ))}
-                    </select>
-                    <p className="text-xs text-slate-300 leading-relaxed break-words">
-                      {CANONICAL_TECHNIQUES[selectedCanonIdx].description}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Concept & Forge */}
-                    <div className="space-y-1.5">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="text-[11px] font-semibold text-amber-300" htmlFor="custom-concept-dnd5e">
-                          Conceito Central da Técnica Inata
-                        </label>
-                        <button
-                          type="button"
-                          onClick={handleGenerateBalancedTechnique}
-                          disabled={isGeneratingTech}
-                          className="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-white text-[10px] font-bold flex items-center gap-1 cursor-pointer"
-                        >
-                          <Wand2 className="w-3 h-3" />
-                          <span>{isGeneratingTech ? 'Forjando...' : 'Forjar Técnica com IA'}</span>
-                        </button>
-                      </div>
-                      <textarea
-                        id="custom-concept-dnd5e"
-                        rows={3}
-                        value={customConcept}
-                        onChange={(e) => setCustomConcept(e.target.value)}
-                        placeholder="Descreva o funcionamento e limites da sua técnica..."
-                        className="w-full px-2.5 py-2 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
-                      />
-                    </div>
-
-                    {/* Technique Name */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold uppercase text-slate-400" htmlFor="custom-technique-name">
-                        Nome da Técnica
-                      </label>
-                      <input
-                        id="custom-technique-name"
-                        type="text"
-                        value={customTechnique.name}
-                        onChange={(e) =>
-                          setCustomTechnique({ ...customTechnique, name: e.target.value })
-                        }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white font-bold"
-                      />
-                    </div>
-
-                    {/* Lapso (Lapse) */}
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center justify-between gap-1">
-                        <span className="text-[10px] font-bold uppercase text-sky-400">
-                          Lapso da Técnica (Azul / Aplicação Básica)
-                        </span>
-                        {renderUndevelopedToggle(
-                          customTechnique.lapse,
-                          () => setCustomTechnique({ ...customTechnique, lapse: UNDEVELOPED_MARKER }),
-                          () => setCustomTechnique({ ...customTechnique, lapse: 'Lapso Primário de Energia Amaldiçoada' })
-                        )}
-                      </div>
-                      <textarea
-                        rows={2}
-                        value={customTechnique.lapse}
-                        onChange={(e) =>
-                          setCustomTechnique({ ...customTechnique, lapse: e.target.value })
-                        }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
-                      />
-                    </div>
-
-                    {/* Reversão (Reversal) */}
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center justify-between gap-1">
-                        <span className="text-[10px] font-bold uppercase text-amber-400">
-                          Reversão da Técnica (Vermelho / Energia Positiva)
-                        </span>
-                        {renderUndevelopedToggle(
-                          customTechnique.reversal,
-                          () => setCustomTechnique({ ...customTechnique, reversal: UNDEVELOPED_MARKER }),
-                          () => setCustomTechnique({ ...customTechnique, reversal: 'Reversão com Energia Positiva' })
-                        )}
-                      </div>
-                      <textarea
-                        rows={2}
-                        value={customTechnique.reversal}
-                        onChange={(e) =>
-                          setCustomTechnique({ ...customTechnique, reversal: e.target.value })
-                        }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
-                      />
-                    </div>
-
-                    {/* Técnica Máxima (Maximum) */}
-                    <div className="space-y-1">
-                      <div className="flex flex-wrap items-center justify-between gap-1">
-                        <span className="text-[10px] font-bold uppercase text-amber-400">
-                          Técnica Máxima (Gokunotan)
-                        </span>
-                        {renderUndevelopedToggle(
-                          customTechnique.maximum,
-                          () => setCustomTechnique({ ...customTechnique, maximum: UNDEVELOPED_MARKER }),
-                          () => setCustomTechnique({ ...customTechnique, maximum: 'Liberação Máxima de Output' })
-                        )}
-                      </div>
-                      <textarea
-                        rows={2}
-                        value={customTechnique.maximum}
-                        onChange={(e) =>
-                          setCustomTechnique({ ...customTechnique, maximum: e.target.value })
-                        }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-slate-200 leading-relaxed"
-                      />
-                    </div>
-
-                    {/* RCT & Anti-Domain */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      <div className="p-2.5 rounded bg-[#080605] border border-slate-800 space-y-1.5">
-                        <div className="flex flex-wrap items-center justify-between gap-1">
-                          <span className="text-[10px] font-bold text-emerald-400">
-                            Técnica Reversa (RCT)
-                          </span>
-                          {renderUndevelopedToggle(
-                            customTechnique.hasRct ? 'Desenvolvido' : UNDEVELOPED_MARKER,
-                            () => setCustomTechnique({ ...customTechnique, hasRct: false, rctStatus: UNDEVELOPED_MARKER }),
-                            () => setCustomTechnique({ ...customTechnique, hasRct: true, rctStatus: 'Desenvolvido' })
-                          )}
-                        </div>
-                        <div className="text-[11px] text-slate-400 leading-snug">
-                          {customTechnique.hasRct ? 'Cura de tecidos e membros ativa' : 'Bloqueado (despertará na história)'}
-                        </div>
-                      </div>
-
-                      <div className="p-2.5 rounded bg-[#080605] border border-slate-800 space-y-1.5">
-                        <div className="flex flex-wrap items-center justify-between gap-1">
-                          <span className="text-[10px] font-bold text-sky-400">
-                            Anti-Domínio
-                          </span>
-                          {renderUndevelopedToggle(
-                            customTechnique.antiDomain,
-                            () => setCustomTechnique({ ...customTechnique, antiDomain: UNDEVELOPED_MARKER }),
-                            () => setCustomTechnique({ ...customTechnique, antiDomain: 'Domínio Simples (Novo Estilo da Sombra)' })
-                          )}
-                        </div>
-                        <input
-                          type="text"
-                          value={customTechnique.antiDomain || ''}
-                          onChange={(e) => setCustomTechnique({ ...customTechnique, antiDomain: e.target.value })}
-                          className="w-full px-2 py-1 rounded bg-[#0d0b09] border border-slate-700 text-[11px] text-white"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Arsenal & Ferramentas Amaldiçoadas */}
-              <div className="dnd5e-framed-box space-y-2.5">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-1.5">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider">
-                    <Sword className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                    <span>Arsenal & Ferramenta Amaldiçoada</span>
-                  </div>
-                  <span className="text-[10px] text-slate-400">Item Inicial</span>
-                </div>
-
+          <details className="mt-6 border-t border-[rgba(201,169,106,0.18)] pt-4">
+            <summary className="editorial-link cursor-pointer">
+              Traços, filosofia e linhagem
+            </summary>
+            <div className="mt-5 grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <label className="sm:col-span-2">
+                <span className="editorial-label">Personalidade</span>
+                <textarea
+                  value={personalityTraits}
+                  onChange={(event) => setPersonalityTraits(event.target.value)}
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Vínculos</span>
+                <textarea
+                  value={bonds}
+                  onChange={(event) => setBonds(event.target.value)}
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Defeitos</span>
+                <textarea
+                  value={flaws}
+                  onChange={(event) => setFlaws(event.target.value)}
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Filosofia</span>
                 <select
-                  value={selectedToolIdx}
-                  onChange={(e) => {
-                    setSelectedToolIdx(Number(e.target.value));
-                    if (Number(e.target.value) >= 0) setPatchedTool(null);
-                  }}
-                  className="w-full px-2.5 py-2 rounded bg-[#080605] border border-slate-700 text-xs text-white"
+                  value={alignmentPhilosophy}
+                  onChange={(event) => setAlignmentPhilosophy(event.target.value)}
+                  className="editorial-select"
                 >
-                  {patchedTool && selectedToolIdx < 0 && (
-                    <option value={-1}>
-                      {patchedTool.name} ({patchedTool.grade})
-                    </option>
-                  )}
-                  {INITIAL_TOOLS.map((tool, idx) => (
-                    <option key={tool.id} value={idx}>
-                      {tool.name} ({tool.grade})
+                  {PHILOSOPHIES.map((philosophy) => (
+                    <option key={philosophy} value={philosophy}>
+                      {philosophy}
                     </option>
                   ))}
                 </select>
-                <div className="text-xs text-slate-300 leading-relaxed break-words">
-                  {patchedTool && selectedToolIdx < 0
-                    ? patchedTool.effect
-                    : INITIAL_TOOLS[selectedToolIdx >= 0 ? selectedToolIdx : 0].effect}
-                </div>
+              </label>
+              <label>
+                <span className="editorial-label">Estilo de combate</span>
+                <textarea
+                  value={combatStyle}
+                  onChange={(event) => setCombatStyle(event.target.value)}
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Traço do clã</span>
+                <input
+                  value={clanTrait}
+                  onChange={(event) => setClanTrait(event.target.value)}
+                  placeholder="Ex.: sombras líquidas, olhos que leem o fluxo..."
+                  className="editorial-input"
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Tradição do clã</span>
+                <input
+                  value={clanTradition}
+                  onChange={(event) => setClanTradition(event.target.value)}
+                  placeholder="História, reputação, dívidas..."
+                  className="editorial-input"
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Status do clã</span>
+                <input
+                  value={clanStatus}
+                  onChange={(event) => setClanStatus(event.target.value)}
+                  className="editorial-input"
+                />
+              </label>
+              <div>
+                <span className="editorial-label">Restrição celestial</span>
+                <select
+                  value={heavenlyRestriction.type}
+                  onChange={(event) =>
+                    setHeavenlyRestriction((prev) => ({
+                      ...prev,
+                      type: event.target.value as typeof prev.type,
+                    }))
+                  }
+                  className="editorial-select"
+                >
+                  <option value="nenhuma">Nenhuma</option>
+                  <option value="fisica">Física (corpo sobre-humano)</option>
+                  <option value="espiritual">Espiritual (percepção ampliada)</option>
+                  <option value="parcial">Parcial</option>
+                </select>
               </div>
-
-              {/* História, Personalidade & Estilo Marcial */}
-              <div className="dnd5e-framed-box space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-sky-300 uppercase tracking-wider border-b border-sky-500/20 pb-2">
-                  <User className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                  <span>História, Personalidade & Estilo Marcial</span>
-                </div>
-                <div className="space-y-2">
-                  <Field label="Aparência Física & Aura">
-                    <textarea rows={2} value={appearance} onChange={(e) => setAppearance(e.target.value)} placeholder="Como seu feiticeiro se parece?" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                  <Field label="História de Origem (Backstory)">
-                    <textarea rows={3} value={backstory} onChange={(e) => setBackstory(e.target.value)} placeholder="De onde ele vem? O que o motiva?" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                  <Field label="Estilo de Combate & Taijutsu">
-                    <textarea rows={2} value={combatStyle} onChange={(e) => setCombatStyle(e.target.value)} placeholder="Como ele luta?" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <Field label="Traços de Personalidade">
-                      <textarea rows={2} value={personalityTraits} onChange={(e) => setPersonalityTraits(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                    </Field>
-                    <Field label="Ideais & Motivação">
-                      <textarea rows={2} value={ideals} onChange={(e) => setIdeals(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                    </Field>
-                    <Field label="Vínculos (Bonds)">
-                      <textarea rows={2} value={bonds} onChange={(e) => setBonds(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                    </Field>
-                    <Field label="Defeitos & Fragilidades (Flaws)">
-                      <textarea rows={2} value={flaws} onChange={(e) => setFlaws(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                    </Field>
-                  </div>
-                </div>
-              </div>
-
-              {/* Clã / Linhagem */}
-              <div className="dnd5e-framed-box space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 uppercase tracking-wider border-b border-emerald-500/20 pb-2">
-                  <BookOpen className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                  <span>Clã & Linhagem (Criação Livre)</span>
-                </div>
-                <div className="space-y-2">
-                  <Field label="Status do Clã">
-                    <input type="text" value={clanStatus} onChange={(e) => setClanStatus(e.target.value)} placeholder="Ex: Três Grandes Famílias, clã menor, exilado, sobrevivente..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                  <Field label="Traço Genético Amaldiçoado (Técnica de Linhagem)">
-                    <textarea rows={2} value={clanTrait} onChange={(e) => setClanTrait(e.target.value)} placeholder="Habilidade ou marca herdada pelo sangue do clã." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                  <Field label="Tradição, História & Conflitos do Clã">
-                    <textarea rows={2} value={clanTradition} onChange={(e) => setClanTradition(e.target.value)} placeholder="Rivalidades com os Três Grandes Clãs, ritos, reputação..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                </div>
-              </div>
-
-              {/* Restrição Celestial */}
-              <div className="dnd5e-framed-box space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20 pb-2">
-                  <Scale className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Restrição Celestial (Tenshin Jubaku)</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
-                  {(
-                    [
-                      { v: 'nenhuma', l: 'Nenhuma' },
-                      { v: 'fisica', l: 'Física (Zero EA)' },
-                      { v: 'espiritual', l: 'Espiritual (EA Ampliada)' },
-                      { v: 'parcial', l: 'Parcial' },
-                    ] as const
-                  ).map((opt) => (
-                    <button
-                      key={opt.v}
-                      type="button"
-                      onClick={() => setHeavenlyRestriction((prev) => ({ ...prev, type: opt.v }))}
-                      className={`px-2 py-1.5 rounded text-[11px] font-semibold cursor-pointer border transition-colors ${
-                        heavenlyRestriction.type === opt.v
-                          ? 'bg-amber-600/30 border-amber-500 text-amber-100'
-                          : 'bg-[#080605] border-slate-700 text-slate-400'
-                      }`}
-                    >
-                      {opt.l}
-                    </button>
-                  ))}
-                </div>
-                {heavenlyRestriction.type !== 'nenhuma' && (
-                  <div className="space-y-2">
-                    <Field label="Preço / Custo">
-                      <input type="text" value={heavenlyRestriction.price} onChange={(e) => setHeavenlyRestriction((prev) => ({ ...prev, price: e.target.value }))} placeholder="Ex: 0% de EA, corpo frágil, alcance limitado..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                    </Field>
-                    <Field label="Benefício em Troca">
-                      <input type="text" value={heavenlyRestriction.benefit} onChange={(e) => setHeavenlyRestriction((prev) => ({ ...prev, benefit: e.target.value }))} placeholder="Ex: corpo sobre-humano, alcance quilométrico de EA..." className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                    </Field>
-                  </div>
-                )}
-              </div>
-
-              {/* Votos Vinculativos Livres */}
-              <div className="dnd5e-framed-box space-y-3">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider border-b border-amber-500/20 pb-2">
-                  <HeartHandshake className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Votos Vinculativos Livres (Binding Vows)</span>
-                </div>
-                <div className="space-y-2">
-                  <Field label="Voto Principal (Nome)">
-                    <input type="text" value={customVowName} onChange={(e) => setCustomVowName(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                  <Field label="Condição do Voto">
-                    <input type="text" value={customVowCondition} onChange={(e) => setCustomVowCondition(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                  <Field label="Bônus do Voto">
-                    <input type="text" value={customVowBonus} onChange={(e) => setCustomVowBonus(e.target.value)} className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  </Field>
-                </div>
-
-                {extraVows.length > 0 && (
-                  <div className="space-y-1.5">
-                    {extraVows.map((v, i) => (
-                      <div key={i} className="p-2 rounded-lg bg-[#0b0907] border border-slate-800 flex items-start justify-between gap-2">
-                        <div className="min-w-0 text-[11px] text-slate-300">
-                          <div className="font-bold text-amber-200">{v.name}</div>
-                          <div className="text-slate-400">{v.condition} → {v.bonus}</div>
-                        </div>
-                        <button type="button" onClick={() => setExtraVows((prev) => prev.filter((_, idx) => idx !== i))} className="text-amber-400 hover:text-amber-300 text-xs cursor-pointer shrink-0">✕</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 gap-1.5">
-                  <input type="text" value={newVowName} onChange={(e) => setNewVowName(e.target.value)} placeholder="Nome do novo Voto" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  <input type="text" value={newVowCondition} onChange={(e) => setNewVowCondition(e.target.value)} placeholder="Condição (ex: 'não usar técnica durante a semana')" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  <input type="text" value={newVowBonus} onChange={(e) => setNewVowBonus(e.target.value)} placeholder="Bônus (ex: 'dobrar o poder no sábado')" className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-xs text-white" />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (!newVowName.trim()) return;
-                      setExtraVows((prev) => [...prev, { name: newVowName.trim(), condition: newVowCondition.trim(), bonus: newVowBonus.trim() }]);
-                      setNewVowName('');
-                      setNewVowCondition('');
-                      setNewVowBonus('');
-                    }}
-                    className="px-3 py-1.5 rounded bg-amber-600 hover:bg-amber-500 text-slate-950 text-xs font-bold flex items-center gap-1.5 cursor-pointer justify-center"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> Adicionar Voto
-                  </button>
-                </div>
-              </div>
-
-              {/* Configuração do Portal de Expansão de Domínio */}
-              <div className="dnd5e-framed-box space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/20 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider">
-                    <Zap className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Portal de Expansão de Domínio</span>
-                  </div>
-                  {renderUndevelopedToggle(
-                    isDomainUndeveloped ? UNDEVELOPED_MARKER : domainPortal.domainName,
-                    () => setIsDomainUndeveloped(true),
-                    () => setIsDomainUndeveloped(false),
-                    'Domínio Não desenvolvido ainda'
-                  )}
-                </div>
-
-                {isDomainUndeveloped ? (
-                  <div className="p-3 rounded-lg bg-amber-950/20 border border-amber-500/40 text-xs text-amber-300 space-y-1">
-                    <div className="font-bold flex items-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5 shrink-0" />
-                      <span>Expansão de Domínio Bloqueada no Início</span>
-                    </div>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Seu Domínio Inato ainda não atingiu o ápice de refinamento. Quando você subir de Nível/Grau ou atingir um Kokusen iluminado, a história despertará seu Domínio automaticamente na sua Ficha Exclusiva!
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-2.5 text-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-bold uppercase text-slate-400">Nome do Domínio</label>
-                        <input
-                          type="text"
-                          value={domainPortal.domainName}
-                          onChange={(e) => setDomainPortal({ ...domainPortal, domainName: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-white font-bold"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px] font-bold uppercase text-slate-400">Tipo de Barreira</label>
-                        <select
-                          value={domainPortal.barrierType}
-                          onChange={(e) =>
-                            setDomainPortal({
-                              ...domainPortal,
-                              barrierType: e.target.value as DomainBarrierType,
-                            })
-                          }
-                          className="w-full px-2 py-1.5 rounded bg-[#080605] border border-slate-700 text-white"
-                        >
-                          {BARRIER_TYPES.map((b) => (
-                            <option key={b} value={b}>
-                              {b}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-amber-300">
-                        Acerto Garantido (Sure-Hit)
-                      </label>
-                      <textarea
-                        rows={2}
-                        value={domainPortal.sureHitEffect}
-                        onChange={(e) =>
-                          setDomainPortal({ ...domainPortal, sureHitEffect: e.target.value })
-                        }
-                        className="w-full px-2.5 py-1.5 rounded bg-[#080605] border border-slate-700 text-slate-200 leading-relaxed"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-sky-300">
-                        Estilo Visual do Portal
-                      </label>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 pt-1">
-                        {PORTAL_STYLES.map((st) => (
-                          <button
-                            key={st.id}
-                            type="button"
-                            onClick={() =>
-                              setDomainPortal({ ...domainPortal, visualStyle: st.id })
-                            }
-                            className={`px-2.5 py-1.5 rounded border text-[10px] text-left break-words cursor-pointer ${
-                              domainPortal.visualStyle === st.id
-                                ? 'bg-amber-600/30 border-amber-500 text-white font-bold'
-                                : 'bg-[#080605] border-slate-800 text-slate-400'
-                            }`}
-                          >
-                            {st.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Arco Cronológico & Cena de Início da Campanha (Campo de Texto Maior) */}
-              <div className="dnd5e-framed-box space-y-3 border-amber-500/45 bg-[#120e0b]">
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-amber-500/25 pb-2">
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-300 uppercase tracking-wider font-display">
-                    <BookOpen className="w-4 h-4 text-amber-400 shrink-0" />
-                    <span>Arco Cronológico &amp; Premissa · Onde a Campanha Irá Iniciar</span>
-                  </div>
-                  <span className="text-[10px] text-amber-200/80">Briefing enviado ao Mestre</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {STARTING_ARC_ERAS.map((era) => {
-                    const isActive = selectedArc.era === era.id;
-                    return (
-                      <button
-                        key={era.id}
-                        type="button"
-                        aria-pressed={isActive}
-                        onClick={() => {
-                          const idx = STARTING_ARCS.findIndex((a) => a.era === era.id);
-                          if (idx >= 0) handleArcChange(idx);
-                        }}
-                        className={`text-left rounded-xl border px-3 py-2 transition-colors cursor-pointer ${
-                          isActive
-                            ? 'border-amber-400 bg-amber-950/40 text-amber-100'
-                            : 'border-slate-800 bg-[#080605] text-slate-400 hover:border-amber-500/50 hover:text-amber-200'
-                        }`}
-                      >
-                        <span className="block text-[11px] font-bold uppercase tracking-wide">
-                          {era.label}
-                        </span>
-                        <span className="block text-[10px] leading-snug mt-0.5">{era.hint}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Premissa da campanha — o que a IA recebe como bússola do mundo. */}
-                <div className="rounded-xl border border-amber-500/30 bg-gradient-to-br from-amber-950/30 via-[#0d0a07] to-[#0a0806] px-3.5 py-3 space-y-2.5">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-amber-400">
-                    <Compass className="w-3.5 h-3.5 shrink-0" />
-                    <span>Premissa da campanha</span>
-                  </div>
-                  <p className="text-[12px] leading-relaxed text-amber-50/90">{selectedArc.premise}</p>
-                  <div className="grid grid-cols-1 gap-2 border-t border-amber-500/15 pt-2.5 sm:grid-cols-2">
-                    <div className="min-w-0">
-                      <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                        Seu papel neste arco
-                      </span>
-                      <p className="text-[11px] leading-snug text-slate-300">{selectedArc.playerRole}</p>
-                    </div>
-                    <div className="min-w-0">
-                      <span className="block text-[9px] font-bold uppercase tracking-wider text-slate-500">
-                        Tom que o Mestre deve sustentar
-                      </span>
-                      <p className="text-[11px] leading-snug text-slate-300">{selectedArc.tone.join(' · ')}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-400" htmlFor="arc-select">
-                      Selecionar Arco Base
-                    </label>
-                    <select
-                      id="arc-select"
-                      value={selectedArcIdx}
-                      onChange={(e) => handleArcChange(Number(e.target.value))}
-                      className="w-full px-2.5 py-2 rounded-lg bg-[#080605] border border-amber-500/40 text-xs text-white font-semibold"
-                    >
-                      {arcsByEra.map((group) => (
-                        <optgroup key={group.id} label={group.label}>
-                          {group.arcs.map(({ arc, idx }) => (
-                            <option key={arc.id} value={idx}>
-                              {arc.title}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-bold uppercase text-slate-400" htmlFor="arc-location">
-                      Local Exato de Início
-                    </label>
+              {heavenlyRestriction.type !== 'nenhuma' && (
+                <>
+                  <label>
+                    <span className="editorial-label">Preço</span>
                     <input
-                      id="arc-location"
-                      type="text"
-                      value={customArcLocation}
-                      onChange={(e) => setCustomArcLocation(e.target.value)}
-                      placeholder="Ex: Escola Técnica de Tóquio, Estação de Shibuya..."
-                      className="w-full px-2.5 py-2 rounded-lg bg-[#080605] border border-slate-700 text-xs text-amber-100"
+                      value={heavenlyRestriction.price}
+                      onChange={(event) =>
+                        setHeavenlyRestriction((prev) => ({ ...prev, price: event.target.value }))
+                      }
+                      className="editorial-input"
                     />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
-                  <div className="rounded-lg border border-slate-800 bg-[#080605] px-2.5 py-2">
-                    <span className="block text-[9px] uppercase tracking-wider text-slate-500">
-                      Cronologia enviada ao Mestre
-                    </span>
-                    <span className="text-amber-100">{selectedArc.timeline}</span>
-                  </div>
-                  <div className="rounded-lg border border-slate-800 bg-[#080605] px-2.5 py-2">
-                    <span className="block text-[9px] uppercase tracking-wider text-slate-500">
-                      Objetivo imediato
-                    </span>
-                    <span className="text-amber-100">{selectedArc.objective}</span>
-                  </div>
-                </div>
-
-                {selectedArc.initialNpcs.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-300">
-                    <span className="text-amber-400 font-semibold">Personagens Presentes na Abertura:</span>
-                    {selectedArc.initialNpcs.map((npc, i) => (
-                      <span key={npc.name}>
-                        {i > 0 && <span className="mx-1 text-slate-600">·</span>}
-                        <strong className="text-white">{npc.name}</strong> ({npc.attitude})
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <label className="text-[11px] font-bold text-amber-200" htmlFor="arc-opening-textarea">
-                      Cena de Abertura (o que o Mestre IA narra no Turno #1)
-                    </label>
-                    <button
-                      type="button"
-                      onClick={handleResetArcScene}
-                      className="text-[10px] font-semibold px-2 py-1 rounded-md border border-amber-500/40 text-amber-300 hover:bg-amber-950/50 cursor-pointer"
-                    >
-                      Restaurar cena do arco
-                    </button>
-                  </div>
-                  <textarea
-                    id="arc-opening-textarea"
-                    rows={8}
-                    maxLength={4000}
-                    value={customArcDescription}
-                    onChange={(e) => setCustomArcDescription(e.target.value)}
-                    placeholder="Descreva em detalhes por onde e como sua campanha irá começar (clima, local, missão inicial, personagens ao redor, tensão do momento)..."
-                    className="w-full px-3.5 py-3 rounded-xl bg-[#080605] border border-amber-500/40 text-sm font-narrative text-amber-50 leading-relaxed focus:outline-none focus:border-amber-400"
-                  />
-                  <p className="text-[11px] text-slate-400 leading-snug">
-                    {customArcDescription.trim().length} / 4000 caracteres · este é exatamente o texto que o Mestre recebe como cena canônica do Turno #1, junto com a premissa, o seu papel, a cronologia, o objetivo e os limites do arco. Descreva lugar, clima, o que está em jogo e o que você vê — sem instruções, sem pensamentos e sem falas do seu personagem.
-                  </p>
-                </div>
-
-                <details className="rounded-xl border border-slate-800 bg-[#080605] px-3 py-2">
-                  <summary className="cursor-pointer text-[11px] font-bold uppercase tracking-wide text-amber-300">
-                    Contrato do Mestre · fatos do mundo e limites
-                  </summary>
-                  <div className="mt-2 space-y-3">
-                    <div>
-                      <span className="block text-[9px] uppercase tracking-wider text-amber-400 mb-1">
-                        Batidas obrigatórias do Turno #1
-                      </span>
-                      <ul className="grid list-disc grid-cols-1 gap-1 pl-4 text-[11px] text-slate-300 sm:grid-cols-2">
-                        {selectedArc.mustEstablish.map((beat) => (
-                          <li key={beat}>{beat}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    <div>
-                      <span className="block text-[9px] uppercase tracking-wider text-emerald-400 mb-1">
-                        Fatos imutáveis
-                      </span>
-                      <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-300">
-                        {selectedArc.worldFacts.map((fact) => (
-                          <li key={fact}>{fact}</li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <span className="block text-[9px] uppercase tracking-wider text-amber-400 mb-1">
-                        O Mestre não pode
-                      </span>
-                      <ul className="list-disc pl-4 space-y-1 text-[11px] text-slate-300">
-                        {selectedArc.forbidden.map((rule) => (
-                          <li key={rule}>{rule}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </div>
-                </details>
-                <div className="pt-2 flex justify-end">
-                  <button
-                    type="submit"
-                    data-start="true"
-                    className="w-full sm:w-auto px-6 py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-display font-bold tracking-wider text-xs sm:text-sm shadow-[0_0_25px_rgba(217,119,6,0.45)] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                  >
-                    <Flame className="w-4 h-4 fill-current text-white shrink-0" />
-                    <span>Iniciar Campanha neste Arco</span>
-                  </button>
-                </div>
-              </div>
+                  </label>
+                  <label>
+                    <span className="editorial-label">Benefício</span>
+                    <input
+                      value={heavenlyRestriction.benefit}
+                      onChange={(event) =>
+                        setHeavenlyRestriction((prev) => ({ ...prev, benefit: event.target.value }))
+                      }
+                      className="editorial-input"
+                    />
+                  </label>
+                </>
+              )}
             </div>
+          </details>
+        </section>
+
+        <section className="editorial-section">
+          <div className="editorial-section-head">
+            <span className="editorial-numeral">II</span>
+            <h2 className="editorial-section-title">Técnica inata</h2>
+            <span className="h-px flex-1 bg-[rgba(201,169,106,0.18)]" />
           </div>
 
-          {/* Sticky Mobile Floating Quick-Start Bar (< lg) */}
-          <div className="lg:hidden sticky bottom-3 z-40 p-2.5 rounded-2xl bg-[#0a0807]/95 backdrop-blur-md border border-amber-500/50 shadow-[0_10px_35px_rgba(0,0,0,0.9)] flex items-center justify-between gap-3 safe-bottom">
-            <div className="flex items-center gap-2.5 pl-1 min-w-0">
-              <div className="w-9 h-9 rounded-lg overflow-hidden border border-amber-500/60 shrink-0 bg-[#080605]">
-                <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
-              </div>
-              <div className="min-w-0">
-                <div className="text-xs font-bold text-white break-words leading-tight">{name || 'Feiticeiro'}</div>
-                <div className="text-[10px] text-amber-300 font-semibold flex flex-wrap items-center gap-1">
-                  <span>{selectedGrade}</span>
-                  <span>·</span>
-                  <span className="text-slate-400">Nv. 1 (100 XP)</span>
-                </div>
-              </div>
-            </div>
-
+          <div className="mb-5 flex flex-wrap items-center gap-4">
+            {(
+              [
+                ['custom', 'Original'],
+                ['canon', 'Canônica'],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setTechniqueMode(id)}
+                className={
+                  'border-b pb-1 font-sans text-[10px] uppercase tracking-[0.16em] transition-colors ' +
+                  (techniqueMode === id
+                    ? 'border-[#c9a96a] text-[#e6cfa2]'
+                    : 'border-transparent text-[#837968] hover:text-[#d8bd86]')
+                }
+              >
+                {label}
+              </button>
+            ))}
             <button
-              type="submit"
-              className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-display font-bold text-xs tracking-wider shadow-[0_0_20px_rgba(217,119,6,0.5)] flex items-center gap-1.5 shrink-0 cursor-pointer touch-target-min"
+              type="button"
+              onClick={handleGenerateBalancedTechnique}
+              disabled={isGeneratingTech}
+              className="editorial-link ml-auto flex items-center gap-1.5"
             >
-              <Flame className="w-3.5 h-3.5 fill-current" />
-              <span>INICIAR</span>
+              <Wand2 className="h-3.5 w-3.5" />
+              {isGeneratingTech ? 'Forjando...' : 'Forjar com IA'}
             </button>
           </div>
-        </form>
-      </div>
+
+          {techniqueMode === 'canon' ? (
+            <div className="space-y-4">
+              <label>
+                <span className="editorial-label">Técnica canônica</span>
+                <select
+                  value={selectedCanonIdx}
+                  onChange={(event) => setSelectedCanonIdx(Number(event.target.value))}
+                  className="editorial-select"
+                >
+                  {CANONICAL_TECHNIQUES.map((technique, index) => (
+                    <option key={technique.name} value={index}>
+                      {technique.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="editorial-body text-[1.02rem]">
+                {CANONICAL_TECHNIQUES[selectedCanonIdx].description}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                <label>
+                  <span className="editorial-label">Nome da técnica</span>
+                  <input
+                    value={customTechnique.name}
+                    onChange={(event) =>
+                      setCustomTechnique({ ...customTechnique, name: event.target.value })
+                    }
+                    placeholder="Ex.: Fio de Retorno"
+                    className="editorial-input"
+                  />
+                </label>
+                <label>
+                  <span className="editorial-label">Conceito central</span>
+                  <input
+                    value={customConcept}
+                    onChange={(event) => setCustomConcept(event.target.value)}
+                    placeholder="Vetores, sombras, palavras, memória..."
+                    className="editorial-input"
+                  />
+                </label>
+              </div>
+              <label>
+                <span className="editorial-label">Como funciona</span>
+                <textarea
+                  value={customTechnique.description}
+                  onChange={(event) =>
+                    setCustomTechnique({ ...customTechnique, description: event.target.value })
+                  }
+                  placeholder="Descreva o efeito, o alcance e como ela se manifesta."
+                  className="editorial-textarea"
+                  rows={4}
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Custo e limites</span>
+                <textarea
+                  value={customTechnique.activationConditions}
+                  onChange={(event) =>
+                    setCustomTechnique({ ...customTechnique, activationConditions: event.target.value })
+                  }
+                  placeholder="Memória, cansaço, condições para usar..."
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+              <p className="editorial-muted font-sans text-[10px] italic">
+                Toda técnica cobra um preço. O Mestre o fará valer.
+              </p>
+            </div>
+          )}
+
+          <details className="mt-6 border-t border-[rgba(201,169,106,0.18)] pt-4">
+            <summary className="editorial-link cursor-pointer">Extensões da técnica</summary>
+            <div className="mt-5 space-y-5">
+              {(
+                [
+                  ['lapse', 'Lapso (aplicação básica)'],
+                  ['reversal', 'Reversão (energia positiva)'],
+                  ['maximum', 'Técnica máxima'],
+                  ['antiDomain', 'Defesa anti-domínio'],
+                  ['domainExpansion', 'Expansão de domínio'],
+                ] as const
+              ).map(([key, label]) => (
+                <label key={key} className="block">
+                  <span className="editorial-label flex items-center justify-between gap-3">
+                    {label}
+                    <span className="normal-case tracking-normal">
+                      {renderUndevelopedToggle(
+                        customTechnique[key],
+                        () => setCustomTechnique({ ...customTechnique, [key]: UNDEVELOPED_MARKER }),
+                        () => setCustomTechnique({ ...customTechnique, [key]: 'Despertar a definir na história' })
+                      )}
+                    </span>
+                  </span>
+                  <textarea
+                    value={customTechnique[key]}
+                    onChange={(event) =>
+                      setCustomTechnique({ ...customTechnique, [key]: event.target.value })
+                    }
+                    className="editorial-textarea mt-1"
+                    rows={2}
+                  />
+                </label>
+              ))}
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <label>
+                  <span className="editorial-label">RCT</span>
+                  <select
+                    value={customTechnique.hasRct ? 'sim' : 'nao'}
+                    onChange={(event) => {
+                      const hasRct = event.target.value === 'sim';
+                      setCustomTechnique({
+                        ...customTechnique,
+                        hasRct,
+                        rctStatus: hasRct ? 'Desenvolvido' : UNDEVELOPED_MARKER,
+                      });
+                    }}
+                    className="editorial-select"
+                  >
+                    <option value="nao">Não desenvolvida</option>
+                    <option value="sim">Desenvolvida</option>
+                  </select>
+                </label>
+                <label>
+                  <span className="editorial-label">Nome do domínio</span>
+                  <input
+                    value={domainPortal.domainName}
+                    onChange={(event) =>
+                      setDomainPortal((prev) => ({ ...prev, domainName: event.target.value }))
+                    }
+                    className="editorial-input"
+                  />
+                </label>
+              </div>
+
+              <label className="block">
+                <span className="editorial-label flex items-center justify-between gap-3">
+                  Efeito do domínio
+                  <button
+                    type="button"
+                    onClick={() => setIsDomainUndeveloped((value) => !value)}
+                    className="editorial-link normal-case tracking-normal"
+                  >
+                    {isDomainUndeveloped ? 'Não desenvolvido ainda' : 'Definir efeito'}
+                  </button>
+                </span>
+                <textarea
+                  value={isDomainUndeveloped ? UNDEVELOPED_MARKER : domainPortal.sureHitEffect}
+                  onChange={(event) =>
+                    setDomainPortal((prev) => ({ ...prev, sureHitEffect: event.target.value }))
+                  }
+                  className="editorial-textarea mt-1"
+                  rows={3}
+                />
+              </label>
+            </div>
+          </details>
+        </section>
+
+        <section className="editorial-section">
+          <div className="editorial-section-head">
+            <span className="editorial-numeral">III</span>
+            <h2 className="editorial-section-title">Votos e vínculos</h2>
+            <span className="h-px flex-1 bg-[rgba(201,169,106,0.18)]" />
+          </div>
+
+          <div className="mb-5 flex flex-wrap items-center gap-4">
+            {(
+              [
+                [true, 'Começar com voto'],
+                [false, 'Sem voto inicial'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={String(value)}
+                type="button"
+                onClick={() => setStartWithVow(value)}
+                className={
+                  'border-b pb-1 font-sans text-[10px] uppercase tracking-[0.16em] transition-colors ' +
+                  (startWithVow === value
+                    ? 'border-[#c9a96a] text-[#e6cfa2]'
+                    : 'border-transparent text-[#837968] hover:text-[#d8bd86]')
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {startWithVow ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <label className="sm:col-span-2">
+                <span className="editorial-label">Voto vinculativo</span>
+                <input
+                  value={customVowName}
+                  onChange={(event) => setCustomVowName(event.target.value)}
+                  placeholder="Promessas que concedem poder em troca de uma restrição."
+                  className="editorial-input"
+                />
+              </label>
+              <label>
+                <span className="editorial-label">Condição</span>
+                <textarea
+                  value={customVowCondition}
+                  onChange={(event) => setCustomVowCondition(event.target.value)}
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+              <label>
+                <span className="editorial-label">O que o voto muda</span>
+                <textarea
+                  value={customVowBonus}
+                  onChange={(event) => setCustomVowBonus(event.target.value)}
+                  className="editorial-textarea"
+                  rows={3}
+                />
+              </label>
+            </div>
+          ) : (
+            <p className="editorial-body text-[1rem]">
+              Seu personagem começa livre de votos. Se a história cobrar uma promessa —
+              ou se você quiser selar uma durante a campanha — o Mestre registra o voto
+              na Ficha Exclusiva.
+            </p>
+          )}
+        </section>
+
+        <section className="editorial-section">
+          <div className="editorial-section-head">
+            <span className="editorial-numeral">IV</span>
+            <h2 className="editorial-section-title">Equipamento</h2>
+            <span className="h-px flex-1 bg-[rgba(201,169,106,0.18)]" />
+          </div>
+
+          <div className="mb-5 flex flex-wrap items-center gap-4">
+            {(
+              [
+                ['none', 'Sem equipamento'],
+                ['canon', 'Canônico'],
+                ['custom', 'Original'],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setToolMode(value)}
+                className={
+                  'border-b pb-1 font-sans text-[10px] uppercase tracking-[0.16em] transition-colors ' +
+                  (toolMode === value
+                    ? 'border-[#c9a96a] text-[#e6cfa2]'
+                    : 'border-transparent text-[#837968] hover:text-[#d8bd86]')
+                }
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {toolMode === 'none' ? (
+            <p className="editorial-body text-[1rem]">
+              Você começa sem ferramenta amaldiçoada. Nada de arsenal herdado ou
+              talismã de cortina: o que você tiver será conquistado, forjado ou
+              perdido na história.
+            </p>
+          ) : toolMode === 'canon' ? (
+            <div className="space-y-4">
+              <label>
+                <span className="editorial-label">Ferramenta canônica</span>
+                <select
+                  value={selectedCanonicalTool.id}
+                  onChange={(event) => setSelectedToolId(event.target.value)}
+                  className="editorial-select"
+                >
+                  {canonicalTools.map((tool) => (
+                    <option key={tool.id} value={tool.id}>
+                      {tool.name} — {tool.grade}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="border border-[rgba(201,169,106,0.2)] p-4">
+                <div className="editorial-label">Ferramenta selecionada</div>
+                <h3 className="editorial-serif mt-1 text-[19px] leading-tight text-[#e7ddcb]">
+                  {selectedCanonicalTool.name}
+                </h3>
+                <p className="editorial-muted mt-1 font-sans text-[10px] uppercase tracking-[0.12em]">
+                  {selectedCanonicalTool.grade}
+                </p>
+                <p className="editorial-body mt-3 text-[0.98rem]">
+                  {selectedCanonicalTool.effect}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-[minmax(0,1fr)_180px]">
+                <label>
+                  <span className="editorial-label">Nome do equipamento</span>
+                  <input
+                    value={customToolName}
+                    onChange={(event) => setCustomToolName(event.target.value)}
+                    placeholder="Ex.: Fio de Retorno"
+                    className="editorial-input"
+                  />
+                </label>
+                <label>
+                  <span className="editorial-label">Grau / categoria</span>
+                  <input
+                    value={customToolGrade}
+                    onChange={(event) => setCustomToolGrade(event.target.value)}
+                    placeholder="Ex.: Grau 2, utilitário..."
+                    className="editorial-input"
+                  />
+                </label>
+              </div>
+              <label>
+                <span className="editorial-label">Efeito e limites</span>
+                <textarea
+                  value={customToolEffect}
+                  onChange={(event) => setCustomToolEffect(event.target.value)}
+                  placeholder="O que ele faz? Qual é o custo de usá-lo?"
+                  className="editorial-textarea"
+                  rows={4}
+                />
+              </label>
+              <p className="editorial-muted font-sans text-[10px] italic">
+                Ferramentas também cobram um preço. O Mestre o fará valer.
+              </p>
+            </div>
+          )}
+        </section>
+
+        <section className="editorial-section">
+          <div className="editorial-section-head">
+            <span className="editorial-numeral">V</span>
+            <h2 className="editorial-section-title">Onde a história começa</h2>
+            <span className="h-px flex-1 bg-[rgba(201,169,106,0.18)]" />
+          </div>
+
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <label>
+              <span className="editorial-label">Arco inicial</span>
+              <select
+                value={selectedArcIdx}
+                onChange={(event) => handleArcChange(Number(event.target.value))}
+                className="editorial-select"
+              >
+                {arcsByEra.map((group) => (
+                  <optgroup key={group.id} label={group.label}>
+                    {group.arcs.map(({ arc, idx }) => (
+                      <option key={arc.id} value={idx}>
+                        {arc.title}
+                      </option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="editorial-label">Local</span>
+              <input
+                value={customArcLocation}
+                onChange={(event) => setCustomArcLocation(event.target.value)}
+                className="editorial-input"
+              />
+            </label>
+            <label className="sm:col-span-2">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <span className="editorial-label">Cena de abertura</span>
+                <button type="button" onClick={handleResetArcScene} className="editorial-link normal-case tracking-normal">
+                  Restaurar cena do arco
+                </button>
+              </div>
+              <textarea
+                value={customArcDescription}
+                onChange={(event) => setCustomArcDescription(event.target.value)}
+                className="editorial-textarea mt-1"
+                rows={5}
+              />
+            </label>
+          </div>
+        </section>
+
+        <details className="editorial-section">
+          <summary className="editorial-link cursor-pointer">
+            VI · Sessão Zero com o Mestre
+            {sessionZeroStatus === 'BALANCED_READY' ? ' · conversada' : ''}
+          </summary>
+          <p className="editorial-muted mt-3 font-sans text-[11px] leading-relaxed">
+            Converse sobre o personagem, os limites e os custos da técnica. O Mestre
+            pode propor ajustes narrativos — nunca números.
+          </p>
+          <div className="mt-5 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => handleRunSessionZero()}
+              disabled={isEvaluatingSessionZero}
+              className="editorial-button editorial-button--ghost"
+            >
+              <MessageSquare className="h-3.5 w-3.5" />
+              {isEvaluatingSessionZero ? 'Mestre avaliando...' : 'Conversar com o Mestre'}
+            </button>
+            {latestProposedPatch && (
+              <button
+                type="button"
+                onClick={() => handleApplyProposedPatch(latestProposedPatch)}
+                className="editorial-link flex items-center gap-1.5"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Aplicar proposta
+              </button>
+            )}
+          </div>
+
+          {sessionZeroChat.length > 0 && (
+            <div className="mt-5 max-h-80 space-y-3 overflow-y-auto border-t border-[rgba(201,169,106,0.16)] pt-4">
+              {sessionZeroChat.map((entry) => (
+                <div key={entry.id} className={entry.sender === 'gm' ? '' : 'pl-6'}>
+                  <div className="editorial-label">
+                    {entry.sender === 'gm' ? 'Mestre' : 'Você'}
+                  </div>
+                  <p className="editorial-body mt-1 whitespace-pre-line text-[0.98rem]">
+                    {entry.text}
+                  </p>
+                  {entry.questionsForPlayer?.length ? (
+                    <ul className="mt-2 list-disc space-y-1 pl-5 font-sans text-[11px] text-[#a89b86]">
+                      {entry.questionsForPlayer.map((question) => (
+                        <li key={question}>{question}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="mt-4 flex gap-2">
+            <input
+              value={sessionZeroReplyInput}
+              onChange={(event) => setSessionZeroReplyInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  handleRunSessionZero();
+                }
+              }}
+              placeholder="Responder ao Mestre..."
+              className="editorial-input flex-1"
+            />
+            <button
+              type="button"
+              onClick={() => handleRunSessionZero()}
+              disabled={isEvaluatingSessionZero || !sessionZeroReplyInput.trim()}
+              className="editorial-button px-4"
+              aria-label="Enviar resposta"
+            >
+              <Send className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        </details>
+
+        <div className="flex flex-col gap-4 border-t border-[rgba(201,169,106,0.2)] pt-6 sm:flex-row sm:items-center sm:justify-between">
+          <p className="editorial-muted font-sans text-[11px] italic">
+            {name.trim() ? 'Tudo pronto. A primeira cena é do Mestre.' : 'Dê um nome ao personagem para começar.'}
+          </p>
+          <button type="submit" disabled={!name.trim()} className="editorial-button">
+            Começar a história
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+      </form>
     </div>
   );
 };

@@ -9,16 +9,6 @@ export function getAccessCode(): string {
   }
 }
 
-export function setAccessCode(code: string): void {
-  try {
-    const clean = (code || '').trim();
-    if (clean) localStorage.setItem(ACCESS_CODE_STORAGE_KEY, clean);
-    else localStorage.removeItem(ACCESS_CODE_STORAGE_KEY);
-  } catch {
-    // localStorage indisponível (modo privado): o código vale só na sessão.
-  }
-}
-
 export function getAccessHeaders(): Record<string, string> {
   const code = getAccessCode();
   return code ? { 'x-access-code': code } : {};

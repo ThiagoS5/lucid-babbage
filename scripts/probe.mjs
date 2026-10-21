@@ -129,14 +129,45 @@ if (process.argv[6] === 'seedchat') {
   });
   await sleep(2600);
 } else if (process.argv[6] && process.argv[6].startsWith('click:')) {
-  const sel = process.argv[6].slice(6).replace(/"/g, '');
-  const clicked = await send('Runtime.evaluate', {
-    expression: '(() => { const els = Array.from(document.querySelectorAll(' + JSON.stringify(sel) + ')); const el = els.find((e) => e.offsetParent !== null) || els[0]; if (el) el.click(); return Boolean(el); })()',
-    returnByValue: true,
-  });
-  const dialogs = await send('Runtime.evaluate', { expression: 'document.querySelectorAll(\'[role="dialog"]\').length', returnByValue: true });
-  console.log('clicked:' + clicked.result.value + ' dialogs:' + dialogs.result.value);
-  await sleep(700);
+  const parts = process.argv[6].slice(6).split('||').map((s) => s.replace(/"/g, ''));
+  for (const part of parts) {
+    if (part.startsWith('sel:')) {
+      const sel = part.slice(4);
+      await send('Runtime.evaluate', {
+        expression: '(() => { const el = document.querySelector(' + JSON.stringify(sel) + '); if (el) el.scrollIntoView({ block: "center" }); return Boolean(el); })()',
+        returnByValue: true,
+      });
+      await sleep(500);
+      continue;
+    }
+    if (part.startsWith('text:')) {
+      const txt = part.slice(5);
+      const clickedText = await send('Runtime.evaluate', {
+        expression: '(() => { const el = Array.from(document.querySelectorAll("button,label")).find((e) => (e.textContent || "").includes(' + JSON.stringify(txt) + ')); if (el) el.click(); return Boolean(el); })()',
+        returnByValue: true,
+      });
+      console.log('clickedText:' + clickedText.result.value + ' for ' + txt);
+      await sleep(500);
+      continue;
+    }
+    if (part.startsWith('eval:')) {
+      const evalResult = await send('Runtime.evaluate', {
+        expression: part.slice(5),
+        returnByValue: true,
+        awaitPromise: true,
+      });
+      console.log('eval:' + JSON.stringify(evalResult.result.value));
+      await sleep(300);
+      continue;
+    }
+    const clicked = await send('Runtime.evaluate', {
+      expression: '(() => { const els = Array.from(document.querySelectorAll(' + JSON.stringify(part) + ')); const el = els.find((e) => e.offsetParent !== null) || els[0]; if (el) el.click(); return Boolean(el); })()',
+      returnByValue: true,
+    });
+    const dialogs = await send('Runtime.evaluate', { expression: 'document.querySelectorAll(\'[role="dialog"]\').length', returnByValue: true });
+    console.log('clicked:' + clicked.result.value + ' dialogs:' + dialogs.result.value);
+    await sleep(parts.length > 1 ? 900 : 700);
+  }
 } else if (process.argv[6] && process.argv[6].startsWith('sel:')) {
   const sel = process.argv[6].slice(4).replace(/"/g, '');
   await send('Runtime.evaluate', {

@@ -114,7 +114,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Megumi Fushiguro',
         grade: 'Grau 1',
-        hpPercentage: 100,
         status: 'Casaco escuro, pasta de casos na mão, sombras inquietas sob os pés',
         attitude: 'Aliado',
         visualDescription:
@@ -123,7 +122,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Maldição dos Cortes Gêmeos',
         grade: 'Grau Especial (não catalogada)',
-        hpPercentage: 100,
         status: 'Espreita entre os andaimes de Shinjuku, emitindo estalos secos de ar cortado',
         attitude: 'Hostil',
         visualDescription:
@@ -168,7 +166,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Maki Zenin',
         grade: 'Grau Especial (Restrição Celestial)',
-        hpPercentage: 100,
         status: 'Katana da Alma Dividida cravada no asfalto, óculos escuros, impaciente',
         attitude: 'Aliado',
         visualDescription:
@@ -177,7 +174,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Kogane Residual',
         grade: 'Objeto Amaldiçoado',
-        hpPercentage: 100,
         status: 'Flutuando, rachada, repetindo a regra da colônia em loop',
         attitude: 'Neutro',
         visualDescription:
@@ -222,7 +218,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Yuta Okkotsu',
         grade: 'Grau Especial',
-        hpPercentage: 100,
         status: 'Apoiado no carro, selando a Cortina, olheiras profundas, Rika adormecida',
         attitude: 'Aliado',
         visualDescription:
@@ -231,7 +226,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Eco do Santuário',
         grade: 'Grau Especial (fenômeno residual)',
-        hpPercentage: 100,
         status: 'Formas de corte se condensando na neblina da cratera',
         attitude: 'Hostil',
         visualDescription:
@@ -276,7 +270,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Atsuya Kusakabe',
         grade: 'Grau 1',
-        hpPercentage: 100,
         status: 'Encostado na cadeira, chá frio na mão, olhos atentos',
         attitude: 'Aliado',
         visualDescription:
@@ -285,7 +278,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Enviado Sem Brasão',
         grade: 'Grau 1',
-        hpPercentage: 100,
         status: 'De pé na ponta da mesa, terno cinza, discurso ensaiado',
         attitude: 'Neutro',
         visualDescription:
@@ -330,7 +322,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Sayaka Mori',
         grade: 'Civil',
-        hpPercentage: 100,
         status: 'Desaparecida no 704; envia mensagens de voz às 2h10',
         attitude: 'Neutro',
         visualDescription:
@@ -339,7 +330,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Maldição do Elevador',
         grade: 'Grau 2',
-        hpPercentage: 100,
         status: 'Ocupa o 7º andar; imita a voz de quem desapareceu',
         attitude: 'Hostil',
         visualDescription:
@@ -387,7 +377,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Megumi Fushiguro',
         grade: 'Grau 2',
-        hpPercentage: 100,
         status: 'Em guarda, sombras tremulando sob os pés',
         attitude: 'Aliado',
         visualDescription:
@@ -396,7 +385,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Espírito Amaldiçoado do Pátio',
         grade: 'Grau 2',
-        hpPercentage: 100,
         status: 'Faminto pela energia do Dedo de Sukuna',
         attitude: 'Hostil',
         visualDescription:
@@ -442,7 +430,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Satoru Gojo',
         grade: 'Grau Especial',
-        hpPercentage: 100,
         status: 'Relaxado, mãos nos bolsos, observando através dos Seis Olhos',
         attitude: 'Aliado',
         visualDescription:
@@ -488,7 +475,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Aoi Todo',
         grade: 'Grau 1',
-        hpPercentage: 100,
         status: 'Postura de combate empolgada, pronto para perguntar seu tipo',
         attitude: 'Neutro',
         visualDescription:
@@ -535,7 +521,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Kento Nanami',
         grade: 'Grau 1',
-        hpPercentage: 100,
         status: 'Em Hora Extra (Overtime 120%), cutelo cego envolto em pano pontilhado em punho',
         attitude: 'Aliado',
         visualDescription:
@@ -544,7 +529,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Enxame de Humanos Transfigurados',
         grade: 'Grau 3 (Múltiplos)',
-        hpPercentage: 100,
         status: 'Avançando descontroladamente pelos corredores do metrô',
         attitude: 'Hostil',
         visualDescription:
@@ -590,7 +574,6 @@ export const STARTING_ARCS: OpeningArc[] = [
       {
         name: 'Feiticeiro Reencarnado da Era Heian',
         grade: 'Grau 1',
-        hpPercentage: 100,
         status: 'Avaliando sua reserva de Energia Amaldiçoada do topo de um prédio',
         attitude: 'Hostil',
         visualDescription:

@@ -1,15 +1,17 @@
-# PROMPT DEFINITIVO PARA O GOOGLE AI STUDIO BUILD — JUJUTSU KAISEN: NARRATIVE RPG & VTT ENGINE
+# PROMPT DEFINITIVO PARA O GOOGLE AI STUDIO BUILD — JUJUTSU KAISEN: NARRATIVE RPG ENGINE
 
 Copie todo o conteúdo abaixo da linha divisória e cole diretamente no **Google AI Studio Build** (ou ferramenta de geração de aplicações Full-Stack/Front-End com IA).
 
 ---
 
 ```markdown
-# ESPECIFICAÇÃO COMPLETA DE ENGENHARia E DESIGN: "JUJUTSU KAISEN — CURSED CHRONICLES VTT & NARRATIVE RPG"
+# ESPECIFICAÇÃO COMPLETA DE ENGENHARIA E DESIGN: "JUJUTSU KAISEN — CURSED CHRONICLES NARRATIVE RPG"
 
-Construa uma aplicação web completa, ultra-imersiva, responsiva (Mobile-First e Desktop VTT) de **RPG Narrativo Solo de Mesa (Virtual Tabletop - VTT) ambientada no universo canônico de Jujutsu Kaisen**, onde a IA atua como um **Mestre de RPG (Game Master) vivo, rigoroso e cinematográfico**, utilizando o SDK `@google/genai`.
+> **REVISÃO ATUAL (2026-10-21):** este projeto é um **RPG narrativo**, não uma mesa de RPG virtual. Foram removidos atributos, perícias, HP, energia amaldiçoada medida, dados, níveis e XP. Onde este documento ainda descrever barras de HP/EA ou rolagem de d20, considere obsoleto: a IA decide, pela ficção, quando o personagem enfraquece, é ferido ou morre — e quando um inimigo é derrotado.
 
-O aplicativo deve funcionar perfeitamente tanto em **Computadores (layout VTT de 3 colunas)** quanto em **Celulares/Smartphones (layout adaptativo estilo App Nativo com Bottom Navigation Bar, Drawers deslizantes e suporte a `100dvh`)**.
+Construa uma aplicação web completa, ultra-imersiva e responsiva (Mobile-First e Desktop) de **RPG Narrativo Solo ambientado no universo canônico de Jujutsu Kaisen**, onde a IA atua como um **Mestre de RPG vivo, rigoroso e cinematográfico**, utilizando o SDK `@google/genai`.
+
+O aplicativo deve funcionar perfeitamente tanto em **Computadores (layout de 3 colunas: ficha, crônica e mundo)** quanto em **Celulares/Smartphones (layout adaptativo estilo App Nativo com Bottom Navigation Bar, Drawers deslizantes e suporte a `100dvh`)**.
 
 ---
 
@@ -36,26 +38,26 @@ Implemente classes e animações visuais reativas disparadas automaticamente pel
    - Quando qualquer Expansão de Domínio estiver ativa na cena (`activeBarrierOrDomain`), exiba uma transição visual dramática e fixe um **Banner de Domínio Dominante** no topo do palco narrativo (ex.: *"⚠️ EXPANSÃO DE DOMÍNIO ATIVA: SANTUÁRIO MALEVOLENTE — Acerto Garantido Ativo"*).
    - Altere dinamicamente o brilho da borda do palco central e a atmosfera de fundo de acordo com o domínio (Vermelho Sanguinário para Sukuna, Galáxia/Ciano Cósmico para Vazio Ilimitado de Gojo, Sombras Líquidas para Megumi, Dourado/Judicial para Higuruma, etc.).
 3. **Técnica Amaldiçoada Reversa (RCT / Cura):**
-   - Quando o HP do jogador subir via RCT, exiba um efeito de brilho esmeralda/branco suave na barra de vida.
+   - Quando a narrativa descrever cura por RCT, aplique um brilho esmeralda/branco suave no retrato ou na cena — sem barra de vida.
 4. **Exaustão de Técnica Pós-Domínio (*Cursed Technique Burnout*):**
-   - Quando `techniqueState` for `"Em Exaustão Pós-Domínio (Burnout)"`, aplique um efeito visual de vidro trincado/estática cinza sobre o card da Técnica Inata e desabilite temporariamente os botões de ataque da técnica até ela se recuperar.
+   - A exaustão é narrada: descreva a técnica instável e as consequências na cena. Não há medidor nem botão bloqueado por estado numérico.
 5. **Cortina (*Curtain / Tobari*):**
    - Quando uma Cortina estiver abaixada no local, exiba um indicador visual escuro no topo do Radar de Mundo mostrando que a área está isolada de civis e sinais externos.
 
-### 1.3. Responsividade Total: Computador (Desktop VTT) vs. Celular (Mobile App)
+### 1.3. Responsividade Total: Computador vs. Celular (Mobile App)
 - **No Computador (`>= 1024px`):**
-  - Layout VTT de **3 Colunas Simultâneas**:
-    - Coluna Esquerda (`320px`, retrátil): Ficha do Feiticeiro/Maldição.
+  - Layout de **3 Colunas Simultâneas**:
+    - Coluna Esquerda (`320px`, retrátil): Ficha narrativa do Feiticeiro.
     - Coluna Central (`flex-1`): Visualizador de Cena 16:9, Feed Narrativo e Console de Ação.
-    - Coluna Direita (`340px`, retrátil): Radar de Mundo, NPCs Presentes, Rolador de Dados e Códice RAG.
+    - Coluna Direita (`340px`, retrátil): Radar de Mundo, NPCs Presentes e Códice RAG.
 - **No Celular e Tablet (`< 1024px`):**
   - Usa `height: 100dvh` para evitar problemas com a barra de endereço e o teclado virtual do navegador móvel.
-  - **Mini-Header Fixo (Sticky Top Bar):** Exibe de forma ultra-compacta o Nome/Grau, mini-barra de HP, mini-barra de EA, Local Atual e botão rápido de Dados ($1\text{d}20$).
+  - **Mini-Header Fixo (Sticky Top Bar):** Exibe de forma ultra-compacta o Nome/Grau, a condição narrativa atual e o local.
   - **Área Principal:** Exibe a aba ativa em tela cheia sem espremer colunas.
   - **Bottom Navigation Bar (Barra Inferior Estilo App Nativo):** 5 abas com ícones grandes (`min-height: 48px`):
     1. `📖 Crônica` (Palco Narrativo + Imagem da Cena + Input de Ação)
     2. `👤 Ficha` (Status, Técnicas, Inventário e Votos)
-    3. `👁️ Radar` (Localização, Domínio Ativo, NPCs em Cena e Dados)
+    3. `👁️ Radar` (Localização, Domínio Ativo e NPCs em Cena)
     4. `📚 Códice` (Lorebook `.md`/`.json` e Diário de Memória)
     5. `⚙️ Sistema` (Save/Load, Modelo de IA, API Key, Tamanho da Fonte)
 
@@ -115,14 +117,13 @@ Ao abrir o site sem uma campanha ativa (ou ao clicar em "Nova Campanha"), exiba 
 1. **Cabeçalho do Personagem:**
    - Retrato quadrado (`1:1`) com moldura reativa ao estado atual (normal, ferido grave, Zona de Kokusen ou Domínio ativo) + botão **"Regerar Retrato"** (atualiza a imagem considerando o estado/ferimentos atuais).
    - Nome, Facção, Clã e Badge de Grau.
-2. **Barras de Recursos Animadas e Status Clínico:**
-   - **Condição Física (HP):** Barra `0% a 100%` com transição suave de cor (Verde -> Amarelo -> Vermelho Crítico) + tag descritiva de lesões específicas (`physicalCondition`, ex.: *"Intacto"*, *"Costelas trincadas, sangramento no ombro direito"*).
-   - **Reserva de Energia Amaldiçoada (EA):** Barra azul elétrica `0% a 100%` (ou `0% Fixo - Restrição Celestial`) + indicador de **Output Máximo** (ex.: `100%` ou `120% [Zona Kokusen]`).
-   - **Estado da Técnica Inata:** Badge dinâmico (`Ativa`, `Em Uso`, `Sob Voto Vinculativo`, `Em Exaustão Pós-Domínio (Burnout)`).
+2. **Condição Narrativa (sem barras):**
+   - **Condição Física/Emocional:** Texto descritivo (`physicalCondition`, ex.: *"Intacto"*, *"Costelas trincadas, sangramento no ombro direito"*, *"Exausto após sustentar o domínio"*).
+   - **Sem HP, sem reserva de energia, sem Output e sem badge de estado técnico:** a ficha é literatura; o Mestre decide o peso de cada ferimento e de cada técnica.
 3. **Abas Internas da Ficha (Editáveis e Atualizadas pela IA):**
    - **Aba 1 — Técnicas & Domínio:** Descrição mecânica da Técnica Inata, extensões (*Lapse*, *Reversal*, *Maximum*), *Técnica Amaldiçoada Reversa (RCT)*, * Técnicas Anti-Domínio (Domínio Simples / Cesto Oco de Vime / Emoção da Pétala Caída)* e *Expansão de Domínio*.
    - **Aba 2 — Arsenal & Objetos Amaldiçoados:** Lista de Ferramentas Amaldiçoadas equipadas com seu Grau e efeito especial, além de itens consumíveis ou dedos de Sukuna.
-   - **Aba 3 — Votos Vinculativos (*Binding Vows*):** Contratos ativos (ex.: *Revelar a Própria Mão — +20% de Output em troca de expor o funcionamento da técnica ao inimigo*, *Hora Extra / Overtime*, ou votos criados durante a campanha).
+   - **Aba 3 — Votos Vinculativos (*Binding Vows*):** Contratos ativos (ex.: *Revelar a Própria Mão* — expor o funcionamento da técnica ao inimigo em troca de torná-la mais eficaz e previsível na ficção; *Hora Extra / Overtime*; ou votos criados durante a campanha).
 
 ### B. Coluna Central: Palco Narrativo, Visualizador de Cena e Console de Ação
 1. **Visualizador Gráfico da Cena (`16:9` no Topo):**
@@ -133,22 +134,22 @@ Ao abrir o site sem uma campanha ativa (ou ao clicar em "Nova Campanha"), exiba 
      - Botão **"🔍 Ampliar (Lightbox)"** e histórico das ilustrações geradas na sessão.
 2. **Feed de História (Chat Narrativo Interativo):**
    - Exibe toda a campanha turno a turno com rolagem suave.
-   - **Acordeão `[⚙️ LOG DO MOTOR JUJUTSU]`** no topo de cada resposta do Mestre: recolhido por padrão; ao clicar, mostra o `engineLog` (cálculo de escala de poder, gasto de EA, checagem de velocidade/grau, resultado do dado e badges dos `activeStoryCards` consultados no Códice).
+   - **Acordeão `[⚙️ NOTAS DO MESTRE]`** no topo de cada resposta: recolhido por padrão; ao clicar, mostra o `engineLog` (o que a cena estabeleceu, o que cada NPC quer e o que ficou em suspenso) e os `activeStoryCards` consultados no Códice. Sem cálculos de atributos, dano ou energia.
    - **Ações de Mensagem em cada turno:**
      - ✏️ **Editar Texto:** Permite corrigir ou ajustar qualquer detalhe da narração ou da ação do jogador.
      - 🔄 **Re-rolar Turno (Retry):** Pede ao Mestre para gerar uma nova versão daquele último turno.
-     - ⏪ **Voltar no Tempo (Rewind):** Restaura o histórico, o HP, a EA e o estado do mundo exatamente para aquele turno específico.
+     - ⏪ **Voltar no Tempo (Rewind):** Restaura o histórico, a condição narrativa e o estado do mundo exatamente para aquele turno específico.
      - 🔊 **Ouvir Narração (TTS Nativo / Web Speech API):** Botão opcional para ler a narração em voz alta em Português-BR.
 3. **Sugestões Táticas Rápidas (`suggestedActions`):**
    - Acima da barra de digitação, exiba 3 pílulas clicáveis geradas pelo Mestre a cada turno com sugestões contextuais (ex.: *"Ativar Domínio Simples para anular o acerto garantido"*, *"Avançar pelo flanco tentando um Kokusen"*, *"Questionar o espírito sobre quem o enviou"*). Clicar preenche ou envia a ação.
 4. **Console de Ação Multimodo (Rodapé):**
    - Seletor de Modo de Entrada com 4 botões claros:
      - ⚔️ **Agir (Do):** Ação física, combate corpo a corpo, movimentação ou furtividade.
-     - 💬 **Falar (Say):** Diálogo direto com os personagens em cena. Inclui um botão toggle especial: **🗣️ "Revelar a Própria Mão (Voto Vinculativo)"** — quando ativado junto à fala explicando a técnica, concede bônus imediato de Output de Energia Amaldiçoada na rodada!
+     - 💬 **Falar (Say):** Diálogo direto com os personagens em cena. Inclui um toggle **🗣️ "Revelar a Própria Mão (Voto Vinculativo)"**: ao explicar a técnica, o jogador muda o equilíbrio dramático da cena — o oponente entende o funcionamento e pode explorá-lo.
      - ⚡ **Usar Jujutsu (Technique):** Abre um menu rápido com os golpes da ficha do jogador (*Técnica Inata*, *Reforço de EA*, *Tentativa de Black Flash*, *Técnica Reversa (RCT)*, *Domínio Simples*, *Expansão de Domínio*), preenchendo a ação com a técnica escolhida.
      - 📖 **Direcionar Cena (Story / Meta):** Permite ao jogador dar uma instrução narrativa direta ao Mestre (ex.: *"Avance o tempo até a manhã seguinte na Escola Técnica"*).
 
-### C. Coluna Direita: Radar do Mundo, Dados Táticos e Códice (Lorebook RAG)
+### C. Coluna Direita: Radar do Mundo e Códice (Lorebook RAG)
 1. **Estado do Mundo & Localização:**
    - Card mostrando: **Local Atual**, **Arco/Data Cronológica**, **Estado da Barreira/Domínio** (`Nenhum`, `Cortina Ativa`, `Expansão de Domínio: [Nome]`).
 2. **Radar de Presença (NPCs e Ameaças na Cena):**
@@ -156,28 +157,7 @@ Ao abrir o site sem uma campanha ativa (ou ao clicar em "Nova Campanha"), exiba 
    - Cada card de NPC mostra:
      - Retrato `1:1` do NPC (ou ícone de silhueta + botão **"🎨 Gerar Retrato"** que usa o `visualDescription` do NPC para gerar e salvar o avatar dele!).
      - Nome, Grau estimado, Atitude (`Aliado` em azul, `Neutro` em amarelo, `Hostil` em vermelho) e Status físico/postura atual.
-3. **Rolador Tático de Dados ($1\text{d}20$ Jujutsu System):**
-   - Modo Automático (rola um $1\text{d}20$ junto com ações de combate/técnica e envia o valor no prompt para o Mestre arbitrar o grau de sucesso) ou Modo Manual (botão para rolar o dado com animação visual).
-   - **Tabela de Referência Rápida do Dado:**
-     - `1 (Falha Crítica)`: Abertura grave na guarda ou falha no controle de EA.
-     - `2–9 (Sucesso Parcial / Custo Alto)`: A ação ocorre com resistência severa ou contra-ataque inimigo.
-     - `10–18 (Sucesso Sólido)`: Execução limpa proporcional ao Grau do feiticeiro.
-     - `19 (Acerto Crítico)`: Golpe devastador na brecha do inimigo.
-     - `20 Natural (FAÍSCA NEGRA — KOKUSEN!)`: Desbloqueia um **Black Flash** garantido no golpe físico imbuído de EA!
-4. **Gerenciador de Códice Enciclopédico & Story Cards (RAG Local Zero-Alucinação):**
-   - Permite fazer **Upload de Arquivos `.md` (como `JJK_Codex_Ultra_Completo.md`) e/ou `.json` (como os 284 Story Cards exportados do AI Dungeon)**.
-   - **Parser Automático:**
-     - Se o usuário importar um arquivo `.json` de Story Cards (`[{ title, keys, type, value }]`), converte cada entrada em um Card pesquisável.
-     - Se o usuário importar um arquivo `.md` enciclopédico, divide automaticamente pelas seções (`## ` ou `---`) extraindo o título, os `Gatilhos (Keys)` e o texto completo de lore.
-   - **Busca e Injeção Inteligente (RAG Client-Side):**
-     - Possui barra de busca para o jogador consultar qualquer personagem, técnica ou domínio durante o jogo.
-     - A cada turno, antes de chamar a API do Gemini, o sistema analisa o texto da ação do jogador + os nomes dos NPCs em cena + o local atual + o último turno, busca os **Top 8 a 12 Story Cards/Seções do Códice** cujas `keys` ou títulos dão match, e os injeta dinamicamente no prompt do turno sob a seção `[CONHECIMENTO CANÔNICO ATIVO DESTA CENA]`.
-5. **Diário de Memória de Longo Prazo:**
-   - Guarda um resumo cronológico dos eventos passados da campanha (com botão *"Resumir Últimos 10 Turnos na Memória"*), garantindo que mesmo após 100 turnos o Mestre nunca esqueça aliados, ferimentos permanentes, inimigos exorcizados ou promessas feitas.
-
----
-
-## 5. INTEGRAÇÃO TÉCNICA COM A API DO GEMINI (`@google/genai`)
+3. **Sem rolagem de dados:** o Mestre decide o desfecho pela lógica da cena, pelos limites da técnica e pelas escolhas do jogador. Não exiba dados, modificadores, iniciativa ou tabelas de sucesso.
 
 ### 5.1. Modelos Atualizados e Configuração
 - Utilize o SDK oficial `@google/genai`.
@@ -204,18 +184,13 @@ Configure a chamada à API para retornar obrigatoriamente um objeto JSON válido
 
 ```json
 {
-  "engineLog": "Análise tática da rodada: resultado do d20, comparação de Graus, cálculo de gasto de Energia Amaldiçoada, regras mecânicas aplicadas e intenções ocultas dos NPCs.",
+  "engineLog": "Notas do Mestre: o que a cena estabeleceu, o que cada NPC quer agora e o que ficou em suspenso — sem atributos, dano, energia ou probabilidades.",
   "activeStoryCards": ["Lista dos títulos dos Story Cards/Códice utilizados neste turno"],
   "visualEffectTrigger": "NONE | BLACK_FLASH | DOMAIN_EXPANSION | RCT_HEAL | TECHNIQUE_BURNOUT | CRITICAL_DAMAGE",
   "narrative": "*Narrador*: Descrição visceral da cena e do impacto da ação do jogador...\n\n*Nome do NPC*: Ação e expressão do personagem. \"Fala canônica e imersiva do NPC.\"\n\n*Narrador*: Gancho final descrevendo a situação imediata e perguntando o que o jogador faz.",
   "imagePrompt": "Anime scene in the dark atmospheric art style of Jujutsu Kaisen by MAPPA studio, high contrast, cursed energy aura, dynamic camera angle, depicting [detailed visual description in English of the exact current scene, no text or watermarks]",
   "playerStateUpdate": {
-    "hpPercentage": 100,
-    "cursedEnergyPercentage": 85,
-    "outputPercentage": 100,
-    "physicalCondition": "Intacto",
-    "techniqueState": "Ativa | Em Uso | Sob Voto Vinculativo | Em Exaustão Pós-Domínio (Burnout)",
-    "inBlackFlashZone": false,
+    "physicalCondition": "Intacto | Ferido no ombro | Exausto após sustentar o domínio",
     "newInventoryItemOrVow": "Opcional: item obtido ou voto vinculado neste turno, ou vazio"
   },
   "worldStateUpdate": {

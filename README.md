@@ -19,6 +19,14 @@ View your app in AI Studio: https://ai.studio/apps/ead516e9-ac27-4189-8b34-cc53c
 3. Run the app:
    `npm run dev`
 
+## Modelo de jogo: crônica narrativa
+
+Este projeto é um **RPG narrativo**, não uma mesa de RPG virtual. Não existem
+atributos, perícias, HP, reservas de energia medidas, dados, níveis ou XP. A
+Ficha Exclusiva é um documento de ficção (personalidade, técnica, limites,
+história, ferimentos) e o Mestre IA decide, pela lógica da cena, quando o
+personagem enfraquece, é ferido ou morre — e quando um inimigo é derrotado.
+
 ## Segurança e limites (opcional)
 
 Os endpoints `/api/gemini/*` agora têm:
@@ -27,13 +35,14 @@ Os endpoints `/api/gemini/*` agora têm:
   acima do limite retornam `429` com `Retry-After`.
 - **Bloqueio de origem cruzada**: um `Origin` de outro host recebe `403`.
 - **Código de acesso opcional**: defina `APP_ACCESS_CODE` no `.env` para exigir
-  o cabeçalho `x-access-code`. A UI pede o código em **Sistema & Nuvem →
-  Código de acesso do servidor** e o guarda apenas no navegador.
+  o cabeçalho `x-access-code`. Para usar pelo navegador, salve o código em
+  `localStorage` sob a chave `JJK_SERVER_ACCESS_CODE`; o app envia o valor
+  automaticamente em toda chamada `/api`.
 
 Sem `APP_ACCESS_CODE`, o app roda localmente como antes. `/api/health` continua
 aberto para diagnóstico.
 
 ## Build
 
-`npm run build` gera a ficha e o painel de nuvem em chunks separados; o SDK do
-Firebase só é baixado quando o painel de nuvem é aberto.
+`npm run build` gera a ficha de feiticeiro em chunk separado (lazy loading);
+a crônica carrega no bundle principal.

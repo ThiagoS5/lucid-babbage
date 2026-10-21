@@ -83,10 +83,7 @@ function loadServerSideLore() {
     }
   }
 
-  const mdCandidates = [
-    path.join(cwd, 'Codex.md'),
-    path.join(cwd, 'JJK_Codex_Ultra_Completo.md'),
-  ];
+  const mdCandidates = [path.join(cwd, 'Codex.md')];
 
   for (const mdPath of mdCandidates) {
     if (fs.existsSync(mdPath)) {
@@ -306,9 +303,7 @@ interface TurnPromptParams {
   world: unknown;
   actionMode: string;
   actionText: string;
-  diceRoll: number;
   revealedHandVow: boolean;
-  modBreakdown: string;
   combinedRagContext: string;
   isOpening: boolean;
   startingArcTitle: string;
@@ -402,9 +397,7 @@ function buildTurnPrompt(p: TurnPromptParams): string {
     world,
     actionMode,
     actionText,
-    diceRoll,
     revealedHandVow,
-    modBreakdown,
     combinedRagContext,
     isOpening,
     startingArcTitle,
@@ -442,7 +435,7 @@ O jogador ainda não agiu: você está abrindo a campanha.
 4. Não escreva falas, pensamentos, sentimentos nem decisões do personagem do jogador; narre apenas o que ele vê, ouve e sente.
 5. Não mencione "arco", "campanha", "contrato", "IA", "sistema" ou "prompt" dentro da narração.
 6. Termine com uma pergunta direta ou uma ameaça iminente que exija uma escolha imediata.
-7. Responda no formato *Narrador*: / *Nome do Personagem*:, com cada bloco em seu próprio parágrafo separado por uma linha em branco. Nunca coloque fala de NPC no mesmo parágrafo da narração. Preencha engineLog, suggestedActions, imagePrompt e playerStateUpdate. xpGained inicial entre 15 e 40.
+7. Responda no formato *Narrador*: / *Nome do Personagem*:, com cada bloco em seu próprio parágrafo separado por uma linha em branco. Nunca coloque fala de NPC no mesmo parágrafo da narração. Preencha engineLog, suggestedActions, imagePrompt e playerStateUpdate.
 `
     : `
 === ESTADO ATUAL DO PERSONAGEM DO JOGADOR ===
@@ -453,7 +446,7 @@ ${(character as { exclusiveSheetMarkdown?: string })?.exclusiveSheetMarkdown || 
 
 ${renderArcContract(world, startingArcTitle, '', false)}
 
-=== ESTADO ATUAL DO MUNDO E NPCS EM CENA (ATUALIZE O hpPercentage DOS NPCS QUANDO SOFREREM DANO!) ===
+=== ESTADO ATUAL DO MUNDO E NPCS EM CENA (ATUALIZE O status NARRATIVO DOS NPCS: FERIDO, RECUANDO, DERROTADO, MORTO ETC.) ===
 ${JSON.stringify(worldForPrompt, null, 2)}
 
 === MEMÓRIA CONSOLIDADA DA CAMPANHA ===
@@ -476,14 +469,12 @@ ${combinedRagContext || 'Nenhum card específico acionado; use o cânone oficial
           ? 'Execução de Técnica Amaldiçoada / Domínio / RCT'
           : 'Direcionamento Narrativo de Cena'
       })
-- Rolagem (referência de tensão): ${diceRoll} — valor ALTO sugere sorte/momento favorável; valor BAIXO sugere contratempo. É apenas um guia: o resultado final deve seguir a lógica da cena, a ficha e o Grau, NUNCA um Black Flash automático por rolagem.
-- Modificador Tático de Contexto: ${modBreakdown}
 - Voto Vinculativo "Revelar a Própria Mão" ativado neste turno: ${
-        revealedHandVow ? 'SIM (+20% Output de EA concedido!)' : 'NÃO'
+        revealedHandVow ? 'SIM — a técnica foi explicada ao oponente; use isso dramaticamente, sem bônus numérico.' : 'NÃO'
       }
 - Texto do Jogador: "${actionText}"
 
-Gere a resposta estruturada em JSON seguindo o schema e o formato teatral (*Narrador*: e *Nome do Personagem*:). Consulte as Perícias & Afinidades Narrativas e Pilares do jogador na Ficha Exclusiva: faça as perícias de ★ Maestria e ● Afinidade AJUDAREM organicamente na cena, e as de ▼ Inaptidão PREJUDICAREM gerando complicações dramáticas (sem cálculos matemáticos!). Conceda xpGained (15 a 120 XP, conforme o peso narrativo do turno)!
+Gere a resposta estruturada em JSON seguindo o schema e o formato teatral (*Narrador*: e *Nome do Personagem*:). Este é um RPG narrativo: **não há atributos, perícias, HP, energia medida, dados, níveis ou XP**. Decida consequências pela lógica da cena, pelos limites da técnica e pelas escolhas do jogador. Você decide, com verossimilhança, quando o personagem enfraquece, é ferido ou morre — e quando um inimigo é derrotado ou morto.
 `;
 }
 
@@ -504,40 +495,13 @@ function extractNarrativeFromJson(rawJson: string): string {
   return unescapeJsonString(m[1]);
 }
 
-function getGradeModifier(grade?: string, inBlackFlashZone?: boolean, revealedHandVow?: boolean): {
-  mod: number;
-  breakdown: string;
-} {
-  const g = (grade || 'Grau 3').toLowerCase();
-  let gradeMod = 1;
-  if (g.includes('especial')) gradeMod = 6;
-  else if (g.includes('semi-grau 1') || g.includes('semi grau 1')) gradeMod = 3;
-  else if (g.includes('grau 1')) gradeMod = 4;
-  else if (g.includes('grau 2')) gradeMod = 2;
-  else if (g.includes('grau 3')) gradeMod = 1;
-  else if (g.includes('grau 4')) gradeMod = 0;
-
-  const zoneMod = inBlackFlashZone ? 2 : 0;
-  const vowMod = revealedHandVow ? 2 : 0;
-  const totalMod = gradeMod + zoneMod + vowMod;
-
-  const parts = [`Grau (${gradeMod >= 0 ? `+${gradeMod}` : gradeMod})`];
-  if (zoneMod > 0) parts.push(`Zona Kokusen (+${zoneMod})`);
-  if (vowMod > 0) parts.push(`Revelar a Mão (+${vowMod})`);
-
-  return {
-    mod: totalMod,
-    breakdown: parts.join(' + '),
-  };
-}
-
 const JJK_RESPONSE_JSON_SCHEMA = {
   type: 'object',
   properties: {
     engineLog: {
       type: 'string',
       description:
-        'Bloco técnico obrigatório ⚙️ [LOG DO MOTOR JUJUTSU] (2 a 4 linhas analisando friamente a física da cena: 1. Checagem de Escala de Poder entre o Grau do Jogador e o Grau do NPC/Maldição e quem tem vantagem de velocidade; 2. Checagem de Técnica / Lore Check: condições exatas de ativação, alcance, quanto de EA foi gasto e fraquezas ativas; 3. Psicologia e estratégia oculta do NPC conforme sua personalidade canônica).',
+        'Bloco técnico obrigatório ⚙️ [NOTAS DO MESTRE] (2 a 4 linhas): 1. O que a cena estabelece e qual consequência dramática ficou latente; 2. Como cada NPC presente reagiu e o que ele quer agora; 3. Que detalhe do mundo ou da técnica foi revelado e qual gancho fica para o próximo turno. Não calcule atributos, dano, HP ou energia.',
     },
     activeStoryCards: {
       type: 'array',
@@ -547,7 +511,7 @@ const JJK_RESPONSE_JSON_SCHEMA = {
     activeCardRuleSummary: {
       type: 'string',
       description:
-        'Card Ativo na Cena: Resumo técnico das regras exatas da habilidade ou técnica que está sendo usada no momento para travar a consistência mecânica no 📊 [HUD & REGISTRO DE CARDS].',
+        'Card ativo na cena: resumo das regras de ficção da técnica/domínio em foco (o que ela pode e não pode fazer), sem números de jogo.',
     },
     visualEffectTrigger: {
       type: 'string',
@@ -591,50 +555,19 @@ const JJK_RESPONSE_JSON_SCHEMA = {
     playerStateUpdate: {
       type: 'object',
       properties: {
-        hpPercentage: { type: 'number', description: 'Novo HP do jogador de 0 a 100.' },
-        cursedEnergyPercentage: {
-          type: 'number',
-          description: 'Nova Reserva de Energia Amaldiçoada de 0 a 100 (0 se Restrição Celestial).',
-        },
-        outputPercentage: {
-          type: 'number',
-          description: 'Output atual de EA (ex: 100 padrão, 120 na Zona após Black Flash ou com Voto de Revelar a Mão).',
-        },
         physicalCondition: {
           type: 'string',
-          description: 'Descrição clínica e visceral dos ferimentos atuais.',
-        },
-        techniqueState: {
-          type: 'string',
-          enum: [
-            'Ativa',
-            'Em Uso',
-            'Sob Voto Vinculativo',
-            'Em Exaustão Pós-Domínio (Burnout)',
-          ],
-        },
-        inBlackFlashZone: {
-          type: 'boolean',
-          description: 'True se o jogador atingiu um Black Flash e está operando a 120% de potencial.',
+          description:
+            'Estado físico/emocional do jogador em linguagem narrativa ("Intacto", "Ferido no ombro", "Exausto após sustentar o domínio"). Sem números.',
         },
         newInventoryItemOrVow: {
           type: 'string',
           description: 'Opcional: Nova Ferramenta Amaldiçoada obtida ou Voto Vinculativo selado no turno (ou vazio).',
         },
-        xpGained: {
-          type: 'number',
-          description:
-            'XP de Feiticeiro concedido neste turno (0 a 250 XP). Cada 100 XP sobe 1 Nível na categoria atual de Grau (Grau 4 exige 10 níveis -> Grau 3 exige 15 -> Grau 2 exige 20 -> Semi-Grau 1 exige 25 -> Grau 1 exige 30 -> Grau Especial). Conceda 25-60 XP em turnos normais, 80-120 XP em exorcismos/treinos intensos e 150-220 XP ao atingir Kokusen (Black Flash).',
-        },
-        levelUpReason: {
-          type: 'string',
-          description:
-            'Breve justificativa do ganho de XP/Nível neste turno (ex: "Refinamento de EA sob pressão em combate", "Despertar por Kokusen").',
-        },
         sheetEvolution: {
           type: 'object',
           description:
-            'Preencha SEMPRE que a história modificar a Ficha Exclusiva do personagem (ex: despertar uma seção antes marcada como "Não desenvolvido ainda", evoluir o Lapso/Reversão/Máxima/Domínio Simples/Expansão de Domínio/RCT, cicatriz ou evolução do Estilo de Combate).',
+            'Preencha SEMPRE que a história modificar a Ficha Exclusiva do personagem (ex: despertar uma seção antes marcada como "Não desenvolvido ainda", evoluir o Lapso/Reversão/Máxima/Domínio Simples/Expansão de Domínio/RCT, cicatriz, mudança de estilo ou reconhecimento de um novo Grau).',
           properties: {
             sectionUpdated: {
               type: 'string',
@@ -651,36 +584,19 @@ const JJK_RESPONSE_JSON_SCHEMA = {
               description:
                 'Explicação narrativa de como o personagem despertou ou alterou essa característica na história.',
             },
+            grade: {
+              type: 'string',
+              description:
+                'Opcional: novo Grau de prestígio reconhecido pela história (ex: "Grau 2"). Use com parcimônia, só quando a conquista for inegável.',
+            },
             unlockRct: {
               type: 'boolean',
               description: 'True se o personagem acabou de despertar a Técnica Amaldiçoada Reversa (RCT) neste turno.',
             },
-            skillUpdated: {
-              type: 'object',
-              description:
-                'Opcional: Preencha se o personagem despertou ou evoluiu uma Perícia Narrativa neste turno (ex: de "nao_desenvolvido" ou "neutro" para "afinidade" ou "maestria").',
-              properties: {
-                skillId: { type: 'string' },
-                skillName: { type: 'string' },
-                newLevel: {
-                  type: 'string',
-                  enum: ['maestria', 'afinidade', 'neutro', 'inaptidao', 'nao_desenvolvido'],
-                },
-                reason: { type: 'string' },
-              },
-            },
           },
         },
       },
-      required: [
-        'hpPercentage',
-        'cursedEnergyPercentage',
-        'outputPercentage',
-        'physicalCondition',
-        'techniqueState',
-        'inBlackFlashZone',
-        'xpGained',
-      ],
+      required: ['physicalCondition'],
     },
     worldStateUpdate: {
       type: 'object',
@@ -698,11 +614,10 @@ const JJK_RESPONSE_JSON_SCHEMA = {
             properties: {
               name: { type: 'string' },
               grade: { type: 'string' },
-              status: { type: 'string', description: 'Condição física e postura tática atual do NPC.' },
-              hpPercentage: {
-                type: 'number',
+              status: {
+                type: 'string',
                 description:
-                  'Vitalidade atual do NPC de 0 a 100 (reduza proporcionalmente aos golpes sofridos; 0 = Exorcizado/Derrotado).',
+                  'Estado narrativo atual do NPC: postura, ferimentos, exaustão, derrota ou morte ("Ferido no braço, recuando", "Exorcizado", "Morto"). Sem números.',
               },
               attitude: {
                 type: 'string',
@@ -717,7 +632,7 @@ const JJK_RESPONSE_JSON_SCHEMA = {
                 description: 'Prompt visual em inglês para gerar o retrato 1:1 deste NPC no estilo MAPPA.',
               },
             },
-            required: ['name', 'grade', 'status', 'hpPercentage', 'attitude', 'visualDescription'],
+            required: ['name', 'grade', 'status', 'attitude', 'visualDescription'],
           },
         },
       },
@@ -809,8 +724,10 @@ async function callGeminiStructured(
   return response.text;
 }
 
-const SYSTEM_INSTRUCTION_GM = `Você é um **Mestre de RPG (Game Master) experiente, imersivo e implacável na fidelidade ao mundo**, e um **Motor de Simulação operando sob regras estritas do cânone de Jujutsu Kaisen (Gege Akutami — STRICT LORE MODE)**.
-Seu papel é conduzir a narrativa em Português do Brasil, descrever cenários vivos, controlar todos os NPCs (aliados, civis, rivais e inimigos), arbitrar consequências de ações e reagir de forma dinâmica às escolhas do jogador. Sua prioridade máxima é a **FIDELIDADE MECÂNICA E DE PERSONALIDADE**. É terminantemente proibido inventar efeitos secundários para técnicas canônicas ou alterar a escala de poder estabelecida.
+const SYSTEM_INSTRUCTION_GM = `Você é um **Mestre de RPG narrativo experiente, imersivo e implacável na fidelidade ao mundo**, conduzindo uma crônica de Jujutsu Kaisen (Gege Akutami — STRICT LORE MODE).
+Seu papel é conduzir a narrativa em Português do Brasil, descrever cenários vivos, controlar todos os NPCs (aliados, civis, rivais e inimigos), arbitrar consequências de ações e reagir de forma dinâmica às escolhas do jogador. Sua prioridade máxima é a **FIDELIDADE À FICÇÃO, ÀS PERSONALIDADES E ÀS REGRAS DO MUNDO**. É terminantemente proibido inventar efeitos secundários para técnicas canônicas ou alterar a escala de poder estabelecida.
+
+> **Este é um RPG narrativo, não uma mesa de RPG virtual.** Não existem atributos, perícias, HP, reservas de energia medidas, dados, níveis ou XP. Ninguém rola nada. Você decide, com verossimilhança dramática, quando um personagem enfraquece, é ferido, entra em burnout ou morre — e quando um inimigo é derrotado ou morto. Nunca cite números de jogo, barras ou "checks" na narração.
 
 ---
 
@@ -868,11 +785,12 @@ Sempre que um personagem do mundo (NPC, aliado ou inimigo) falar ou realizar uma
 
 ---
 
-## 4. PROTOCOLO DE PROCESSAMENTO DE TURNO (OBRIGATÓRIO em "engineLog" — \`[LOG DO MOTOR JUJUTSU]\`)
-Antes de narrar qualquer cena ou combate, você deve processar a lógica da rodada no campo \`engineLog\` (de 2 a 4 linhas analisando friamente a física da cena):
-1. **Checagem de Escala de Poder:** Compare o Grau do Jogador com o Grau do NPC/Maldição e quem tem vantagem de velocidade. Um Grau 2 NUNCA vence um Grau Especial na força bruta sem condições extremas ou ajuda.
-2. **Checagem de Técnica (Lore Check):** Verifique as condições exatas de ativação, alcance, quanto de Energia Amaldiçoada (EA) foi gasto e fraquezas da técnica usada na cena.
-3. **Psicologia do NPC & Estratégia Oculta:** Os personagens devem agir estritamente conforme sua personalidade canônica (ex: Sukuna é arrogante, analítico e hedonista; Kenjaku é calculista, curioso e prolixo; Kashimo busca apenas lutas até a morte sem usar Expansão de Domínio; Higuruma é guiado pelo senso de justiça e leis).
+## 4. NOTAS DE DIREÇÃO NARRATIVA (OBRIGATÓRIO em "engineLog" — \`[NOTAS DO MESTRE]\`)
+Antes de narrar qualquer cena ou combate, registre no campo \`engineLog\` (2 a 4 linhas) a direção dramática do turno:
+1. **O que a cena estabelece:** qual consequência imediata a ação do jogador provoca (sucesso, custo, imprevisto, revelação).
+2. **O que cada NPC quer agora:** intenção, blefe, medo ou contra-ataque, sempre fiel à personalidade canônica (ex: Sukuna é arrogante, analítico e hedonista; Kenjaku é calculista e prolixo; Kashimo busca lutas até a morte; Higuruma é guiado por justiça e leis).
+3. **O que fica em suspenso:** detalhe do mundo, da técnica ou da relação entre personagens que o próximo turno pode explorar.
+Não calcule atributos, dano, HP, energia, iniciativa ou probabilidades.
 
 ---
 
@@ -909,11 +827,11 @@ Antes de narrar qualquer cena ou combate, você deve processar a lógica da roda
 
 ---
 
-## 7. REGRAS DO CENÁRIO (MANGÁ 2018 → ERA DE SEGUIMENTO), PILARES E FICHA VIVA
+## 7. REGRAS DO CENÁRIO (MANGÁ 2018 → ERA DE SEGUIMENTO) E FICHA VIVA
 - **Era da campanha:** leia o campo "era" do mundo. Se for "sequel", a história acontece DEPOIS do desfecho do mangá (Sukuna destruído, Kenjaku derrotado, Gojo morto, política jujutsu em reconstrução) e a seção 9 se aplica. Se for "canon", a história roda dentro do mangá de 2018 e não pode ultrapassar o ponto cronológico do arco.
-- Nas colônias do **Jogo do Abate (Culling Game)** — apenas em campanhas canônicas daquele arco —, cada jogador possui uma **Kogane** (interface amaldiçoada que anuncia regras, pontuação e localização). Feiticeiros valem **5 pontos** ao morrerem; Não-feiticeiros valem **1 ponto**; com **100 pontos**, um jogador pode adicionar uma nova regra geral.
-- **Pilares de Aptidão e Perícias Narrativas (100% Narrativo, Sem Cálculos Matemáticos):** Respeite os Pilares de Aptidão do jogador e suas Perícias Narrativas (★ Maestria, ● Afinidade, ▼ Inaptidão), sem nunca exibir somas matemáticas de perícias no texto.
-- **Ficha Exclusiva Viva:** Se alguma seção estiver como "Não desenvolvido ainda" e o jogador treinar, despertar em situação extrema ou em um momento de clímax digno, preencha \`playerStateUpdate.sheetEvolution\` com parcimônia.
+- Nas colônias do **Jogo do Abate (Culling Game)** — apenas em campanhas canônicas daquele arco —, cada jogador possui uma **Kogane** (interface amaldiçoada que anuncia regras, pontuação e localização). A pontuação é parte da ficção do arco, não uma mecânica de jogo do aplicativo.
+- **Sem fichas numéricas:** ignore qualquer pedido para calcular atributos, perícias, HP, energia, dano, iniciativa ou XP. A Ficha Exclusiva é literatura: personalidade, técnica, limites, ferimentos e história.
+- **Ficha Exclusiva Viva:** Se alguma seção estiver como "Não desenvolvido ainda" e o jogador treinar, despertar em situação extrema ou viver um clímax digno, preencha \`playerStateUpdate.sheetEvolution\` com parcimônia. Mudanças de Grau também são narrativas e só acontecem quando a história as torna inegáveis.
 
 ---
 
@@ -925,7 +843,7 @@ O bloco "PLOT ESSENTIALS" do turno informa o **objetivo imediato do arco** e a *
 2. **Não resolva o futuro do mangá:** a não ser que o jogador esteja exatamente naquele ponto cronológico, **não antecipe nem conclua** eventos canônicos posteriores (mortes, revelações, o desfecho do mangá). O mundo evolui pelas escolhas do jogador, mas sem pular arcos.
 3. **Fidelidade de NPCs e limites de conhecimento (Anti-Alucinação):** cada NPC só sabe aquilo que **viu, sentiu ou foi informado**. Um NPC não pode saber que o jogador carrega o Dedo de Sukuna, uma técnica oculta ou uma Restrição Celestial, a menos que isso tenha sido revelado em cena. Aplique a mesma regra a informações de lore: o NPC conhece apenas o que sua posição no mundo permite.
 4. **Elenco do arco:** use preferencialmente os NPCs listados no estado do mundo. Ao introduzir um personagem canônico, respeite sua ficha técnica (seção 6) e seu papel cronológico. Não spawnar personagens canônicos de arcos futuros fora de época.
-5. **Rolagem como guia, não como árbitro:** o valor de dado informado é apenas uma **referência de tensão narrativa** (sorte/azar da cena). **Nunca** trate um "20" como Black Flash automático nem um "1" como punição obrigatória: o Kokusen e as consequências críticas devem ser decididos pela **lógica da cena + ficha + Grau**, como um Mestre de mesa faria. Preserve a agência do jogador e a verossimilhança.
+5. **Consequência dramaticamente justa:** não existe rolagem de dado. A força de um NPC, a preparação do jogador, o terreno, os ferimentos e as escolhas anteriores determinam o que é crível. Você decide quando o personagem enfraquece, quando um golpe o incapacita e quando um inimigo morre — sempre mostrando o custo na cena, nunca anunciando números. Preserve a agência do jogador e a verossimilhança.
 
 ---
 
@@ -993,7 +911,7 @@ async function startServer() {
           ok: false,
           reason: 'ACCESS_CODE_REQUIRED',
           message:
-            'Este servidor exige um código de acesso. Informe-o em Sistema & Nuvem → Código de acesso do servidor.',
+            'Este servidor exige um código de acesso. Salve-o no navegador em localStorage (chave JJK_SERVER_ACCESS_CODE) e recarregue.',
         });
       }
     }
@@ -1351,10 +1269,9 @@ async function startServer() {
   });
 
   /**
-   * Interactive "Sessão Zero" — AI Character Questioning, Power-Level Balancing & Negotiation Endpoint
-   * Questiona conceitos que fogem da escala de força de Jujutsu Kaisen, propõe nivelamentos com
-   * Votos Vinculativos, Grau Inicial Designado (ex: Grau 4 -> 10 níveis -> Grau 3) e marca habilidades
-   * avançadas como "Não desenvolvido ainda" para despertar na campanha.
+   * Sessão Zero — conversa de criação e calibragem narrativa. O Mestre acolhe
+   * o conceito, negocia limites de ficção (Votos, custos, segredos) e marca
+   * extensões avançadas como "Não desenvolvido ainda". Não há níveis nem XP.
    */
   app.post('/api/gemini/session-zero', async (req, res) => {
     const {
@@ -1379,19 +1296,19 @@ async function startServer() {
       return {
         gmMessage: `*Mestre (Sessão Zero)*: Analisei cuidadosamente o conceito de **${name}** (${clan})! A ideia base de **${
           characterDraft.technique?.name || concept || 'sua Técnica Inata'
-        }** tem ótimo potencial dramático para o universo de Gege Akutami.\n\nPara que a progressão seja empolgante como no mangá, recomendo começar no **Grau 4** (onde você precisará subir **10 níveis** para alcançar o **Grau 3**, depois **15 níveis** para o **Grau 2**), mantendo o Lapso e seu Estilo de Combate ativos desde já, mas marcando as extensões de topo (**Reversão**, **Técnica Máxima**, **RCT** e **Expansão de Domínio**) como **"Não desenvolvido ainda"** na sua Ficha Exclusiva. Assim, quando você passar por um combate extremo ou atingir um *Kokusen*, a própria história consultará e atualizará sua ficha exclusiva despertando esses poderes!`,
+        }** tem ótimo potencial dramático para o universo de Gege Akutami.\n\nComo esta é uma crônica narrativa, não vamos falar em níveis ou pontos: o que importa é o que o personagem já sabe fazer, o preço que cada poder cobra e o que ainda é semente. Sugiro começar com o **Grau 4** de prestígio, mantendo o Lapso e seu Estilo de Combate ativos desde já, e marcar as extensões de topo (**Reversão**, **Técnica Máxima**, **RCT** e **Expansão de Domínio**) como **"Não desenvolvido ainda"** na sua Ficha Exclusiva. Assim, quando você viver um treino brutal, uma perda ou um momento de clímax, a própria história despertará esses poderes — sem somar experiência.`,
         balanceStatus: hasPlayerNegotiated ? ('BALANCED_READY' as const) : ('NEEDS_BALANCING' as const),
         designatedInitialGrade: 'Grau 4',
         powerScaleWarning:
-          'Equilíbrio de Campanha Recomendado: Iniciar em Grau 4 ou Grau 3 com técnicas supremas marcadas como "Não desenvolvido ainda" garante evolução orgânica.',
+          'Equilíbrio de Campanha Recomendado: começar em Grau 4 ou Grau 3 e deixar as técnicas supremas como "Não desenvolvido ainda" cria espaço para evolução dramática, sem fichas numéricas.',
         questionsForPlayer: [
-          '1. Qual é a principal condição ou custo físico/espiritual que sua técnica exige quando você força o Output ao limite?',
-          '2. Você prefere começar no Grau 4 (10 níveis para Grau 3) com Reversão, Máxima e Expansão de Domínio marcados como "Não desenvolvido ainda" para despertá-los durante a história?',
+          '1. Qual é a principal condição ou custo físico/espiritual que sua técnica exige quando você a força além do seguro?',
+          '2. Quem ou o que você perdeu para chegar até aqui — e o que ainda está disposto a sacrificar para dominar essa técnica?',
         ],
         proposedAdjustmentsSummary: [
-          'Grau Inicial Designado: Grau 4 (Progressão: 10 níveis -> Grau 3 -> 15 níveis -> Grau 2).',
-          'Lapso da Técnica e Estilo Marcial prontos para combate imediato.',
-          'Reversão, Técnica Máxima, RCT e Expansão de Domínio marcados como "Não desenvolvido ainda" na Ficha Exclusiva para despertar na história.',
+          'Grau inicial de prestígio: Grau 4 — reconhecimento, não nível numérico.',
+          'Lapso da Técnica e Estilo Marcial prontos para a ficção desde o primeiro turno.',
+          'Reversão, Técnica Máxima, RCT e Expansão de Domínio marcados como "Não desenvolvido ainda" para despertar na história.',
         ],
         proposedCharacterPatch: {
           grade: 'Grau 4',
@@ -1431,7 +1348,7 @@ async function startServer() {
           type: 'string',
           enum: ['Grau 4', 'Grau 3', 'Grau 2', 'Semi-Grau 1', 'Grau 1'],
           description:
-            'Grau Inicial Designado recomendado pelo Mestre (prefira Grau 4 ou Grau 3 para progressão de níveis).',
+            'Grau inicial de prestígio recomendado pelo Mestre. É um título na ficção, não um nível com barra de progresso.',
         },
         powerScaleWarning: {
           type: 'string',
@@ -1448,7 +1365,7 @@ async function startServer() {
           type: 'array',
           items: { type: 'string' },
           description:
-            'Lista objetiva das mudanças sugeridas pelo Mestre para nivelar a ficha (incluindo quais habilidades ficam como "Não desenvolvido ainda").',
+            'Lista objetiva das mudanças sugeridas pelo Mestre para ajustar a ficha à ficção (incluindo quais habilidades ficam como "Não desenvolvido ainda").',
         },
         proposedCharacterPatch: {
           type: 'object',
@@ -1494,7 +1411,7 @@ async function startServer() {
       ],
     };
 
-    const sessionZeroPrompt = `Você é o Mestre de RPG de Jujutsu Kaisen conduzindo a "Sessão Zero" (Criação, Questionamento e Nivelamento de Personagem).
+    const sessionZeroPrompt = `Você é o Mestre de RPG narrativo de Jujutsu Kaisen conduzindo a "Sessão Zero" (criação, questionamento e calibragem de personagem).
 O jogador está criando seu personagem e pode ter colocado habilidades muito apelonas (overpowered) que fogem do nível de força inicial do universo de Gege Akutami, ou ainda não desenvolveu todas as partes da ficha.
 
 === RASCUNHO ATUAL DA FICHA DO JOGADOR ===
@@ -1508,19 +1425,14 @@ ${
 }
 
 === RESPOSTA / ARGUMENTO MAIS RECENTE DO JOGADOR ===
-${playerReply ? `"${playerReply}"` : '(O jogador solicitou a avaliação e nivelamento inicial da ficha)'}
+${playerReply ? `"${playerReply}"` : '(O jogador solicitou a avaliação e calibragem inicial da ficha)'}
 
 REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
 1. Nunca destrua a ideia do jogador: acolha a criatividade dele (mesmo se for filho adotivo de Gojo, híbrido de maldição, clã que manipula a realidade ou duas Restrições Celestiais) e EXPLIQUE como adaptar isso às leis reais de Jujutsu Kaisen através de:
-   - Votos Vinculativos com custos reais (ex: drenar muita Energia Amaldiçoada se não tiver o sangue do clã, ou restringir a manipulação da realidade primeiro ao próprio corpo);
-   - Selos de poder que evoluem conforme o Grau;
+   - Votos Vinculativos com custos reais (ex: drenar muita energia espiritual se não tiver o sangue do clã, ou restringir a manipulação da realidade primeiro ao próprio corpo);
+   - Segredos, dívidas e limites que a história pode cobrar depois;
    - Marcar habilidades avançadas (como Reversão, Técnica Máxima, RCT e Expansão de Domínio) com o texto exato "Não desenvolvido ainda" em proposedCharacterPatch.technique para que sejam despertadas durante a campanha!
-2. Explique o Sistema de Níveis por Grau:
-   - Grau 4: necessário subir 10 níveis para subir ao Grau 3;
-   - Grau 3: necessário subir 15 níveis para subir ao Grau 2;
-   - Grau 2: necessário subir 20 níveis para subir ao Semi-Grau 1;
-   - Semi-Grau 1: necessário subir 25 níveis para subir ao Grau 1;
-   - Grau 1: necessário subir 30 níveis para subir ao Grau Especial.
+2. Deixe claro que esta é uma crônica narrativa: **não existem atributos, perícias, HP, energia medida, dados, níveis ou XP**. O Grau é prestígio reconhecido na ficção e só muda quando a história o justificar. O Mestre decide quando o personagem enfraquece ou é ferido e quando um inimigo morre.
 3. Questione o jogador em "questionsForPlayer" para que ele possa dialogar e negociar cada ponto.`;
 
     for (const candidateModel of ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite']) {
@@ -1559,7 +1471,6 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       world,
       actionMode = 'DO',
       actionText = '',
-      diceRoll = 12,
       revealedHandVow = false,
       ragContext = '',
       activeCards = [],
@@ -1573,13 +1484,6 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
 
     const headerKey = req.headers['x-custom-api-key'] as string | undefined;
     const ai = getGeminiClient(customApiKey || headerKey);
-
-    const { mod: totalDiceMod, breakdown: modBreakdown } = getGradeModifier(
-      character?.grade,
-      character?.inBlackFlashZone,
-      revealedHandVow
-    );
-    const modifiedRoll = Number(diceRoll) + totalDiceMod;
 
     // Enrich with Server-Side Deep RAG from the 283 Story Cards + 1.1MB Encyclopedic Codex
     const searchContextForServerRag = [
@@ -1605,27 +1509,33 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
 
     // Fallback generator if no API key is configured or all models are exhausted
     const buildDynamicFallback = (reason: string) => {
-      const isCrit20 = Number(diceRoll) === 20;
-      const isCrit1 = Number(diceRoll) === 1;
-      const isRct =
-        actionText.toLowerCase().includes('reversa') ||
-        actionText.toLowerCase().includes('rct') ||
-        actionText.toLowerCase().includes('curar');
-      const isDomain =
-        actionText.toLowerCase().includes('expansão de domínio') ||
-        actionText.toLowerCase().includes('ryoiki tenkai') ||
-        actionText.toLowerCase().includes('ryōiki tenkai');
-
-      // O motor local também lê o contrato do arco: sem isso o fallback
-      // virava uma cena genérica de "feiticeiro contra maldição".
+      // Motor local de continuidade: não simula dados, HP, energia, XP ou
+      // níveis. Apenas mantém a cena viva, coerente com o contrato do arco,
+      // quando a IA generativa não está disponível. Quem decide ferimentos e
+      // mortes é a ficção — e, aqui, a ficção é conservadora: ninguém morre
+      // por conta de um fallback.
       const contractWorld = (world || {}) as ArcContractWorld;
       const premise = (contractWorld.campaignPremise || '').trim();
-      const playerRole = (contractWorld.playerRole || '').trim();
       const objective = (contractWorld.missionObjective || '').trim();
       const openingScene = (contractWorld.openingScene || customOpeningPrompt || '').trim();
       const beats = contractWorld.mustEstablish || [];
+      const lowerAction = (actionText || '').toLowerCase();
+      const actionForNarration = (actionText || '').trim().replace(/[.!?]+$/, '');
 
-      let vfx: string = 'NONE';
+      const isRct =
+        lowerAction.includes('reversa') ||
+        lowerAction.includes('rct') ||
+        lowerAction.includes('curar');
+      const isDomain =
+        lowerAction.includes('expansão de domínio') ||
+        lowerAction.includes('ryoiki tenkai') ||
+        lowerAction.includes('ryōiki tenkai');
+      const isKokusen =
+        lowerAction.includes('kokusen') ||
+        lowerAction.includes('faísca negra') ||
+        lowerAction.includes('black flash');
+
+      let vfx = 'NONE';
       if (isDomain) {
         const techName = (character?.technique?.name || '').toLowerCase();
         if (techName.includes('ilimitado') || techName.includes('gojo')) vfx = 'DOMAIN_GOJO';
@@ -1634,56 +1544,45 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         else vfx = 'DOMAIN_GENERIC';
       } else if (isRct) {
         vfx = 'RCT_HEAL';
+      } else if (isKokusen) {
+        vfx = 'BLACK_FLASH';
       }
-
-      const curHp = character?.hpPercentage ?? 100;
-      const curCe = character?.isHeavenlyRestriction ? 0 : character?.cursedEnergyPercentage ?? 100;
-      const newHp = isRct ? Math.min(100, curHp + 25) : isCrit1 ? Math.max(10, curHp - 15) : curHp;
-      const ceCost = isDomain ? 35 : isRct ? 25 : actionMode === 'TECHNIQUE' ? 12 : 5;
-      const newCe = character?.isHeavenlyRestriction
-        ? 0
-        : isCrit20
-        ? Math.min(100, curCe + 15)
-        : Math.max(0, curCe - ceCost);
-      const newOutput = isCrit20 || character?.inBlackFlashZone ? 120 : revealedHandVow ? 120 : 100;
 
       const firstNpc = world?.npcsInScene?.[0] || {
         name: 'Espírito Amaldiçoado de Grau 1',
         grade: 'Grau 1',
         status: 'Emitindo pressão hostil nas sombras',
-        hpPercentage: 100,
         attitude: 'Hostil',
         visualDescription: 'Grotesque cursed spirit in dark anime style by MAPPA studio, glowing eyes',
       };
 
-      const damageToNpc = isOpening ? 0 : isCrit20 ? 45 : isDomain ? 40 : Number(diceRoll) >= 10 ? 22 : 8;
       const updatedNpcs = (world?.npcsInScene?.length ? world.npcsInScene : [firstNpc]).map(
-        (npc: { name: string; grade: string; status: string; hpPercentage?: number; attitude: string; visualDescription: string }, idx: number) => {
+        (
+          npc: {
+            name: string;
+            grade: string;
+            status: string;
+            attitude: string;
+            visualDescription: string;
+            revealedTechnique?: string;
+            avatarUrl?: string;
+          },
+          idx: number
+        ) => {
           if (idx === 0 && npc.attitude === 'Hostil' && !isOpening) {
-            const prevHp = typeof npc.hpPercentage === 'number' ? npc.hpPercentage : 100;
-            const nextHp = Math.max(0, prevHp - damageToNpc);
-            return {
-              ...npc,
-              hpPercentage: nextHp,
-              status:
-                nextHp === 0
-                  ? 'Exorcizado / Desintegrado em cinzas de Energia Amaldiçoada'
-                  : nextHp <= 35
-                  ? `Gravemente ferido (${nextHp}% HP) — Guarda quebrada`
-                  : `${npc.status} (${nextHp}% HP)`,
-            };
+            const nextStatus =
+              isDomain || isKokusen
+                ? 'Atingido em cheio — guarda destruída, tentando se recompor'
+                : actionMode === 'TECHNIQUE'
+                ? 'Sob pressão da técnica, recuando meio passo'
+                : npc.status;
+            return { ...npc, status: nextStatus };
           }
-          return {
-            ...npc,
-            hpPercentage: typeof npc.hpPercentage === 'number' ? npc.hpPercentage : 100,
-          };
+          return npc;
         }
       );
 
-      // Check if player is trying to develop/awaken an undeveloped section or scored a Kokusen
-      const lowerAction = actionText.toLowerCase();
       const wantsAwakening =
-        isCrit20 ||
         lowerAction.includes('despertar') ||
         lowerAction.includes('desenvolver') ||
         lowerAction.includes('treinar') ||
@@ -1698,169 +1597,113 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
           }
         | undefined;
 
-      if (!isOpening && wantsAwakening && Number(diceRoll) >= 12) {
+      if (!isOpening && wantsAwakening) {
         const tech = character?.technique || {};
         if (String(tech.lapse || '').toLowerCase().includes('não desenvolvido')) {
           fallbackSheetEvolution = {
             sectionUpdated: 'lapse',
-            newValue: `Lapso Desperto (${tech.name || 'Técnica Inata'}): Canalização concentrada de Energia Amaldiçoada despertada em combate real.`,
-            reason: 'Despertar do Lapso da Técnica durante pressão de combate!',
+            newValue: `Lapso Desperto (${tech.name || 'Técnica Inata'}): a canalização que antes era instinto agora encontra forma deliberada.`,
+            reason: 'Despertar do Lapso da Técnica sob pressão real.',
           };
         } else if (String(tech.antiDomain || '').toLowerCase().includes('não desenvolvido')) {
           fallbackSheetEvolution = {
             sectionUpdated: 'antiDomain',
-            newValue: 'Domínio Simples (Novo Estilo da Sombra — Desperto em Combate)',
-            reason: 'Compreensão de barreira defensiva adquirida sob risco de vida!',
+            newValue: 'Domínio Simples (Novo Estilo da Sombra) — a compreensão de barreira nasce de um erro quase fatal.',
+            reason: 'Compreensão de barreira defensiva adquirida sob risco de vida.',
           };
         } else if (String(tech.reversal || '').toLowerCase().includes('não desenvolvido')) {
           fallbackSheetEvolution = {
             sectionUpdated: 'reversal',
-            newValue: `Reversão da Técnica (${tech.name || 'Inata'}): Inversão de vetores com Energia Positiva despertada no calor da batalha!`,
-            reason: 'Despertar da Reversão da Técnica na Ficha Exclusiva!',
+            newValue: `Reversão da Técnica (${tech.name || 'Inata'}): a inversão com energia positiva finalmente responde.`,
+            reason: 'Despertar da Reversão da Técnica na Ficha Exclusiva.',
           };
         } else if (!tech.hasRct && lowerAction.includes('rct')) {
           fallbackSheetEvolution = {
             sectionUpdated: 'rct',
-            newValue: 'Técnica Amaldiçoada Reversa (RCT) Desperta — Multiplicação de energia negativa por negativa.',
-            reason: 'Compreensão do núcleo da Energia Positiva à beira da morte!',
+            newValue:
+              'Técnica Amaldiçoada Reversa (RCT) — a multiplicação de energia negativa por negativa produz calor vivo.',
+            reason: 'Compreensão do núcleo da Energia Positiva à beira da exaustão.',
             unlockRct: true,
           };
-        } else if (String(tech.domainExpansion || '').toLowerCase().includes('não desenvolvido') && (isDomain || isCrit20)) {
+        } else if (
+          String(tech.domainExpansion || '').toLowerCase().includes('não desenvolvido') &&
+          isDomain
+        ) {
           fallbackSheetEvolution = {
             sectionUpdated: 'domainExpansion',
-            newValue: `Horizonte Inato de ${character?.name || 'Feiticeiro'} — Barreira completa desperta sob iluminação de Kokusen!`,
-            reason: 'Expansão de Domínio despertada e gravada na Ficha Exclusiva!',
+            newValue: `Horizonte Inato de ${character?.name || 'Feiticeiro'} — a barreira completa se ergue pela primeira vez.`,
+            reason: 'Expansão de Domínio despertada e gravada na Ficha Exclusiva.',
           };
         }
       }
 
-      const xpGained = isOpening
-        ? 0
-        : isCrit20
-        ? 180
-        : updatedNpcs[0]?.hpPercentage === 0
-        ? 110
-        : Number(diceRoll) >= 12
-        ? 60
-        : 35;
-
-      // Extract player pillars & skills for rich narrative integration
-      const weakPillar = character?.narrativePillars?.find(
-        (p: { tier: string }) => p.tier === 'Fraco' || p.tier === 'fragilidade'
-      );
-      const strongPillar = character?.narrativePillars?.find(
-        (p: { tier: string }) =>
-          p.tier === 'Apice' || p.tier === 'Forte' || p.tier === 'Alto' || p.tier === 'forte'
-      );
-      const masterySkill = character?.narrativeSkills?.find(
-        (s: { level: string }) => s.level === 'maestria' || s.level === 'afinidade'
-      );
-      const fragileSkill = character?.narrativeSkills?.find(
-        (s: { level: string }) => s.level === 'inaptidao'
-      );
-
       const buildContextualActionNarrative = () => {
         if (actionMode === 'SAY') {
           return [
-            `*Narrador*: Em **${world?.location || 'Tóquio'}**, sua voz corta o silêncio denso da Cortina enquanto sua aura espiritual oscila ao redor do corpo. Você se dirige diretamente a **${firstNpc.name}**: *"${actionText}"*${
-              strongPillar
-                ? ` — sua presença reflete seu ponto forte em **${strongPillar.name}**, impondo peso imediato às palavras.`
-                : '.'
-            }`,
+            `*Narrador*: Em **${world?.location || 'Tóquio'}**, sua voz corta o silêncio denso da Cortina. Você se dirige diretamente a **${firstNpc.name}**: *"${actionText}"*`,
             `*${firstNpc.name}*: ${
               firstNpc.attitude === 'Aliado'
-                ? `Cruza os braços e assente com seriedade diante do que você disse (${updatedNpcs[0]?.status || firstNpc.status}). "Faz sentido, ${character?.name || 'Feiticeiro'}. Se seguirmos essa linha agora, podemos virar o fluxo da Energia Amaldiçoada a nosso favor. Qual é o seu próximo passo?"`
+                ? `Cruza os braços e assente com seriedade (${updatedNpcs[0]?.status || firstNpc.status}). "Faz sentido, ${character?.name || 'Feiticeiro'}. Se seguirmos essa linha agora, podemos virar o fluxo da Energia Amaldiçoada a nosso favor. Qual é o seu próximo passo?"`
                 : `Estreita os olhos diante da sua declaração enquanto a pressão espiritual treme no chão (${updatedNpcs[0]?.status || firstNpc.status}). "Palavras ousadas para um feiticeiro de ${character?.grade || 'Grau 4'}... Vamos ver se sua técnica sustenta o que sua boca promete!"`
             }`,
-            `*Narrador*: O ambiente reage à tensão do diálogo${
-              weakPillar && Number(diceRoll) <= 10
-                ? `, embora sua fragilidade em **${weakPillar.name}**${
-                    fragileSkill ? ` e inaptidão em **${fragileSkill.name}**` : ''
-                  } exijam cautela redobrada`
-                : ''
-            }. Você recebeu **+${xpGained} XP de Feiticeiro**. O que você faz a seguir?`,
+            `*Narrador*: O ambiente reage à tensão do diálogo. O que você faz a seguir?`,
           ];
         }
 
         if (actionMode === 'STORY') {
           return [
-            `*Narrador*: ${actionText}. A cena em **${world?.location || 'Tóquio'}** se transforma sob o peso dessa mudança dramática. Os resíduos de Energia Amaldiçoada se condensam no ar${
-              masterySkill
-                ? `, e sua maestria em **${masterySkill.name}** permite ler cada detalhe oculto do cenário antes de qualquer outro.`
-                : '.'
-            }`,
+            `*Narrador*: ${actionForNarration}. A cena em **${world?.location || 'Tóquio'}** se transforma sob o peso dessa mudança dramática.`,
             `*${firstNpc.name}*: Percebe imediatamente a mudança de rumo na cena (${updatedNpcs[0]?.status || firstNpc.status}). "${
               firstNpc.attitude === 'Aliado'
                 ? `O cenário mudou rápido... Mantenha os olhos abertos, ${character?.name || 'Feiticeiro'}, algo grande está se movendo dentro da barreira!`
                 : `Você acha que mudar o ritmo da batalha vai salvá-lo?! O ar inteiro deste lugar já está impregnado pela minha maldição!`
             }"`,
-            `*Narrador*: A crônica avança com **+${xpGained} XP de Feiticeiro** registrados na sua Ficha Exclusiva. Como você conduz o próximo momento?`,
+            `*Narrador*: A crônica avança. Como você conduz o próximo momento?`,
           ];
         }
 
         if (actionMode === 'TECHNIQUE' || isDomain || isRct) {
           return [
-            `*Narrador*: Você canaliza o núcleo da sua Energia Amaldiçoada em **${world?.location || 'Tóquio'}** executando: **${actionText}**! ${
-              isCrit20
-                ? 'Em um lapso de 0,000001 segundo, o espaço se fende em relâmpagos negros e carmesim — **KOKUSEN (Black Flash)**! Sua compreensão da essência amaldiçoada dispara para 120% de potencial!'
+            `*Narrador*: Você canaliza o núcleo da sua Energia Amaldiçoada em **${world?.location || 'Tóquio'}** executando: **${actionForNarration}**! ${
+              isKokusen
+                ? 'Em um lapso de um milionésimo de segundo, o espaço se fende em relâmpagos negros e carmesim — **KOKUSEN (Black Flash)**. A cena inteira muda de temperatura.'
                 : isDomain
-                ? `Ao entoar o encantamento e fechar o selo de mão, sua barreira inata (**${character?.technique?.domainExpansion || 'Expansão de Domínio'}**) engole o ambiente com acerto garantido!`
+                ? `Ao entoar o encantamento e fechar o selo de mão, sua barreira inata (**${character?.technique?.domainExpansion || 'Expansão de Domínio'}**) engole o ambiente.`
                 : isRct
-                ? 'Multiplicando energia negativa contra energia negativa, o vapor denso da **Técnica Amaldiçoada Reversa** reconstrói seus tecidos instantaneamente!'
-                : `A liberação de **${character?.technique?.name || 'sua Técnica Inata'}** rasga o espaço (Dado 1d20: ${diceRoll} | Total: ${modifiedRoll}), atingindo **${firstNpc.name}** em cheio!`
-            }${
-              weakPillar && Number(diceRoll) <= 7
-                ? ` O esforço cobra um preço na sua fragilidade obrigatória (**${weakPillar.name}**), fazendo sua respiração pesar.`
-                : ''
+                ? 'Multiplicando energia negativa contra energia negativa, o vapor denso da **Técnica Amaldiçoada Reversa** reconstrói seus tecidos.'
+                : `A liberação de **${character?.technique?.name || 'sua Técnica Inata'}** rasga o espaço e atinge **${firstNpc.name}**.`
             }${
               fallbackSheetEvolution
                 ? ` **[DESPERTAR NA FICHA EXCLUSIVA: ${fallbackSheetEvolution.newValue}]**`
                 : ''
             }`,
             `*${firstNpc.name}*: ${
-              updatedNpcs[0]?.hpPercentage === 0
-                ? `Não suporta a densidade destrutiva da sua técnica e se desfaz em fagulhas escuras de Energia Amaldiçoada residual! "Impossível... esse nível de técnica..."`
+              isDomain || isKokusen
+                ? `É arremessado para trás e se ergue com dificuldade, o corpo fumegando (${updatedNpcs[0]?.status || firstNpc.status}). "Impossível... esse nível de técnica..."`
                 : `Recua sob o impacto direto da sua técnica, tentando estabilizar a guarda (${updatedNpcs[0]?.status || firstNpc.status}). "${
                     revealedHandVow
-                      ? 'Revelar o funcionamento da própria técnica para aumentar o Output com um Voto Vinculativo... Você joga pesado!'
-                      : isCrit20
+                      ? 'Revelar o funcionamento da própria técnica... Você joga pesado, mas agora eu conheço o seu jogo!'
+                      : isKokusen
                       ? 'Faísca Negra?! A pressão espiritual dele acabou de mudar completamente!'
                       : `Essa técnica... ${character?.technique?.name || 'sua maldição'} é mais perigosa do que parecia!`
                   }"`
             }`,
-            `*Narrador*: Seu domínio técnico rende **+${xpGained} XP de Feiticeiro**. O que você faz agora?`,
+            `*Narrador*: O confronto não terminou. O que você faz agora?`,
           ];
         }
 
-        // Default: DO (Ação Física / Combate / Exploração)
         return [
-          `*Narrador*: Em **${world?.location || 'Tóquio'}**, você age com decisão: **${actionText}**. ${
-            isCrit20
-              ? 'No instante exato do impacto (0,000001s), relâmpagos negros e carmesim explodem do seu golpe em um **KOKUSEN (Black Flash)** brutal, elevando seu Output a 120%!'
-              : isCrit1
-              ? `O movimento encontra resistência súbita (1d20: 1 Natural)${
-                  weakPillar ? `, expondo sua fragilidade em **${weakPillar.name}**` : ''
-                } e forçando você a absorver o impacto no último instante!`
-              : `Com rolagem ${diceRoll} no d20 (Total: ${modifiedRoll})${
-                  masterySkill ? ` e apoiado por sua maestria em **${masterySkill.name}**` : ''
-                }, sua ação altera o equilíbrio da cena contra **${firstNpc.name}**.`
-          }${
-            fallbackSheetEvolution
-              ? ` **[DESPERTAR NA FICHA EXCLUSIVA: ${fallbackSheetEvolution.newValue}]**`
-              : ''
+          `*Narrador*: Em **${world?.location || 'Tóquio'}**, você age com decisão: **${actionForNarration}**. ${
+            isKokusen
+              ? 'No instante exato do impacto, relâmpagos negros e carmesim explodem do seu golpe em um **KOKUSEN (Black Flash)** brutal.'
+              : 'O movimento encontra a resistência que a cena impõe, e o equilíbrio pende por um fio.'
           }`,
           `*${firstNpc.name}*: ${
-            updatedNpcs[0]?.hpPercentage === 0
-              ? `Cai de joelhos enquanto seu núcleo amaldiçoado entra em colapso definitivo (${updatedNpcs[0]?.status}). "Você... venceu este confronto..."`
-              : firstNpc.attitude === 'Aliado'
+            firstNpc.attitude === 'Aliado'
               ? `Acompanha sua movimentação de perto (${updatedNpcs[0]?.status || firstNpc.status}). "Boa iniciativa, ${character?.name || 'Feiticeiro'}! Continue mantendo esse ritmo!"`
-              : `Reage à sua investida enquanto faíscas de Energia Amaldiçoada iluminam o redor (${updatedNpcs[0]?.status || firstNpc.status}). "${
-                  Number(diceRoll) >= 15
-                    ? 'Que velocidade absurda! Não achei que você abriria minha guarda assim!'
-                    : 'Você tem coragem de avançar assim, mas ainda estou de pé!'
-                }"`
+              : `Reage à sua investida enquanto faíscas de Energia Amaldiçoada iluminam o redor (${updatedNpcs[0]?.status || firstNpc.status}). "Você tem coragem de avançar assim... mas ainda estou de pé!"`
           }`,
-          `*Narrador*: Você conquista **+${xpGained} XP de Feiticeiro** neste turno. Qual é a sua próxima ação?`,
+          `*Narrador*: Você ainda tem a iniciativa. Qual é a sua próxima ação?`,
         ];
       };
 
@@ -1887,12 +1730,7 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
 
       const hasHostileNpc = updatedNpcs.some((n: { attitude: string }) => n.attitude === 'Hostil');
       const isCombatScene =
-        isOpening ||
-        hasHostileNpc ||
-        actionMode === 'DO' ||
-        actionMode === 'TECHNIQUE' ||
-        isCrit20 ||
-        isDomain;
+        isOpening || hasHostileNpc || actionMode === 'DO' || actionMode === 'TECHNIQUE' || isKokusen || isDomain;
 
       const nanoBananaAnimePrompt = `Quadro cinematográfico 16:9 estilo anime Jujutsu Kaisen (Estúdio MAPPA) retratando ${
         character?.name || 'o feiticeiro'
@@ -1907,9 +1745,9 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         fallbackReason: reason,
         engineLog: [
           `0. MOTOR LOCAL DE CONTINUIDADE — ${reason}. Sem narração generativa: a cena segue o contrato do arco (era, objetivo, fatos e limites).${objective ? ` Objetivo: ${objective}` : ''}`,
-          `1. Checagem de Escala de Poder: ${character?.name || 'Jogador'} (${character?.grade || 'Grau 4'}) vs. ${firstNpc.name} (${firstNpc.grade || 'Grau 1'}) | Rolagem 1d20: ${diceRoll} (${modBreakdown} => Total ${modifiedRoll}) — ${Number(diceRoll) >= 12 ? 'Vantagem tática de iniciativa do Jogador' : 'Pressão de velocidade e território do NPC'}.`,
-          `2. Checagem de Técnica (Lore Check): ${character?.technique?.name || 'Reforço de EA'} ativa (Output: ${newOutput}% | Custo de EA no turno: -${ceCost}% -> Reserva: ${newCe}%)${weakPillar ? ` | Fragilidade monitorada: ${weakPillar.name}` : ''}.`,
-          `3. Psicologia & Estratégia Oculta do NPC: ${firstNpc.name} (${firstNpc.attitude}) atua conforme sua natureza canônica, buscando explorar brechas de alcance e desgaste de Energia Amaldiçoada.`,
+          `1. Consequência imediata: a ação "${actionText}" provoca uma reação concreta em ${firstNpc.name}, sem calcular atributos, dano ou probabilidades.`,
+          `2. Direção dos NPCs: ${firstNpc.name} (${firstNpc.attitude}) age conforme sua natureza e o estado narrativo "${updatedNpcs[0]?.status || firstNpc.status}".`,
+          `3. Gancho em suspenso: a cena termina com a iniciativa ainda com o jogador; ferimentos e mortes ficam em aberto para a ficção decidir.`,
         ].join('\n'),
         activeStoryCards: [
           `📜 Ficha Exclusiva: ${character?.name || 'Jogador'}`,
@@ -1917,10 +1755,10 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         ],
         activeCardRuleSummary: `${character?.technique?.name || 'Manipulação de Energia Amaldiçoada'}: ${
           isDomain
-            ? `Expansão de Domínio (${character?.technique?.domainExpansion || 'Barreira Inata'}) — Acerto Garantido (Sure-Hit) ativo; risco de Exaustão Pós-Domínio (Burnout) ao colapsar.`
+            ? `Expansão de Domínio (${character?.technique?.domainExpansion || 'Barreira Inata'}) — acerto garantido narrativo, com exaustão consequente ao colapsar.`
             : isRct
-            ? 'Energia Amaldiçoada Reversa (RCT) — Multiplica energia negativa por negativa para regeneração celular ao custo dobrado de EA.'
-            : character?.technique?.lapse || 'Reforço e liberação controlada de Energia Amaldiçoada respeitando limite de Output por segundo.'
+            ? 'Energia Amaldiçoada Reversa (RCT) — regeneração celular com custo dramático, decisão do Mestre.'
+            : character?.technique?.lapse || 'Reforço e liberação controlada de Energia Amaldiçoada dentro dos limites da ficção.'
         }`,
         visualEffectTrigger: vfx,
         narrative: narrativeLines.join('\n\n'),
@@ -1933,29 +1771,16 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         combatSceneImageQuestion: '',
         nanoBananaAnimePrompt,
         playerStateUpdate: {
-          hpPercentage: newHp,
-          cursedEnergyPercentage: newCe,
-          outputPercentage: newOutput,
-          physicalCondition: isRct
-            ? 'Tecidos regenerados via RCT (Vapor de Energia Positiva)'
-            : isCrit1
-            ? 'Escoriações de contra-ataque e guarda pressionada'
-            : character?.physicalCondition || 'Intacto — Em ação ativa',
-          techniqueState: isDomain
-            ? 'Em Uso'
-            : revealedHandVow
-            ? 'Sob Voto Vinculativo'
-            : character?.techniqueState || 'Ativa',
-          inBlackFlashZone: isCrit20 ? true : Boolean(character?.inBlackFlashZone),
+          physicalCondition: isDomain
+            ? 'Exausto pela Expansão de Domínio — consciente, mas com o corpo pesando'
+            : isRct
+            ? 'Ferimentos recentes tratados com energia positiva — ainda sentindo o custo'
+            : isKokusen
+            ? 'Adrenalina e dor misturadas após o Kokusen'
+            : character?.physicalCondition || 'Em ação',
           newInventoryItemOrVow: revealedHandVow
-            ? 'Voto: Revelar a Própria Mão (+20% Output)'
+            ? 'Voto: Revelar a Própria Mão — a técnica foi explicada ao oponente'
             : '',
-          xpGained,
-          levelUpReason: isCrit20
-            ? 'Iluminação de Kokusen (120% Potencial)!'
-            : updatedNpcs[0]?.hpPercentage === 0
-            ? `Exorcismo / Vitória sobre ${firstNpc.name}!`
-            : 'Experiência narrativa e tática acumulada na cena.',
           sheetEvolution: fallbackSheetEvolution,
         },
         worldStateUpdate: {
@@ -1973,11 +1798,10 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
           `Dialogar com ${firstNpc.name} para explorar informações sobre a anomalia em ${world?.location || 'Tóquio'}`,
           beats.length > 0
             ? `Reagir à cena: ${beats[0]}`
-            : 'Concentrar Energia Amaldiçoada nos punhos buscando um Kokusen decisivo',
+            : 'Mudar o ritmo da cena e forçar uma abertura',
         ],
       };
     };
-
     if (!ai) {
       return res.json({
         ok: true,
@@ -1994,9 +1818,7 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       world,
       actionMode,
       actionText,
-      diceRoll: Number(diceRoll),
       revealedHandVow,
-      modBreakdown,
       combinedRagContext,
       isOpening,
       startingArcTitle,
@@ -2065,7 +1887,6 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       world,
       actionMode = 'DO',
       actionText = '',
-      diceRoll = 12,
       revealedHandVow = false,
       ragContext = '',
       activeCards = [],
@@ -2096,12 +1917,6 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       return done();
     }
 
-    const { mod: totalDiceMod, breakdown: modBreakdown } = getGradeModifier(
-      character?.grade,
-      character?.inBlackFlashZone,
-      revealedHandVow
-    );
-
     const searchContextForServerRag = [
       actionText,
       startingArcTitle,
@@ -2127,9 +1942,7 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       world,
       actionMode,
       actionText,
-      diceRoll: Number(diceRoll),
       revealedHandVow,
-      modBreakdown,
       combinedRagContext,
       isOpening,
       startingArcTitle,
@@ -2377,7 +2190,7 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`JJK Cursed Chronicles VTT Server running on http://localhost:${PORT}`);
+    console.log(`JJK Cursed Chronicles — servidor narrativo em http://localhost:${PORT}`);
   });
 }
 

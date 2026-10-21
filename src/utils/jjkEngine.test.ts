@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  parseNarrativeBlocks,
-  getDiceOutcomeInfo,
   selectActiveStoryCardsForTurn,
   parseJsonStoryCards,
   parseMarkdownCodex,
@@ -10,42 +8,6 @@ import {
   applyNewInventoryItemOrVow,
 } from './jjkEngine.ts';
 import { INITIAL_STORY_CARDS, CANONICAL_TECHNIQUES } from '../data/initialCodex.ts';
-
-test('parseNarrativeBlocks separates *Narrador*: and *Nome do Personagem*: blocks with quotes and actions', () => {
-  const sample = `*Narrador*: A chuva cai pesada sobre o pátio da Escola Sugisawa enquanto a energia carmesim pulsa.\n\n*Satoru Gojo*: Ele abaixa levemente a venda preta, revelando o brilho azul incandescente dos Seis Olhos. "Ora, ora... parece que chegamos bem na hora da festa."`;
-
-  const npcs = [
-    {
-      name: 'Satoru Gojo',
-      grade: 'Grau Especial',
-      hpPercentage: 100,
-      status: 'Intacto',
-      attitude: 'Aliado' as const,
-      visualDescription: 'Gojo portrait',
-    },
-  ];
-
-  const blocks = parseNarrativeBlocks(sample, npcs);
-  assert.equal(blocks.length, 2);
-  assert.equal(blocks[0].type, 'narrator');
-  assert.equal(blocks[0].speaker, 'Narrador');
-  assert.ok(blocks[0].rawText.includes('Escola Sugisawa'));
-
-  assert.equal(blocks[1].type, 'character');
-  assert.equal(blocks[1].speaker, 'Satoru Gojo');
-  assert.equal(blocks[1].npcMatch?.attitude, 'Aliado');
-  assert.deepEqual(blocks[1].spokenQuotes, ['Ora, ora... parece que chegamos bem na hora da festa.']);
-  assert.ok(blocks[1].actionText?.includes('venda preta'));
-});
-
-test('getDiceOutcomeInfo classifies 1, 2-9, 10-18, 19, and Natural 20 (Kokusen) accurately', () => {
-  assert.equal(getDiceOutcomeInfo(1).tier, 'CRITICAL_FAIL');
-  assert.equal(getDiceOutcomeInfo(5).tier, 'PARTIAL');
-  assert.equal(getDiceOutcomeInfo(14).tier, 'SOLID');
-  assert.equal(getDiceOutcomeInfo(19).tier, 'CRITICAL_HIT');
-  assert.equal(getDiceOutcomeInfo(20).tier, 'BLACK_FLASH');
-  assert.ok(getDiceOutcomeInfo(20).title.includes('KOKUSEN'));
-});
 
 test('selectActiveStoryCardsForTurn retrieves matching canonical Story Cards for RAG injection', () => {
   const active = selectActiveStoryCardsForTurn(
@@ -103,12 +65,7 @@ test('applyNewInventoryItemOrVow adds binding vows and inventory items without d
     clan: 'Zenin',
     grade: 'Grau 2',
     isHeavenlyRestriction: false,
-    hpPercentage: 100,
-    cursedEnergyPercentage: 100,
-    outputPercentage: 100,
     physicalCondition: 'Intacto',
-    techniqueState: 'Ativa' as const,
-    inBlackFlashZone: false,
     technique: CANONICAL_TECHNIQUES[0],
     inventory: [],
     bindingVows: [],
