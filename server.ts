@@ -938,7 +938,8 @@ O bloco "PLOT ESSENTIALS" do turno informa o **objetivo imediato do arco** e a *
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  // Cloud Run injeta PORT (normalmente 8080); localmente continua 3000.
+  const PORT = Number(process.env.PORT) || 3000;
 
   app.use(express.json({ limit: '15mb' }));
 

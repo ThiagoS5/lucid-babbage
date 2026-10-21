@@ -1,0 +1,12 @@
+node_modules
+dist
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+shots
+scripts
+ANALISE_*.md
+RELATORIO_*.md
+README.md
