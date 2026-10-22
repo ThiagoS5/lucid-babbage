@@ -62,3 +62,16 @@ corrigidos só na classificação, sem reescrever o `Codex.md`.
 Os JSONs são versionados no git: o diff de conteúdo é auditável e a imagem
 Docker não depende do Markdown em runtime. Depois de editar o `Codex.md`,
 rode `npm run codex:build` e commite o resultado.
+
+### Trava de consistência
+
+`npm run codex:check` recompila o Markdown em memória e compara com os JSONs
+versionados — **sem escrever nada**. Falha (exit 1) se o `Codex.md` foi
+editado sem rebuild, ou se algum JSON está ausente/inconsistente. Ela roda:
+
+- no `pretest`, ou seja, **antes de qualquer `npm test`**;
+- no CI (`.github/workflows/ci.yml`), antes do typecheck, dos testes e do build.
+
+O acervo seed do RPG (Gojo, Sukuna, Yuji…) vive em `json/inicial.json` e é
+consumido pelo bundle do React via import JSON — também sai da 4ª fonte
+hardcoded que era o `src/data/initialCodex.ts`.

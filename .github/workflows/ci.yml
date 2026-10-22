@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # Trava do Códice: os JSONs versionados precisam estar em dia com o
+      # Codex.md. Falha se alguém editou o Markdown e esqueceu de rodar
+      # "npm run codex:build". Roda antes dos testes (o pretest também cobre).
+      - name: Verificar JSONs do Códice
+        run: npm run codex:check
+
+      - name: Typecheck
+        run: npm run lint
+
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build
