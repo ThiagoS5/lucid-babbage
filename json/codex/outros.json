@@ -380,7 +380,7 @@
     {
       "id": "codex-taido-martial-arts",
       "title": "Taido Martial Arts",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "taido martial arts",
         "taido",
@@ -395,7 +395,7 @@
     {
       "id": "codex-hand-to-hand-combat",
       "title": "Hand-to-Hand Combat",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "hand-to-hand combat",
         "hand",
@@ -589,8 +589,8 @@
     },
     {
       "id": "codex-cursed-tool-ferramenta-amaldicoada",
-      "title": "Cursed Tool (Ferramenta Amaldiçoada)",
-      "tag": "Terminology",
+      "title": "Ferramenta Amaldiçoada",
+      "tag": "Terminologia",
       "keys": [
         "cursed tool",
         "cursed",
@@ -606,7 +606,7 @@
     {
       "id": "codex-cursed-corpse-cadaver-amaldicoado",
       "title": "Cursed Corpse (Cadáver Amaldiçoado)",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "cursed corpse",
         "cursed",
@@ -622,7 +622,7 @@
     {
       "id": "codex-incarnation-incarnacao",
       "title": "Incarnation (Incarnação)",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "incarnation",
         "incarnação"
@@ -634,8 +634,8 @@
     },
     {
       "id": "codex-cursed-object-objeto-amaldicoado",
-      "title": "Cursed Object (Objeto Amaldiçoado)",
-      "tag": "Terminology",
+      "title": "Ferramenta Amaldiçoada",
+      "tag": "Terminologia",
       "keys": [
         "cursed object",
         "cursed",
@@ -713,7 +713,7 @@
     },
     {
       "id": "codex-innate-techniques-tecnicas-inatas",
-      "title": "Innate Techniques (Técnicas Inatas)",
+      "title": "Técnicas Inatas",
       "tag": "Terminologia",
       "keys": [
         "innate techniques",
@@ -755,7 +755,7 @@
     },
     {
       "id": "codex-cursed-techniques-tecnicas-amaldicoadas",
-      "title": "Cursed Techniques (Técnicas Amaldiçoadas)",
+      "title": "Técnicas Amaldiçoadas",
       "tag": "Terminologia",
       "keys": [
         "cursed techniques",
@@ -772,7 +772,7 @@
     {
       "id": "codex-residuals-residuos-de-energia-amaldicoada",
       "title": "Residuals (Resíduos de Energia Amaldiçoada)",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "residuals",
         "resíduos",
@@ -787,7 +787,7 @@
     {
       "id": "codex-heavenly-restriction-restricao-celestial",
       "title": "Heavenly Restriction (Restrição Celestial)",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "heavenly restriction",
         "heavenly",
@@ -802,8 +802,8 @@
     },
     {
       "id": "codex-binding-vow-voto-vinculativo",
-      "title": "Binding Vow (Voto Vinculativo)",
-      "tag": "Terminology",
+      "title": "Voto Vinculativo",
+      "tag": "Terminologia",
       "keys": [
         "binding vow",
         "binding",
@@ -819,7 +819,7 @@
     {
       "id": "codex-special-traits-tracos-especiais-de-energia-amaldicoada",
       "title": "Special Traits (Traços Especiais de Energia Amaldiçoada)",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "special traits",
         "special",
@@ -837,7 +837,7 @@
     {
       "id": "codex-applying-cursed-energy-aplicacao-de-energia-amaldicoada",
       "title": "Applying Cursed Energy (Aplicação de Energia Amaldiçoada)",
-      "tag": "Terminology",
+      "tag": "Terminologia",
       "keys": [
         "applying cursed energy",
         "applying",

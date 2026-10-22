@@ -7,9 +7,9 @@ import { inferEraByStructure } from '../utils/storyCardEra';
 /**
  * Carregador do acervo do servidor.
  *
- * Lê os JSONs JÁ GERADOS (json/codex/*.json) e o acervo canônico de 284
- * story cards. Nenhum parsing de Markdown acontece em runtime: o Markdown é
- * compilado por `npm run codex:build` e vira JSON estruturado.
+ * Lê os JSONs canônicos (json/codex/*.json, PT-BR) e o acervo de
+ * 284 story cards. Nenhum parsing de Markdown acontece em runtime.
+ * Fonte única: json/codex/*.json (validado por `npm run codex:lint`).
  *
  * Falha alto: tipo cru desconhecido ou JSON ausente => erro no boot, nunca
  * classificação silenciosa em "lore".
@@ -57,7 +57,7 @@ export function loadCodexJson(cwd: string): ServerStoryCard[] {
     const file = path.join(cwd, 'json', 'codex', `${categoria}.json`);
     if (!fs.existsSync(file)) {
       throw new Error(
-        `[JJK RAG Engine] JSON do Códice ausente: ${file}. Rode "npm run codex:build" antes de iniciar o servidor.`
+        `[JJK RAG Engine] JSON do Códice ausente: ${file}. Rode "npm run codex:lint" e verifique json/codex/*.json.`
       );
     }
     const parsed = JSON.parse(fs.readFileSync(file, 'utf-8')) as CodexJsonFile;

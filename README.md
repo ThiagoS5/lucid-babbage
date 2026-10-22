@@ -47,31 +47,23 @@ aberto para diagnóstico.
 `npm run build` gera a ficha de feiticeiro em chunk separado (lazy loading);
 a crônica carrega no bundle principal.
 
-## Códice em JSON
+## Códice em JSON (PT-BR, fonte única)
 
-`Codex.md` é a fonte canônica do Códice, editada à mão.
-`npm run codex:build` compila para
-`json/codex/{personagens,habilidades,locais,outros}.json`, e o servidor e a UI
-consomem apenas esses JSONs — não há parsing de Markdown em runtime.
+O Códice é servido a partir de `json/codex/{personagens,habilidades,locais,outros}.json`
+(fonte única, PT-BR, sem `Codex.md`). Valide com `npm run codex:lint`
+(`scripts/validate-codex-json.ts` — valida schema, `total`, `categoria`/`era` e
+`keys`, falha alto se um JSON estiver ausente, vazio ou inconsistente).
+Prompts do Mestre em `docs/ai/Prompt_Mestre_RPG.md` e invariantes de segurança
+em `docs/ai/security_spec.md`; docs históricos ficam em `docs/archive/`.
 
-O build é determinístico e **fail-fast**: uma tag nova ou um cabeçalho H1 sem
-classificação no Markdown **quebra** o build (exit 1, com o nome da tag), em
-vez de cair silenciosamente em "lore". Erros de digitação no fonte são
-corrigidos só na classificação, sem reescrever o `Codex.md`.
-
-Os JSONs são versionados no git: o diff de conteúdo é auditável e a imagem
-Docker não depende do Markdown em runtime. Depois de editar o `Codex.md`,
-rode `npm run codex:build` e commite o resultado.
+O acervo seed do RPG (Gojo, Sukuna, Yuji…) vive em `json/inicial.json` e o
+acervo canônico de 284 cards em `json/adventure-*.json`, ambos em PT-BR.
 
 ### Trava de consistência
 
-`npm run codex:check` recompila o Markdown em memória e compara com os JSONs
-versionados — **sem escrever nada**. Falha (exit 1) se o `Codex.md` foi
-editado sem rebuild, ou se algum JSON está ausente/inconsistente. Ela roda:
+`npm run codex:lint` valida os JSONs **sem fonte Markdown** — falha (exit 1)
+se um JSON estiver ausente, vazio, com `total` divergente ou verbete sem
+`keys`/`value`/`categoria`/`era`. Ela roda:
 
 - no `pretest`, ou seja, **antes de qualquer `npm test`**;
 - no CI (`.github/workflows/ci.yml`), antes do typecheck, dos testes e do build.
-
-O acervo seed do RPG (Gojo, Sukuna, Yuji…) vive em `json/inicial.json` e é
-consumido pelo bundle do React via import JSON — também sai da 4ª fonte
-hardcoded que era o `src/data/initialCodex.ts`.

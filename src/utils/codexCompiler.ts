@@ -2,11 +2,16 @@ import type { CodexCategory, StoryCard, StoryEra } from '../types/jjk';
 import { categoryForType } from './codexCategories';
 
 /**
- * Compilador do Códice: Markdown -> verbetes estruturados.
+ * Compilador do Códice (legado): Markdown -> verbetes estruturados.
  *
- * Fonte canônica: Codex.md. O build (scripts/build-codex-json.ts) chama
- * compileCodexMarkdown e grava json/codex/*.json. Servidor e cliente consomem
- * apenas os JSONs — nunca fazem parsing de Markdown em runtime.
+ * HISTÓRICO: a fonte canônica era Codex.md e o build
+ * (scripts/build-codex-json.ts) chamava compileCodexMarkdown para gerar
+ * json/codex/*.json. Hoje a fonte única é json/codex/*.json (PT-BR) e este
+ * módulo é mantido apenas para testes unitários do parser e como
+ * documentação do mapeamento TAG_MAP/H1_OVERRIDES.
+ *
+ * Servidor e cliente consomem apenas os JSONs — nunca fazem parsing de
+ * Markdown em runtime.
  *
  * Regras estruturais (nada de heurística por palavra no título):
  *  - A tag do cabeçalho define tipo e categoria.

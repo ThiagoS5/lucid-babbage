@@ -65,7 +65,7 @@
     {
       "id": "codex-manji-kick",
       "title": "Manji Kick",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "manji kick",
         "manji",
@@ -79,7 +79,7 @@
     {
       "id": "codex-knee-release",
       "title": "Knee Release",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "knee release",
         "knee",
@@ -105,7 +105,7 @@
     {
       "id": "codex-festering-life-sword-espada-da-vida-purulenta",
       "title": "Festering Life Sword (Espada da Vida Purulenta)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "festering life sword",
         "festering",
@@ -123,7 +123,7 @@
     {
       "id": "codex-dragon-bone-osso-de-dragao",
       "title": "Dragon-Bone (Osso de Dragão)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "dragon-bone",
         "dragon",
@@ -139,7 +139,7 @@
     {
       "id": "codex-sword-of-extermination-espada-de-exterminio",
       "title": "Sword of Extermination (Espada de Extermínio)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "sword of extermination",
         "sword",
@@ -155,7 +155,7 @@
     {
       "id": "codex-chain-of-a-thousand-miles-corrente-de-mil-milhas",
       "title": "Chain of a Thousand Miles (Corrente de Mil Milhas)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "chain of a thousand miles",
         "chain",
@@ -173,7 +173,7 @@
     {
       "id": "codex-inverted-spear-of-heaven-lanca-invertida-do-ceu",
       "title": "Inverted Spear of Heaven (Lança Invertida do Céu)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "inverted spear of heaven",
         "inverted",
@@ -191,7 +191,7 @@
     {
       "id": "codex-split-soul-katana-katana-da-alma-dividida",
       "title": "Split Soul Katana (Katana da Alma Dividida)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "split soul katana",
         "split",
@@ -208,7 +208,7 @@
     {
       "id": "codex-playful-cloud-nuvem-brincalhona",
       "title": "Playful Cloud (Nuvem Brincalhona)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "playful cloud",
         "playful",
@@ -224,7 +224,7 @@
     {
       "id": "codex-slaughter-demon-demonio-abatedor",
       "title": "Slaughter Demon (Demônio Abatedor)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "slaughter demon",
         "slaughter",
@@ -240,7 +240,7 @@
     {
       "id": "codex-black-rope-corda-negra",
       "title": "Black Rope (Corda Negra)",
-      "tag": "Cursed Tool",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "black rope",
         "black",
@@ -256,7 +256,7 @@
     {
       "id": "codex-prison-realm-reino-prisao",
       "title": "Prison Realm (Reino Prisão)",
-      "tag": "Cursed Object",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "prison realm",
         "prison",
@@ -272,7 +272,7 @@
     {
       "id": "codex-cursed-womb-death-painting-uteros-amaldicoados-pinturas-da-m",
       "title": "Cursed Womb: Death Painting (Úteros Amaldiçoados: Pinturas da Morte)",
-      "tag": "Cursed Object",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "cursed womb: death painting",
         "cursed",
@@ -292,7 +292,7 @@
     {
       "id": "codex-ryomen-sukuna-fingers-dedos-de-ryomen-sukuna",
       "title": "Ryomen Sukuna Fingers (Dedos de Ryomen Sukuna)",
-      "tag": "Cursed Object",
+      "tag": "Ferramenta Amaldiçoada",
       "keys": [
         "ryomen sukuna fingers",
         "ryomen",
@@ -454,7 +454,7 @@
     {
       "id": "codex-malevolent-shrine-santuario-malevolente-fukuma-mizushi",
       "title": "Malevolent Shrine (Santuário Malevolente / *Fukuma Mizushi*)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "malevolent shrine",
         "malevolent",
@@ -472,7 +472,7 @@
     {
       "id": "codex-domain-clash-confronto-de-dominios-ryoiki-tenkan",
       "title": "Domain Clash (Confronto de Domínios / *Ryoiki Tenkan*)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "domain clash",
         "domain",
@@ -490,7 +490,7 @@
     {
       "id": "codex-incomplete-domains-dominios-incompletos",
       "title": "Incomplete Domains (Domínios Incompletos)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "incomplete domains",
         "incomplete",
@@ -506,7 +506,7 @@
     {
       "id": "codex-non-lethal-domains-dominios-nao-letais",
       "title": "Non-Lethal Domains (Domínios Não Letais)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "non-lethal domains",
         "non",
@@ -845,7 +845,7 @@
     {
       "id": "codex-long-distance-teleportation-teletransporte-de-longa-distanci",
       "title": "Long-Distance Teleportation (Teletransporte de Longa Distância)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "long-distance teleportation",
         "long",
@@ -863,7 +863,7 @@
     {
       "id": "codex-hollow-technique-purple-tecnica-vazia-roxo",
       "title": "Hollow Technique: Purple (Técnica Vazia: Roxo)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "hollow technique: purple",
         "purple",
@@ -881,7 +881,7 @@
     {
       "id": "codex-cursed-technique-reversal-red-reversao-da-tecnica-amaldicoad",
       "title": "Cursed Technique Reversal: Red (Reversão da Técnica Amaldiçoada: Vermelho)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "cursed technique reversal: red",
         "red",
@@ -901,7 +901,7 @@
     {
       "id": "codex-cursed-technique-lapse-blue-lapse-da-tecnica-amaldicoada-azu",
       "title": "Cursed Technique Lapse: Blue (Lapse da Técnica Amaldiçoada: Azul)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "cursed technique lapse: blue",
         "blue",
@@ -1013,7 +1013,7 @@
     },
     {
       "id": "codex-tecnicas-herdadas-inherited-techniques",
-      "title": "Técnicas Herdadas (Inherited Techniques)",
+      "title": "Técnicas Herdadas",
       "tag": "Técnica Inata",
       "keys": [
         "inherited techniques",
@@ -1090,7 +1090,7 @@
     },
     {
       "id": "codex-barrier-techniques-tecnicas-de-barreira",
-      "title": "Barrier Techniques (Técnicas de Barreira)",
+      "title": "Técnicas de Barreira",
       "tag": "Técnica de Barreira",
       "keys": [
         "barrier techniques",
@@ -1107,7 +1107,7 @@
     {
       "id": "codex-wind-scythe",
       "title": "Wind Scythe",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "wind scythe",
         "wind",
@@ -1121,7 +1121,7 @@
     {
       "id": "codex-tool-manipulation",
       "title": "Tool Manipulation",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "tool manipulation",
         "tool",
@@ -1135,7 +1135,7 @@
     {
       "id": "codex-maximum-output-jacob-s-ladder",
       "title": "Maximum Output: Jacob's Ladder",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "maximum output: jacob's ladder",
         "maximum",
@@ -1151,7 +1151,7 @@
     {
       "id": "codex-technique-extinguishment",
       "title": "Technique Extinguishment",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "technique extinguishment",
         "technique",
@@ -1227,7 +1227,7 @@
     {
       "id": "codex-star-rage-bombaim-hoshi-ikari",
       "title": "Star Rage (Bombaim / *Hoshi Ikari*)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "star rage",
         "star",
@@ -1244,7 +1244,7 @@
     {
       "id": "codex-solo-forbidden-area-area-proibida-solitaria-dokuso-kin-iki",
       "title": "Solo Forbidden Area (Área Proibida Solitária / *Dokusō Kin’iki*)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "solo forbidden area",
         "solo",
@@ -1265,7 +1265,7 @@
     {
       "id": "codex-maximum-wing-king-maximo-rei-alado-gokuban-yoo",
       "title": "Maximum: Wing King (Máximo: Rei Alado / *Gokuban: Yōō*)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "maximum: wing king",
         "maximum",
@@ -1285,7 +1285,7 @@
     {
       "id": "codex-decay-apodrecimento-kusari",
       "title": "Decay (Apodrecimento / *Kusari*)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "decay",
         "apodrecimento",
@@ -1475,7 +1475,7 @@
     {
       "id": "codex-polymorphic-soul-isomer-isomero-de-alma-polimorfica",
       "title": "Polymorphic Soul Isomer (Isômero de Alma Polimórfica)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "polymorphic soul isomer",
         "polymorphic",
@@ -1493,7 +1493,7 @@
     {
       "id": "codex-body-repel-repulsao-corporal",
       "title": "Body Repel (Repulsão Corporal)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "body repel",
         "body",
@@ -1509,7 +1509,7 @@
     {
       "id": "codex-soul-multiplicity-multiplicidade-de-almas",
       "title": "Soul Multiplicity (Multiplicidade de Almas)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "soul multiplicity",
         "soul",
@@ -1525,7 +1525,7 @@
     {
       "id": "codex-idle-transfiguration-transfiguracao-ociosa",
       "title": "Idle Transfiguration (Transfiguração Ociosa)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "idle transfiguration",
         "idle",
@@ -1610,7 +1610,7 @@
     {
       "id": "codex-cutie-honey",
       "title": "Cutie Honey",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "cutie honey",
         "cutie",
@@ -1624,7 +1624,7 @@
     {
       "id": "codex-heart-catch",
       "title": "Heart Catch",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "heart catch",
         "heart",
@@ -1638,7 +1638,7 @@
     {
       "id": "codex-g-warstaff",
       "title": "G Warstaff",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "g warstaff",
         "warstaff"
@@ -1651,7 +1651,7 @@
     {
       "id": "codex-disaster-tides",
       "title": "Disaster Tides",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "disaster tides",
         "disaster",
@@ -1882,7 +1882,7 @@
     {
       "id": "codex-comedian-comediante",
       "title": "Comedian (Comediante)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "comedian",
         "comediante"
@@ -1895,7 +1895,7 @@
     {
       "id": "codex-cloning-technique-tecnica-de-clonagem-manipulacao-de-lama",
       "title": "Cloning Technique (Técnica de Clonagem / Manipulação de Lama)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "cloning technique",
         "cloning",
@@ -1913,7 +1913,7 @@
     {
       "id": "codex-boogie-woogie-boogiewoogie",
       "title": "Boogie Woogie (Boogiewoogie)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "boogie woogie",
         "boogie",
@@ -1928,7 +1928,7 @@
     {
       "id": "codex-blazing-courage-coragem-ardente-chama-da-bravura",
       "title": "Blazing Courage (Coragem Ardente / Chama da Bravura)",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "blazing courage",
         "blazing",
@@ -2025,7 +2025,7 @@
     {
       "id": "codex-auspicious-beast-number-two-reiki",
       "title": "Auspicious Beast Number Two - Reiki",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "auspicious beast number two",
         "reiki",
@@ -2042,7 +2042,7 @@
     {
       "id": "codex-auspicious-beast-number-one-kaichi",
       "title": "Auspicious Beast Number One - Kaichi",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "auspicious beast number one",
         "kaichi",
@@ -2059,7 +2059,7 @@
     {
       "id": "codex-auspicious-beasts-summon",
       "title": "Auspicious Beasts Summon",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "auspicious beasts summon",
         "auspicious",
@@ -2074,7 +2074,7 @@
     {
       "id": "codex-antigravity-system",
       "title": "Antigravity System",
-      "tag": "Techniques",
+      "tag": "Técnica",
       "keys": [
         "antigravity system",
         "antigravity",
@@ -2088,7 +2088,7 @@
     {
       "id": "codex-divergent-fist-punho-divergente",
       "title": "Divergent Fist (Punho Divergente)",
-      "tag": "Technique",
+      "tag": "Técnica",
       "keys": [
         "divergent fist",
         "divergent",
@@ -2104,7 +2104,7 @@
     {
       "id": "codex-boogie-woogie-revised-boogie-woogie-revisado",
       "title": "Boogie Woogie: Revised (Boogie Woogie: Revisado)",
-      "tag": "Binding Vow",
+      "tag": "Voto Vinculativo",
       "keys": [
         "boogie woogie: revised",
         "boogie",
@@ -2120,7 +2120,7 @@
     {
       "id": "codex-never-swing-a-katana-again-nunca-mais-balancar-uma-katana",
       "title": "Never Swing a Katana Again (Nunca Mais Balançar uma Katana)",
-      "tag": "Binding Vow",
+      "tag": "Voto Vinculativo",
       "keys": [
         "never swing a katana again",
         "never",
@@ -2140,7 +2140,7 @@
     {
       "id": "codex-overtime-horario-extra",
       "title": "Overtime (Horário Extra)",
-      "tag": "Binding Vow",
+      "tag": "Voto Vinculativo",
       "keys": [
         "overtime",
         "horário",
@@ -2154,7 +2154,7 @@
     {
       "id": "codex-revealing-one-s-hand-revelar-as-proprias-cartas",
       "title": "Revealing One's Hand (Revelar as Próprias Cartas)",
-      "tag": "Binding Vow",
+      "tag": "Voto Vinculativo",
       "keys": [
         "revealing one's hand",
         "revealing",
@@ -2172,7 +2172,7 @@
     {
       "id": "codex-reverse-cursed-technique-tecnica-amaldicoada-reversa",
       "title": "Reverse Cursed Technique (Técnica Amaldiçoada Reversa)",
-      "tag": "Technique",
+      "tag": "Técnica",
       "keys": [
         "reverse cursed technique",
         "reverse",
@@ -2190,7 +2190,7 @@
     {
       "id": "codex-black-flash-relampago-negro",
       "title": "Black Flash (Relâmpago Negro)",
-      "tag": "Technique",
+      "tag": "Técnica",
       "keys": [
         "black flash",
         "black",

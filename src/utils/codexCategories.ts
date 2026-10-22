@@ -20,7 +20,7 @@ export const CODEX_CATEGORY_LABELS: Record<CodexCategory, string> = {
   outros: 'Outros',
 };
 
-/** Categoria -> arquivo em json/codex/ (espelha scripts/build-codex-json.ts). */
+/** Categoria -> arquivo em json/codex/. */
 export const CODEX_CATEGORY_FILES: Record<CodexCategory, string> = {
   personagens: 'personagens.json',
   habilidades: 'habilidades.json',

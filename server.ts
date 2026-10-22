@@ -596,7 +596,7 @@ async function startServer() {
   });
 
   /**
-   * Returns all 272 encyclopedic Portuguese entries from Codex.md + 283 canonical Story Cards
+   * Returns all 283 PT-BR encyclopedic entries (json/codex) + 283 canonical Story Cards
    * so the frontend Códice RAG is populated out-of-the-box without requiring manual file upload.
    */
   app.get('/api/codex/default', (_req, res) => {
