@@ -1114,3 +1114,65 @@ Ciclo: teste falha (`ERR_MODULE_NOT_FOUND`) → criar dados + resolver → **esp
 
 <!-- PART3 -->
 
+---
+
+# Registro de execução (2026-10-21)
+
+> Bloco adicionado após a execução. Registra o que foi de fato implementado,
+> os defeitos encontrados **neste plano** e onde eles foram corrigidos.
+> Um plano que embarca código quebrado é defeito do plano, não do executor.
+
+## Escopo executado
+
+- **Tasks 0–5**: executadas literalmente como especificadas (ciclo RED → GREEN → lint → commit).
+- **Part 3 (Tasks 6+)**: **não existia no arquivo**. Reconstruída a partir das seções
+  *Architecture* e *Current context* deste mesmo plano, que descrevem a cadeia
+  (provedor externo → Gemini → Motor de Continuidade), o bloco `VOZES CANÔNICAS`,
+  as duas seções novas na instrução do Mestre e o histórico 8→12 turnos.
+  Entregue como: `src/server/canonicalVoices.ts`, integração em `server.ts`
+  (`/turn`, `/turn/stream`, `/validate`), UI de provedor em `SettingsPage.tsx`,
+  `provider` no `TurnRequestPayload`, e `slice(-12)` em `src/App.tsx`.
+
+## Defeitos deste plano (corrigidos no repo)
+
+1. **Task 4 — ordem de corte do script de extração quebrava a execução.**
+   O script cortava C → B → A. Cada bloco termina exatamente onde o próximo começa,
+   então cortar o bloco B **apaga o marcador final do bloco A** e o `index()` estoura
+   com `ValueError: substring not found`. Correção: extrair em ordem de documento
+   (A → B → C) em `scripts/extract-prompt-builder.py`. O movimento continua
+   byte-a-byte literal (verificado: 6/6 funções com `literal=True`).
+
+2. **Task 3 — o teste embutido não passa no `tsc --noEmit`.**
+   `list2.find((p) => p.id === 'openrouter').configured` gera `TS2532`
+   (`Object is possibly 'undefined'`). Correção: `?.configured` no teste.
+
+3. **Superfície de SSRF não prevista no plano (Task 3).**
+   A `baseUrl` do provedor customizado vem do cliente e vira destino de `fetch`
+   **no servidor**. O plano aceitava qualquer string. Correção: `normalizeBaseUrl()`
+   em `providerRegistry.ts` — só `http:`/`https:`, sem credenciais embutidas,
+   com testes próprios e caso de rejeição no `resolveProvider`.
+
+4. **Texto de prompt em português não-nativo (Task 7).**
+   As seções novas na instrução do Mestre saíram com caracteres estranhos e palavras
+   misturadas ("como，落实", "nem para，情迫", "deequipment", "established").
+   Relido e corrigido antes de qualquer commit — vai direto para o system prompt.
+
+## Verificação executada
+
+- `npm run lint` → 0 erros · `npm run test` → **36/36** · `npm run build` → ✓
+- **Servidor real** contra mock OpenAI-compatível (`scripts/mock-openai-provider.mjs`):
+  - `/turn` → `usedProvider=custom-openai`, `usedModel=llama3-teste`
+  - `/turn/stream` → eventos `delta` + `done` com narrativa extraída do JSON bruto
+  - `/validate` → `state=VALID` contra o endpoint externo
+  - o mock **ecoa flags do prompt recebido**: `vozesCanonicas=true`, guia do Gojo
+    presente, `secaoFidelidade=true`, `secaoAntiAmnesia=true`, `formatoJson=true`
+- **Branches de fallback exercitados de propósito:**
+  - upstream morto → cai no Gemini (`usedProvider=None`), campanha não para
+  - `baseUrl=file:///etc/passwd` → rejeitado pelo registry, cai no Gemini
+  - sem chave → `resolveProvider` devolve `null`, segue para o Gemini
+
+## Fora de escopo (mantido conforme premissa do plano)
+
+- **Geração de imagens permanece Gemini-only** (Nano Banana). A UI informa isso.
+- **Embeddings do RAG permanecem Gemini**, com fallback por keyword.
+
