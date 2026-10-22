@@ -1,7 +1,12 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import type { StoryCard } from '../types/jjk';
 import { parseJsonStoryCards, parseMarkdownCodex } from '../utils/jjkEngine';
 import { resolveCanonicalPortraitUrl } from '../data/characterPortraits';
+import {
+  CODEX_CATEGORIES,
+  CODEX_CATEGORY_LABELS,
+  categoryOfCard,
+} from '../utils/codexCategories';
 import { ArrowLeft, Search, Upload } from 'lucide-react';
 
 interface CodexPageProps {
@@ -36,7 +41,8 @@ const TYPE_ORDER: StoryCard['type'][] = [
   'tool',
 ];
 
-type FilterId = 'all' | 'character' | 'technique' | 'location';
+/** Aba do Códice: "all" (Tudo) ou uma das 4 categorias estruturais. */
+type FilterId = 'all' | (typeof CODEX_CATEGORIES)[number];
 
 const cleanTitle = (title: string) =>
   title.replace(/^\[[^\]]+\]\s*/, '').replace(/\s+/g, ' ').trim();
@@ -64,6 +70,45 @@ export const CodexPage: React.FC<CodexPageProps> = ({ cards, onImportCodexCards 
   const [filter, setFilter] = useState<FilterId>('all');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [mobileDetailOpen, setMobileDetailOpen] = useState(false);
+  // Verbetes do Códice carregados sob demanda, por categoria (corpo integral).
+  const [categoriaCards, setCategoriaCards] = useState<StoryCard[]>([]);
+  const [loadingCategoria, setLoadingCategoria] = useState(false);
+
+  // Carrega só a aba visada: /api/codex/categoria/:categoria.
+  useEffect(() => {
+    if (filter === 'all') {
+      setCategoriaCards([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingCategoria(true);
+    fetch(`/api/codex/categoria/${filter}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (cancelled || !data?.ok || !Array.isArray(data.cards)) return;
+        setCategoriaCards(data.cards as StoryCard[]);
+      })
+      .catch(() => {
+        if (!cancelled) setCategoriaCards([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingCategoria(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [filter]);
+
+  // Quando uma categoria está ativa, ela SUBSTITUI os cards codex_md do acervo
+  // (que chegam truncados pelo payload de RAG) pelo corpo integral.
+  const visibleCards = useMemo(() => {
+    if (filter === 'all') return cards;
+    const codexIds = new Set(categoriaCards.map((c) => c.id));
+    return [
+      ...cards.filter((c) => !codexIds.has(c.id) && c.source !== 'codex_md'),
+      ...categoriaCards,
+    ];
+  }, [cards, categoriaCards, filter]);
 
   const sorted = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -73,19 +118,10 @@ export const CodexPage: React.FC<CodexPageProps> = ({ cards, onImportCodexCards 
       codex_md: 2,
       custom: 3,
     };
-    const originalOrder = new Map(cards.map((card, index) => [card.id, index]));
-    return [...cards]
+    const originalOrder = new Map(visibleCards.map((card, index) => [card.id, index]));
+    return [...visibleCards]
       .filter((card) => {
-        if (filter === 'character' && card.type !== 'character') return false;
-        if (
-          filter === 'technique' &&
-          card.type !== 'technique' &&
-          card.type !== 'domain' &&
-          card.type !== 'tool'
-        ) {
-          return false;
-        }
-        if (filter === 'location' && card.type !== 'location') return false;
+        if (filter !== 'all' && categoryOfCard(card) !== filter) return false;
         if (!q) return true;
         return (
           card.title.toLowerCase().includes(q) ||
@@ -101,7 +137,7 @@ export const CodexPage: React.FC<CodexPageProps> = ({ cards, onImportCodexCards 
         if (sourceDelta !== 0) return sourceDelta;
         return (originalOrder.get(a.id) ?? 0) - (originalOrder.get(b.id) ?? 0);
       });
-  }, [cards, filter, query]);
+  }, [visibleCards, filter, query]);
 
   const selectedCard =
     sorted.find((card) => card.id === selectedId) ?? sorted[0] ?? null;
@@ -209,15 +245,14 @@ export const CodexPage: React.FC<CodexPageProps> = ({ cards, onImportCodexCards 
             {(
               [
                 ['all', 'Todos'],
-                ['character', 'Personagens'],
-                ['technique', 'Técnicas'],
-                ['location', 'Lugares'],
-              ] as const
+                ...CODEX_CATEGORIES.map((c) => [c, CODEX_CATEGORY_LABELS[c]] as const),
+              ] as ReadonlyArray<readonly [FilterId, string]>
             ).map(([id, label]) => (
               <button
                 key={id}
                 type="button"
                 onClick={() => setFilter(id)}
+                aria-pressed={filter === id}
                 className={
                   'font-sans text-[10px] uppercase tracking-[0.16em] transition-colors ' +
                   (filter === id
@@ -229,7 +264,7 @@ export const CodexPage: React.FC<CodexPageProps> = ({ cards, onImportCodexCards 
               </button>
             ))}
             <span className="ml-auto font-sans text-[9px] uppercase tracking-[0.14em] text-[#6f6659]">
-              {sorted.length} verbetes
+              {loadingCategoria ? 'carregando…' : `${sorted.length} verbetes`}
             </span>
           </div>
 

@@ -71,6 +71,20 @@ test('o preâmbulo do Codex.md não vira verbete', () => {
   );
 });
 
+test('compileCodexMarkdown funciona com fonte CRLF (Codex.md no repo usa CRLF)', () => {
+  const markdown = fs.readFileSync(CODEX_MD, 'utf-8');
+  const lf = compileCodexMarkdown(markdown.replace(/\r\n/g, '\n'));
+  const crlf = compileCodexMarkdown(markdown);
+  assert.ok(lf.entries.length > 0, 'o fonte com LF deve produzir verbetes');
+  assert.equal(crlf.entries.length, lf.entries.length, 'CRLF e LF devem gerar o mesmo número');
+  assert.deepEqual(crlf.unknownTags, [], 'CRLF não pode deixar tag sem mapeamento');
+  assert.deepEqual(
+    crlf.entries.map((e) => e.title),
+    lf.entries.map((e) => e.title),
+    'títulos devem ser idênticos entre CRLF e LF'
+  );
+});
+
 test('normalizeTitle remove tag e numeração de grupo', () => {
   assert.equal(normalizeTitle('1. [Facção] Unidade Kukuru (Kukurutai)'), 'Unidade Kukuru (Kukurutai)');
   assert.equal(normalizeTitle('[Técnica] Manji Kick'), 'Manji Kick');

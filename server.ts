@@ -55,142 +55,41 @@ function normalizeProviderSpec(raw: unknown): ProviderSpec | undefined {
   };
 }
 
-interface ServerStoryCard {
-  id: string;
-  title: string;
-  keys: string[];
-  type: 'character' | 'technique' | 'domain' | 'tool' | 'location' | 'lore';
-  value: string;
-  source?: 'codex_md' | 'story_json' | 'initial' | 'custom';
-}
+import { loadLore, type ServerStoryCard } from './src/server/codexLoader';
+import {
+  CODEX_CATEGORIES,
+  CODEX_CATEGORY_LABELS,
+} from './src/utils/codexCategories';
+import type { CodexCategory, StoryEra } from './src/types/jjk';
+
+/**
+ * Orçamento de caracteres do corpo por card no payload de RAG
+ * (/api/codex/default). Esse payload alimenta o prompt, então precisa ter
+ * teto; o conteúdo INTEGRAL é servido por /api/codex/categoria/:categoria.
+ */
+const RAG_VALUE_MAX_CHARS = 2600;
 
 /**
  * Loads the 283 Story Cards from ./json/adventure-UhtU4tSbk-kc-story-cards-284.json
- * and the 1.1MB Encyclopedic Codex from ./Codex.md / ./JJK_Codex_Ultra_Completo.md at server startup.
+ * and the Encyclopedic Codex from the generated ./json/codex/*.json at server startup.
  */
 let SERVER_STORY_CARDS: ServerStoryCard[] = [];
 let SERVER_CODEX_MD_CARDS: ServerStoryCard[] = [];
-let SERVER_MD_SECTIONS: { title: string; keys: string[]; content: string }[] = [];
+let SERVER_MD_SECTIONS: { title: string; keys: string[]; content: string; era: StoryEra }[] = [];
 
 function loadServerSideLore() {
   const cwd = process.cwd();
-  const jsonCandidates = [
-    path.join(cwd, 'json', 'adventure-UhtU4tSbk-kc-story-cards-284.json'),
-    path.join(cwd, 'adventure-UhtU4tSbk-kc-story-cards-284.json'),
-  ];
-
-  for (const jsonPath of jsonCandidates) {
-    if (fs.existsSync(jsonPath)) {
-      try {
-        const raw = fs.readFileSync(jsonPath, 'utf-8');
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          SERVER_STORY_CARDS = parsed
-            .filter((c) => c && c.value && String(c.value).trim().length > 0)
-            .map((c, idx) => {
-              const title = String(c.title || `Card #${idx + 1}`).trim();
-              const keys = Array.isArray(c.keys)
-                ? c.keys.map((k: unknown) => String(k).trim().toLowerCase())
-                : String(c.keys || title)
-                    .split(',')
-                    .map((k) => k.trim().toLowerCase())
-                    .filter(Boolean);
-              const rawType = String(c.type || 'lore').toLowerCase();
-              const mappedType: ServerStoryCard['type'] = rawType.includes('char')
-                ? 'character'
-                : rawType.includes('tech') || rawType.includes('innate')
-                ? 'technique'
-                : rawType.includes('domain')
-                ? 'domain'
-                : rawType.includes('tool') || rawType.includes('item')
-                ? 'tool'
-                : rawType.includes('loc') || rawType.includes('place')
-                ? 'location'
-                : 'lore';
-
-              return {
-                id: `canon-card-${idx + 1}`,
-                title,
-                keys,
-                type: mappedType,
-                value: String(c.value).trim(),
-                source: 'story_json',
-              };
-            });
-          console.log(`[JJK RAG Engine] ${SERVER_STORY_CARDS.length} Story Cards canônicos carregados de ${path.basename(jsonPath)}.`);
-        }
-      } catch (err) {
-        console.warn('[JJK RAG Engine] Aviso ao ler JSON de Story Cards:', err);
-      }
-      break;
-    }
-  }
-
-  const mdCandidates = [path.join(cwd, 'Codex.md')];
-
-  for (const mdPath of mdCandidates) {
-    if (fs.existsSync(mdPath)) {
-      try {
-        const rawMd = fs.readFileSync(mdPath, 'utf-8');
-        const rawSections = rawMd
-          .split(/\n(?=##\s+)/)
-          .map((s) => s.trim())
-          .filter((s) => s.length > 80);
-
-        SERVER_MD_SECTIONS = rawSections.map((sec) => {
-          const firstLineEnd = sec.indexOf('\n');
-          const header = firstLineEnd !== -1 ? sec.slice(0, firstLineEnd).replace(/^#+\s*/, '').trim() : 'Registro Canônico';
-          const keysMatch = sec.match(/\*\*Gatilhos \(Keys\):\*\*\s*([^\n]+)/i);
-          const extractedKeys = keysMatch
-            ? keysMatch[1]
-                .split(/[,;]/)
-                .map((k) => k.trim().toLowerCase())
-                .filter(Boolean)
-            : [];
-          const headerWords = header
-            .toLowerCase()
-            .replace(/\[[^\]]+\]/g, '')
-            .split(/[\s()—\-–/]+/)
-            .filter((w) => w.length >= 3);
-
-          return {
-            title: header,
-            keys: Array.from(new Set([...extractedKeys, ...headerWords])),
-            content: sec.slice(0, 2600),
-          };
-        });
-
-        SERVER_CODEX_MD_CARDS = SERVER_MD_SECTIONS.map((sec, idx) => {
-          const lowerTitle = sec.title.toLowerCase();
-          const mappedType: ServerStoryCard['type'] =
-            lowerTitle.includes('[personagem]') || lowerTitle.includes('grau') || lowerTitle.includes('maldição')
-              ? 'character'
-              : lowerTitle.includes('domínio') || lowerTitle.includes('domain')
-              ? 'domain'
-              : lowerTitle.includes('técnica') || lowerTitle.includes('shikigami')
-              ? 'technique'
-              : lowerTitle.includes('ferramenta') || lowerTitle.includes('arma') || lowerTitle.includes('objeto')
-              ? 'tool'
-              : lowerTitle.includes('escola') || lowerTitle.includes('shibuya') || lowerTitle.includes('local')
-              ? 'location'
-              : 'lore';
-
-          return {
-            id: `codex-md-${idx + 1}`,
-            title: sec.title,
-            keys: sec.keys,
-            type: mappedType,
-            value: sec.content,
-            source: 'codex_md',
-          };
-        });
-
-        console.log(`[JJK RAG Engine] ${SERVER_MD_SECTIONS.length} verbetes enciclopédicos carregados de ${path.basename(mdPath)} e integrados ao Códice.`);
-      } catch (err) {
-        console.warn(`[JJK RAG Engine] Aviso ao ler ${path.basename(mdPath)}:`, err);
-      }
-      break;
-    }
+  try {
+    const lore = loadLore(cwd);
+    SERVER_CODEX_MD_CARDS = lore.codexCards;
+    SERVER_STORY_CARDS = lore.storyCards;
+    SERVER_MD_SECTIONS = lore.mdSections;
+    console.log(
+      `[JJK RAG Engine] ${SERVER_CODEX_MD_CARDS.length} verbetes do Códice (json/codex) + ${SERVER_STORY_CARDS.length} Story Cards canônicos carregados.`
+    );
+  } catch (err) {
+    console.error('[JJK RAG Engine] Falha ao carregar o acervo:', err);
+    throw err;
   }
 }
 
@@ -239,7 +138,12 @@ async function buildServerSideDeepRag(
 
   // 1. Keyword pré-filtro sobre as seções do Códice
   if (SERVER_MD_SECTIONS.length > 0) {
-    const scoredMd = SERVER_MD_SECTIONS.map((sec) => {
+    // Filtro de era: um verbete de evento de 2018 (Incidente de Shibuya,
+    // Desfile Noturno) não deve entrar numa cena de campanha de seguimento.
+    const mdPool = campaignEra
+      ? SERVER_MD_SECTIONS.filter((sec) => isStoryCardAllowedForEra(sec, campaignEra))
+      : SERVER_MD_SECTIONS;
+    const scoredMd = mdPool.map((sec) => {
       let score = 0;
       for (const k of sec.keys) {
         if (k.length >= 3 && q.includes(k)) score += k.length >= 5 ? 8 : 4;
@@ -698,10 +602,37 @@ async function startServer() {
   app.get('/api/codex/default', (_req, res) => {
     res.json({
       ok: true,
-      cards: [...SERVER_CODEX_MD_CARDS, ...SERVER_STORY_CARDS],
+      cards: [
+        ...SERVER_CODEX_MD_CARDS.map((card) => ({
+          ...card,
+          value: card.value.slice(0, RAG_VALUE_MAX_CHARS),
+        })),
+        ...SERVER_STORY_CARDS,
+      ],
       codexMdCount: SERVER_CODEX_MD_CARDS.length,
       storyCardCount: SERVER_STORY_CARDS.length,
       mdSectionCount: SERVER_MD_SECTIONS.length,
+    });
+  });
+
+  /**
+   * Códice por categoria: /api/codex/personagens | habilidades | locais | outros.
+   * Corpo INTEGRAL (sem truncamento) — a UI do Códice carrega só a aba que
+   * está vendo, em vez dos 283 verbetes de uma vez.
+   */
+  app.get('/api/codex/categoria/:categoria', (req, res) => {
+    const categoria = req.params.categoria as CodexCategory;
+    if (!CODEX_CATEGORIES.includes(categoria)) {
+      res.status(404).json({ ok: false, error: `Categoria inválida: ${req.params.categoria}` });
+      return;
+    }
+    const entries = SERVER_CODEX_MD_CARDS.filter((card) => card.categoria === categoria);
+    res.json({
+      ok: true,
+      categoria,
+      label: CODEX_CATEGORY_LABELS[categoria],
+      total: entries.length,
+      cards: entries,
     });
   });
 

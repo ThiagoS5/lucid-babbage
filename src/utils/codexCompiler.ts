@@ -228,7 +228,7 @@ function extractKeys(body: string, title: string): string[] {
   const fromDoc = match
     ? match[1]
         .split(/[,;]/)
-        .map((k) => k.replace(/[`*_]/g, '').trim().toLowerCase())
+        .map((k) => k.replace(/[`*_\r]/g, '').trim().toLowerCase())
         .filter(Boolean)
     : [];
   const fromTitle = title
@@ -259,7 +259,9 @@ function splitBlocks(markdown: string): Block[] {
     buffer = [];
   };
 
-  for (const line of markdown.split('\n')) {
+  // Normaliza CRLF -> LF: o Codex.md no repo usa CRLF, e um "\r" preso no
+  // fim do cabeçalho faria a tag ser lida como "[Tag]\r" (tag desconhecida).
+  for (const line of markdown.replace(/\r\n/g, '\n').split('\n')) {
     const h1 = line.match(/^#\s+(.*)$/);
     const h2 = line.match(/^##\s+(.*)$/);
     if (h1 || h2) {
