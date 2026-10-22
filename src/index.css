@@ -865,7 +865,10 @@
 .chat-narrator {
   border-left: 1px solid rgba(201, 169, 106, 0.26);
   padding-left: 1rem;
-  margin: 0 2rem 0 0;
+  /* Apenas o recuo lateral: usar o atalho `margin` aqui zerava o
+     margin-bottom e anulava o `space-y-4` da <section>, deixando o
+     bubble da fala encostado na última linha da narração. */
+  margin-right: 2rem;
 }
 
 .chat-narrator .chat-narrator-label {
