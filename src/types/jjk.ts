@@ -254,11 +254,19 @@ export interface CharacterSheet {
 
 export type StoryEra = 'canon' | 'sequel' | 'both';
 
+/** Categorias do Códice, na ordem em que aparecem no Códice da UI. */
+export type CodexCategory = 'personagens' | 'habilidades' | 'locais' | 'outros';
+
 export interface StoryCard {
   id: string;
   title: string;
   keys: string[];
   type: 'character' | 'technique' | 'domain' | 'lore' | 'location' | 'faction' | 'tool';
+  /**
+   * Categoria explícita do verbete (vinda do JSON do Códice). Quando ausente,
+   * o consumidor deriva de `type` via `categoryForType` (src/utils/codexCategories.ts).
+   */
+  categoria?: CodexCategory;
   value: string;
   source?: 'codex_md' | 'story_json' | 'initial' | 'custom';
   /**
