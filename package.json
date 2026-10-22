@@ -10,7 +10,10 @@
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "codex:build": "tsx scripts/build-codex-json.ts",
+    "codex:check": "tsx scripts/check-codex-json.ts",
+    "codex:extract": "tsx scripts/extract-initial-cards.ts",
     "lint": "tsc --noEmit",
+    "pretest": "npm run codex:check",
     "test": "tsx --test src/utils/jjkEngine.test.ts src/services/geminiService.stream.test.ts src/server/providers/jsonRepair.test.ts src/server/providers/openAiCompatProvider.test.ts src/server/providers/providerRegistry.test.ts src/server/providers/gmTurnRunner.test.ts src/utils/characterVoiceResolver.test.ts src/server/canonicalVoices.test.ts src/server/promptBuilder.test.ts src/utils/codexCompiler.test.ts src/utils/storyCardEra.test.ts"
   },
   "dependencies": {
