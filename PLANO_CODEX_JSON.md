@@ -741,6 +741,23 @@ Todas as etapas foram executadas num scratch tree idêntico ao repo
 | Cards sem `categoria` | **0** |
 | Cards sem `era` | **0** |
 | `canon` no payload | 7, **todos eventos** (0 falso positivo) |
+| Build com tag nova no Markdown | **exit 1**, com o nome da tag |
+
+### Defeito do plano encontrado e corrigido na execução
+
+O `Codex.md` **no repositório usa CRLF**, e o scratch (onde o plano foi validado)
+usava LF. Com CRLF, o `\r` ficava preso no fim do cabeçalho e o compilador lia
+a tag como `"[Tag]\r"` — tag desconhecida. O build gerava **0 verbetes**.
+
+Corrigido em `src/utils/codexCompiler.ts` (normalização CRLF→LF em
+`splitBlocks`, e remoção de `\r` dos gatilhos), com teste de regressão
+`compileCodexMarkdown funciona com fonte CRLF`. Os JSONs gerados do fonte CRLF
+são **byte-idênticos** aos do fonte LF — o que prova que a normalização não
+altera o conteúdo.
+
+Este defeito só apareceu porque a execução ocorreu no repositório real, e não
+no scratch: o validador do plano comparava contra uma cópia com finais de linha
+diferentes.
 
 **Prova do "conteúdo preservado"** — comparação byte a byte entre o `value` no JSON
 e o corpo correspondente no `Codex.md`:

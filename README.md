@@ -46,3 +46,19 @@ aberto para diagnóstico.
 
 `npm run build` gera a ficha de feiticeiro em chunk separado (lazy loading);
 a crônica carrega no bundle principal.
+
+## Códice em JSON
+
+`Codex.md` é a fonte canônica do Códice, editada à mão.
+`npm run codex:build` compila para
+`json/codex/{personagens,habilidades,locais,outros}.json`, e o servidor e a UI
+consomem apenas esses JSONs — não há parsing de Markdown em runtime.
+
+O build é determinístico e **fail-fast**: uma tag nova ou um cabeçalho H1 sem
+classificação no Markdown **quebra** o build (exit 1, com o nome da tag), em
+vez de cair silenciosamente em "lore". Erros de digitação no fonte são
+corrigidos só na classificação, sem reescrever o `Codex.md`.
+
+Os JSONs são versionados no git: o diff de conteúdo é auditável e a imagem
+Docker não depende do Markdown em runtime. Depois de editar o `Codex.md`,
+rode `npm run codex:build` e commite o resultado.
