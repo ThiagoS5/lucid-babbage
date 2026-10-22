@@ -50,6 +50,25 @@ export const PROVIDER_PRESETS: Record<
   },
 };
 
+/**
+ * Valida a base URL do provedor personalizado. O cliente informa esse valor, e
+ * ele vira destino de fetch no servidor — aceitar apenas http/https sem
+ * credenciais embutidas evita SSRF e esquemas perversos (file:, data:).
+ */
+export function normalizeBaseUrl(raw: string): string | null {
+  const value = String(raw || '').trim();
+  if (!value) return null;
+  let parsed: URL;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return null;
+  }
+  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return null;
+  if (parsed.username || parsed.password) return null;
+  return parsed.toString().replace(/\/+$/, '');
+}
+
 /** Chave efetiva: a da UI vence; sem ela, a do ambiente. */
 function effectiveKey(spec: ProviderSpec, env: ProviderEnv): string {
   const uiKey = (spec.apiKey || '').trim();
@@ -73,9 +92,10 @@ export function resolveProvider(
   if (!preset) return null;
   const apiKey = effectiveKey(spec, env);
   if (!apiKey) return null;
-  const baseUrl =
+  const rawBaseUrl =
     (spec.baseUrl || '').trim() ||
     (preset.baseUrl || (env.customBaseUrl || '').trim());
+  const baseUrl = normalizeBaseUrl(rawBaseUrl);
   if (!baseUrl) return null;
   const model = (spec.model || '').trim() || preset.defaultModel;
   if (!model) return null;

@@ -4,6 +4,7 @@ import {
   resolveProvider,
   listProviders,
   classifyProviderError,
+  normalizeBaseUrl,
 } from './providerRegistry.ts';
 
 test('resolveProvider cria adaptador NIM; chave da UI vence a do ambiente', () => {
@@ -51,4 +52,23 @@ test('classifyProviderError mapeia 429, 401 e erro generico', () => {
   assert.equal(classifyProviderError('HTTP 429: rate limit').state, 'QUOTA_EXCEEDED');
   assert.equal(classifyProviderError('401 unauthorized').state, 'INVALID');
   assert.equal(classifyProviderError('boom').state, 'INVALID');
+});
+
+test('normalizeBaseUrl aceita apenas http/https sem credenciais', () => {
+  assert.equal(normalizeBaseUrl('https://api.exemplo.com/v1'), 'https://api.exemplo.com/v1');
+  assert.equal(normalizeBaseUrl('http://localhost:11434/v1'), 'http://localhost:11434/v1');
+  assert.equal(normalizeBaseUrl('file:///etc/passwd'), null);
+  assert.equal(normalizeBaseUrl('http://user:pass@api.exemplo.com/v1'), null);
+  assert.equal(normalizeBaseUrl('nao-e-url'), null);
+  assert.equal(normalizeBaseUrl(''), null);
+});
+
+test('resolveProvider rejeita baseUrl insegura do provedor custom', () => {
+  assert.equal(
+    resolveProvider(
+      { id: 'custom-openai', model: 'm', apiKey: 'k', baseUrl: 'file:///etc/passwd' },
+      {}
+    ),
+    null
+  );
 });
