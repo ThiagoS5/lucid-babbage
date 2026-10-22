@@ -17,8 +17,43 @@ import {
   firstSceneLine,
   type ArcContractWorld,
 } from './src/server/promptBuilder';
+import {
+  classifyProviderError,
+  listProviders,
+  resolveProvider,
+  type ProviderEnv,
+} from './src/server/providers/providerRegistry';
+import { parseGmTurnJson, runExternalTurn } from './src/server/providers/gmTurnRunner';
+import type { ProviderId, ProviderSpec } from './src/types/provider';
 
 dotenv.config();
+
+/** Provedores disponíveis lidos do ambiente — a chave da UI sempre tem precedência. */
+function providerEnvFromProcess(): ProviderEnv {
+  return {
+    geminiApiKey: process.env.GEMINI_API_KEY || process.env.API_KEY,
+    nvidiaNimApiKey: process.env.NVIDIA_NIM_API_KEY || process.env.NVIDIA_API_KEY,
+    openRouterApiKey: process.env.OPENROUTER_API_KEY,
+    customBaseUrl: process.env.CUSTOM_AI_BASE_URL,
+    customApiKey: process.env.CUSTOM_AI_API_KEY,
+  };
+}
+
+const VALID_PROVIDER_IDS: ProviderId[] = ['gemini', 'nvidia-nim', 'openrouter', 'custom-openai'];
+
+/** Valida o ProviderSpec enviado pela UI (nunca confiar no cliente). */
+function normalizeProviderSpec(raw: unknown): ProviderSpec | undefined {
+  if (!raw || typeof raw !== 'object') return undefined;
+  const candidate = raw as Partial<ProviderSpec>;
+  const id = candidate.id;
+  if (typeof id !== 'string' || !VALID_PROVIDER_IDS.includes(id as ProviderId)) return undefined;
+  return {
+    id: id as ProviderId,
+    model: typeof candidate.model === 'string' ? candidate.model : '',
+    apiKey: typeof candidate.apiKey === 'string' ? candidate.apiKey : undefined,
+    baseUrl: typeof candidate.baseUrl === 'string' ? candidate.baseUrl : undefined,
+  };
+}
 
 interface ServerStoryCard {
   id: string;
@@ -531,12 +566,60 @@ async function startServer() {
     });
   });
 
+  /** Provedores de IA suportados e quais estão configurados no ambiente. */
+  app.get('/api/providers', (_req, res) => {
+    res.json({
+      ok: true,
+      providers: listProviders(providerEnvFromProcess(), Boolean(getGeminiClient())),
+    });
+  });
+
   app.post('/api/gemini/validate', async (req, res) => {
     const { model = 'gemini-3.8-flash', customApiKey = '' } = req.body || {};
     const headerKey = req.headers['x-custom-api-key'] as string | undefined;
     const providedCustomKey = (customApiKey || headerKey || '').trim();
-    const ai = getGeminiClient(providedCustomKey);
     const startMs = Date.now();
+
+    // Provedor externo escolhido na UI: valida a chave contra aquele endpoint.
+    const externalProvider = resolveProvider(
+      normalizeProviderSpec(req.body?.provider),
+      providerEnvFromProcess()
+    );
+    if (externalProvider) {
+      try {
+        const report = await externalProvider.validate();
+        return res.json({
+          ok: report.ok,
+          state: report.ok ? 'VALID' : 'INVALID',
+          modelTested: externalProvider.model,
+          latencyMs: Date.now() - startMs,
+          fallbackActive: !report.ok,
+          hasEnvironmentKey: false,
+          isUsingCustomKey: true,
+          usedProvider: externalProvider.id,
+          message: report.message,
+          checkedAt: new Date().toISOString(),
+        });
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        const classified = classifyProviderError(msg);
+        return res.json({
+          ok: false,
+          state: classified.state,
+          modelTested: externalProvider.model,
+          latencyMs: Date.now() - startMs,
+          fallbackActive: true,
+          hasEnvironmentKey: false,
+          isUsingCustomKey: true,
+          usedProvider: externalProvider.id,
+          message: classified.userMessage,
+          rawError: msg.slice(0, 180),
+          checkedAt: new Date().toISOString(),
+        });
+      }
+    }
+
+    const ai = getGeminiClient(providedCustomKey);
     const hasEnvironmentKey = Boolean(process.env.GEMINI_API_KEY || process.env.API_KEY);
     const isUsingCustomKey = Boolean(providedCustomKey);
 
@@ -1325,17 +1408,6 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         ],
       };
     };
-    if (!ai) {
-      return res.json({
-        ok: true,
-        usedFallback: true,
-        apiKeyState: 'MISSING',
-        statusNotice:
-          'Chave GEMINI_API_KEY ausente no ambiente. Turno processado pelo Motor Narrativo de Continuidade JJK sem interromper sua história.',
-        data: buildDynamicFallback('Motor Narrativo Local — Chave Ausente'),
-      });
-    }
-
     const turnPrompt = buildTurnPrompt({
       character,
       world,
@@ -1350,6 +1422,58 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       recentHistory,
     });
 
+    // Cadeia do Mestre: provedor externo escolhido (NIM/OpenRouter/custom) ->
+    // Gemini -> Motor Narrativo de Continuidade local.
+    const externalProvider = resolveProvider(
+      normalizeProviderSpec(req.body?.provider),
+      providerEnvFromProcess()
+    );
+
+    let lastErrorMessage = 'Erro desconhecido';
+
+    if (externalProvider) {
+      try {
+        const externalResult = await runExternalTurn(externalProvider, {
+          systemInstruction: SYSTEM_INSTRUCTION_GM,
+          prompt: turnPrompt,
+          jsonSchema: JJK_RESPONSE_JSON_SCHEMA,
+          temperature: 0.75,
+        });
+        return res.json({
+          ok: true,
+          usedFallback: false,
+          apiKeyState: 'VALID',
+          usedModel: externalResult.usedModel,
+          usedProvider: externalResult.providerId,
+          switchedFromPrimary: false,
+          data: externalResult.data,
+        });
+      } catch (error: unknown) {
+        lastErrorMessage = error instanceof Error ? error.message : String(error);
+        console.warn(
+          `[JJK Engine] Provedor ${externalProvider.label} indisponível (${lastErrorMessage.slice(0, 120)}). Caindo para a cadeia Gemini...`
+        );
+      }
+    }
+
+    if (!ai) {
+      const classified = classifyProviderError(lastErrorMessage);
+      return res.json({
+        ok: true,
+        usedFallback: true,
+        apiKeyState: externalProvider ? classified.state : 'MISSING',
+        statusNotice: externalProvider
+          ? classified.userMessage
+          : 'Chave GEMINI_API_KEY ausente no ambiente. Turno processado pelo Motor Narrativo de Continuidade JJK sem interromper sua história.',
+        errorMessage: externalProvider ? lastErrorMessage : undefined,
+        data: buildDynamicFallback(
+          externalProvider
+            ? 'Motor Narrativo Local — Provedor Externo Indisponível'
+            : 'Motor Narrativo Local — Chave Ausente'
+        ),
+      });
+    }
+
     const modelChain = Array.from(
       new Set([
         normalizeModelName(model),
@@ -1358,8 +1482,6 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
         'gemini-3.5-flash-lite',
       ])
     );
-
-    let lastErrorMessage = 'Erro desconhecido';
 
     for (const candidateModel of modelChain) {
       try {
@@ -1435,7 +1557,12 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
     const headerKey = req.headers['x-custom-api-key'] as string | undefined;
     const ai = getGeminiClient(customApiKey || headerKey);
 
-    if (!ai) {
+    const externalProvider = resolveProvider(
+      normalizeProviderSpec(req.body?.provider),
+      providerEnvFromProcess()
+    );
+
+    if (!ai && !externalProvider) {
       send('error', { reason: 'NO_API_KEY', message: 'Chave GEMINI_API_KEY ausente.' });
       return done();
     }
@@ -1484,6 +1611,59 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
     );
 
     let lastError = 'Erro desconhecido';
+
+    // Provedor externo primeiro (NIM/OpenRouter/custom) — narracao em streaming
+    // via deltas SSE do endpoint /chat/completions.
+    if (externalProvider) {
+      let buffer = '';
+      let lastNarrativeLen = 0;
+      try {
+        const raw = await externalProvider.streamTurn(
+          {
+            systemInstruction: SYSTEM_INSTRUCTION_GM,
+            prompt: turnPrompt,
+            jsonSchema: JJK_RESPONSE_JSON_SCHEMA,
+            temperature: 0.75,
+          },
+          (chunk) => {
+            buffer += chunk;
+            const narrative = extractNarrativeFromJson(buffer);
+            if (narrative.length > lastNarrativeLen) {
+              const delta = narrative.slice(lastNarrativeLen);
+              lastNarrativeLen = narrative.length;
+              send('delta', { text: delta });
+            }
+          }
+        );
+        const parsed = parseGmTurnJson(raw);
+        send('done', {
+          ok: true,
+          usedFallback: false,
+          apiKeyState: 'VALID',
+          usedModel: externalProvider.model,
+          usedProvider: externalProvider.id,
+          switchedFromPrimary: false,
+          data: parsed,
+        });
+        return done();
+      } catch (err) {
+        lastError = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `[JJK Stream] Provedor ${externalProvider.label} indisponível (${lastError.slice(0, 120)}). Caindo para a cadeia Gemini...`
+        );
+      }
+    }
+
+    if (!ai) {
+      send('error', {
+        reason: 'MODEL_FAILED',
+        message:
+          'Falha ao gerar o turno em streaming. Use o endpoint não-streaming como fallback.',
+        errorMessage: lastError,
+      });
+      return done();
+    }
+
     for (const candidateModel of modelChain) {
       let buffer = '';
       let lastNarrativeLen = 0;

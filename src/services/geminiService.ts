@@ -4,6 +4,7 @@ import {
   GmTurnResponse,
   WorldStateUpdate,
 } from '../types/jjk';
+import type { ProviderInfo, ProviderSpec } from '../types/provider';
 import { getAccessHeaders } from './accessGuard';
 
 /**
@@ -32,11 +33,14 @@ export interface GeminiConnectionReport {
   message: string;
   fallbackActive: boolean;
   checkedAt: string;
+  /** Provedor efetivamente testado (quando não for o Gemini). */
+  usedProvider?: string;
 }
 
 export async function validateGeminiConnection(
   preferredModel = 'gemini-3.8-flash',
-  customApiKey?: string
+  customApiKey?: string,
+  provider?: ProviderSpec
 ): Promise<GeminiConnectionReport> {
   const startMs = Date.now();
   const storedKey =
@@ -52,7 +56,7 @@ export async function validateGeminiConnection(
         'Content-Type': 'application/json',
         ...(storedKey ? { 'x-custom-api-key': storedKey } : {}),
       },
-      body: JSON.stringify({ model: preferredModel, customApiKey: storedKey }),
+      body: JSON.stringify({ model: preferredModel, customApiKey: storedKey, provider }),
     });
     const data = await res.json();
     return {
@@ -64,6 +68,7 @@ export async function validateGeminiConnection(
         data.message ||
         'Não foi possível validar a chave GEMINI_API_KEY.',
       checkedAt: data.checkedAt || new Date().toISOString(),
+      usedProvider: typeof data.usedProvider === 'string' ? data.usedProvider : undefined,
     };
   } catch {
     return {
@@ -74,6 +79,17 @@ export async function validateGeminiConnection(
       message: 'Não foi possível verificar o servidor de validação.',
       checkedAt: new Date().toISOString(),
     };
+  }
+}
+
+/** Provedores suportados pelo servidor (configurados no ambiente). */
+export async function fetchProviderCatalog(): Promise<ProviderInfo[]> {
+  try {
+    const res = await apiFetch('/api/providers');
+    const data = await res.json();
+    return Array.isArray(data.providers) ? (data.providers as ProviderInfo[]) : [];
+  } catch {
+    return [];
   }
 }
 
@@ -93,6 +109,11 @@ export interface TurnRequestPayload {
   customOpeningPrompt?: string;
   arcObjective?: string;
   customApiKey?: string;
+  /**
+   * Provedor escolhido na UI (NIM/OpenRouter/custom). A chave viaja no corpo
+   * da requisição e nunca é persistida no servidor. Ausente = usar Gemini.
+   */
+  provider?: ProviderSpec;
 }
 
 /**

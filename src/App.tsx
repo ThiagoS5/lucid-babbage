@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState, useEffect, useCallback } from 'react';
+import { lazy, Suspense, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   ActionMode,
   CampaignState,
@@ -11,6 +11,7 @@ import {
   VisualEffectTrigger,
   WorldStateUpdate,
 } from './types/jjk';
+import type { ProviderSpec } from './types/provider';
 import { INITIAL_STORY_CARDS, CANONICAL_TECHNIQUES, STARTING_ARCS } from './data/initialCodex';
 import {
   applyNewInventoryItemOrVow,
@@ -237,6 +238,18 @@ export default function App() {
 
   // Settings & Tactical State
   const [model, setModel] = useState<GeminiModelOption>('gemini-3.8-flash');
+  const [provider, setProvider] = useState<ProviderSpec>(() => {
+    try {
+      const raw = localStorage.getItem('JJK_PROVIDER_SPEC');
+      if (raw) {
+        const parsed = JSON.parse(raw) as ProviderSpec;
+        if (parsed && typeof parsed.id === 'string') return parsed;
+      }
+    } catch {
+      // storage indisponivel ou JSON invalido: usa o padrao
+    }
+    return { id: 'gemini', model: 'gemini-3.8-flash', apiKey: '', baseUrl: '' };
+  });
   const [fontSize, setFontSize] = useState<FontSizeOption>('medium');
   const [autoGenerateImages, setAutoGenerateImages] = useState(false);
   const [sfxEnabled, setSfxEnabled] = useState<boolean>(true);
@@ -265,15 +278,35 @@ export default function App() {
   const [recentLootNotification, setRecentLootNotification] = useState<string | null>(null);
   const [geminiReport, setGeminiReport] = useState<GeminiConnectionReport | null>(null);
 
+  // Persiste a escolha de provedor (chave fica apenas no navegador).
+  useEffect(() => {
+    try {
+      localStorage.setItem('JJK_PROVIDER_SPEC', JSON.stringify(provider));
+    } catch {
+      // storage indisponivel: a escolha vale apenas para a sessao
+    }
+  }, [provider]);
+
+  /** Spec do provedor enviado ao servidor; ausente quando o Gemini narracao. */
+  const providerSpecForRequest = useMemo<ProviderSpec | undefined>(() => {
+    if (!provider || provider.id === 'gemini') return undefined;
+    return {
+      id: provider.id,
+      model: provider.model || '',
+      apiKey: provider.apiKey || '',
+      baseUrl: provider.baseUrl || '',
+    };
+  }, [provider]);
+
   const handleRefreshGeminiStatus = useCallback(async () => {
-    const report = await validateGeminiConnection(model);
+    const report = await validateGeminiConnection(model, customApiKey, providerSpecForRequest);
     setGeminiReport(report);
     if (report.state !== 'VALID') {
       setRateLimitNotice(report.message);
     } else {
       setRateLimitNotice(null);
     }
-  }, [model]);
+  }, [model, customApiKey, providerSpecForRequest]);
 
   // Load separated customCodex + 283 Canonical Server Story Cards on mount
   useEffect(() => {
@@ -294,7 +327,7 @@ export default function App() {
       })
       .catch(() => {});
 
-    validateGeminiConnection(model)
+    validateGeminiConnection(model, customApiKey, providerSpecForRequest)
       .then((report) => {
         setGeminiReport(report);
         if (report.state !== 'VALID') {
@@ -545,6 +578,7 @@ export default function App() {
         memoryContext: '',
         recentHistory: '',
         customApiKey,
+        provider: providerSpecForRequest,
       });
       if (result.apiKeyState) {
         setGeminiReport({
@@ -650,9 +684,9 @@ export default function App() {
       .map((m) => `[${m.turnRange}]: ${m.summary}`)
       .join('\n');
 
-    // Item #1: Send the last 8 full turns for deeper narrative and combat continuity
+    // Item #1: Send the last 12 full turns for deeper narrative and combat continuity
     const recentHistory = campaign.turns
-      .slice(-8)
+      .slice(-12)
       .map(
         (t) =>
           `Turno #${t.turnNumber}:\nAção do Jogador (${t.playerAction?.mode || 'ABERTURA'}): ${
@@ -675,6 +709,7 @@ export default function App() {
         recentHistory,
         isOpening: false,
         customApiKey,
+        provider: providerSpecForRequest,
       };
 
       let result;
@@ -1097,6 +1132,8 @@ export default function App() {
           campaign={campaign}
           model={model}
           onChangeModel={setModel}
+          provider={provider}
+          onChangeProvider={setProvider}
           fontSize={fontSize}
           onChangeFontSize={setFontSize}
           autoGenerateImages={autoGenerateImages}

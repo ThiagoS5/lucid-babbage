@@ -3,6 +3,8 @@
  * para ser testavel isoladamente.
  */
 
+import { renderCanonicalVoices } from './canonicalVoices';
+
 export interface TurnPromptParams {
   character: unknown;
   world: unknown;
@@ -119,6 +121,13 @@ export function buildTurnPrompt(p: TurnPromptParams): string {
       ? 'Nota de era: cards marcados [Story Card · Cânone 2018] descrevem o passado do mangá. Use-os como memória/história, nunca como evento acontecendo agora.'
       : '';
 
+  // Vozes canônicas: resolvidas a partir dos NPCs em cena (bloco vazio quando
+  // nenhum NPC da cena é canônico).
+  const npcNames = ((world as { npcsInScene?: Array<{ name?: string }> })?.npcsInScene || [])
+    .map((npc) => String(npc?.name || '').trim())
+    .filter(Boolean);
+  const canonicalVoicesBlock = renderCanonicalVoices(npcNames);
+
   return isOpening
     ? `
 === ABERTURA DE NOVA CAMPANHA (TURNO #1) ===
@@ -128,6 +137,7 @@ ${(character as { exclusiveSheetMarkdown?: string })?.exclusiveSheetMarkdown || 
 Estado Inicial do Mundo e NPCs: ${JSON.stringify(worldForPrompt, null, 2)}
 ${renderArcContract(world, startingArcTitle, customOpeningPrompt, true)}
 
+${canonicalVoicesBlock}
 === STORY CARDS E ENCICLOPÉDIA CANÔNICA ATIVADOS (RAG) ===
 ${ragEraNote}
 ${combinedRagContext || 'Conhecimento canônico geral de Jujutsu Kaisen.'}
@@ -154,6 +164,7 @@ ${renderArcContract(world, startingArcTitle, '', false)}
 === ESTADO ATUAL DO MUNDO E NPCS EM CENA (ATUALIZE O status NARRATIVO DOS NPCS: FERIDO, RECUANDO, DERROTADO, MORTO ETC.) ===
 ${JSON.stringify(worldForPrompt, null, 2)}
 
+${canonicalVoicesBlock}
 === MEMÓRIA CONSOLIDADA DA CAMPANHA ===
 ${memoryContext || 'Início da campanha.'}
 
@@ -486,4 +497,29 @@ O bloco "PLOT ESSENTIALS" do turno informa o **objetivo imediato do arco** e a *
 1. **O desfecho do mangá é passado imutável.** Sukuna foi destruído, Kenjaku foi derrotado e Gojo morreu em Shinjuku. Não ressuscite nenhum deles, não recrie Dedos de Sukuna, não refaça o Jogo do Abate nem a Fusão de Tengen.
 2. **Novo protagonismo.** O jogador é a nova geração. Yuji, Megumi, Nobara, Maki, Yuta, Hakari e Kusakabe existem, mas são veteranos com deveres próprios: podem orientar, cobrar ou aparecer em cena — nunca resolver o problema no lugar do jogador.
 3. **A ameaça é consequência, não nostalgia.** Use o que o desfecho deixou: resíduos de energia amaldiçoada, maldições que imitam técnicas de feiticeiros mortos, barreiras órfãs, colônias esquecidas, clãs oportunistas e um Conselho extinto. Nada de reviver o passado do mangá como se fosse novidade.
-4. **Escala coerente.** Sem Sukuna e Gojo, Grau Especial continua raro e aterrorizante. Um Grau 4 sobrevive por inteligência, aliados, terreno e barreiras — nunca por força bruta.`;
+4. **Escala coerente.** Sem Sukuna e Gojo, Grau Especial continua raro e aterrorizante. Um Grau 4 sobrevive por inteligência, aliados, terreno e barreiras — nunca por força bruta.
+
+---
+
+## 10. FIDELIDADE DE VOZ DOS PERSONAGENS — OBRIGATÓRIO
+
+O bloco "VOZES CANÔNICAS" (quando presente no turno) define a dicção de cada NPC canônico em cena. Essas regras são mais fortes que o seu instinto de "diálogo natural":
+
+1. **Dição intransferível.** Cada personagem fala no tom descrito no seu guia (ritmo, vocabulário, sintaxe, humor). Nenhum NPC canônico pode falar como outro, nem como o Narrador, nem com um tom genérico de "anime".
+2. **Tiques são assinatura, não muleta.** Use os tiques verbais no máximo uma vez por fala — variar a forma como o tique aparece é melhor do que repetir a frase literal.
+3. **Fronteiras anti-OOC são absolutas.** Se algo aparece na lista "NUNCA diria", o personagem jamais diz — nem sob a pressão do momento. Ex.: Sukuna não usa gíria moderna nem súplica; Nanami não é otimista; Megumi não faz discurso heroico.
+4. **O tom muda com a pressão.** Sob ferimento, cerco ou vitória, o guia indica o ajuste (mais relaxado, mais frio, mais baixo, mais eufórico). A voz não é fixa: ela reage à cena sem virar outra pessoa.
+5. **Falas de referência são referência de TOM, não texto.** Reproduza a cadência e a postura, nunca a frase literal.
+6. **NPCs originais mantêm a voz que você lhes deu.** Se você já estabeleceu a voz de um NPC original, ela permanece; a Bíblia de Vozes não a substitui.
+
+---
+
+## 11. MEMÓRIA DE CENA (ANTI-AMNÉSIA) — OBRIGATÓRIO
+
+Cada turno continua a cena anterior. Você não reinicia, não reseta e não contradiz o que já foi narrado:
+
+1. **Continuidade física:** respeite o estado narrativo de cada NPC em cena (FERIDO, RECUANDO, DERROTADO, MORTO), a posição de todos na cena e o que já foi revelado sobre técnicas e barreiras. Um NPC derrotado não volta a lutar sem narrar a recuperação.
+2. **Sem repetição:** não reescreva o que o jogador acabou de fazer nem repita as falas do turno anterior. Avance a partir dali.
+3. **Sem teleporte:** o jogador não muda de local, não troca de equipamento e não esquece o que carrega sem um evento narrado que o justifique.
+4. **Sem regressão de conhecimento:** nada que já foi dito pode ser negado como se nunca tivesse acontecido. Se o jogador descobriu algo, isso é verdade agora.
+5. **A voz também é memória:** o NPC continua falando como falava. Se um NPC foi ferido, intimidado ou exaltado, o próximo turno parte desse novo estado emocional, não do estado original.`;

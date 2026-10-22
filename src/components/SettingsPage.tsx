@@ -4,6 +4,7 @@ import type {
   FontSizeOption,
   GeminiModelOption,
 } from '../types/jjk';
+import type { ProviderId, ProviderSpec } from '../types/provider';
 import type { GeminiConnectionReport } from '../services/geminiService';
 import {
   Download,
@@ -21,6 +22,8 @@ interface SettingsPageProps {
   campaign: CampaignState | null;
   model: GeminiModelOption;
   onChangeModel: (model: GeminiModelOption) => void;
+  provider: ProviderSpec;
+  onChangeProvider: (provider: ProviderSpec) => void;
   fontSize: FontSizeOption;
   onChangeFontSize: (size: FontSizeOption) => void;
   autoGenerateImages: boolean;
@@ -28,7 +31,7 @@ interface SettingsPageProps {
   sfxEnabled: boolean;
   onToggleSfx: () => void;
   customApiKey: string;
-  onChangeCustomApiKey: (key: string) => void;
+  onChangeCustomApiKey: (value: string) => void;
   geminiReport: GeminiConnectionReport | null;
   onRefreshGeminiStatus: () => void;
   onExportJson: () => void;
@@ -47,6 +50,44 @@ const MODEL_OPTIONS: { id: GeminiModelOption; label: string }[] = [
   { id: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash Lite' },
   { id: 'gemini-4-argon', label: 'Gemini 4 Argon' },
 ];
+
+const PROVIDER_OPTIONS: { id: ProviderId; label: string; hint: string }[] = [
+  {
+    id: 'gemini',
+    label: 'Google Gemini',
+    hint: 'Padrão da casa. Usa a chave do Google AI Studio.',
+  },
+  {
+    id: 'nvidia-nim',
+    label: 'NVIDIA NIM',
+    hint: 'Cloud da NVIDIA (build.nvidia.com). Chave em build.nvidia.com.',
+  },
+  {
+    id: 'openrouter',
+    label: 'OpenRouter',
+    hint: 'Agregador openrouter.ai — modelos :free e pagos.',
+  },
+  {
+    id: 'custom-openai',
+    label: 'IA personalizada (OpenAI-compatível)',
+    hint: 'Qualquer endpoint com /chat/completions (Ollama, LM Studio, vLLM…).',
+  },
+];
+
+const PROVIDER_MODEL_SUGGESTIONS: Record<ProviderId, string[]> = {
+  gemini: ['gemini-3.8-flash', 'gemini-3.5-flash-lite', 'gemini-3.1-flash-lite'],
+  'nvidia-nim': [
+    'meta/llama-3.3-70b-instruct',
+    'nvidia/llama-3.1-nemotron-70b-instruct',
+    'deepseek-ai/deepseek-r1',
+  ],
+  openrouter: [
+    'meta-llama/llama-3.3-70b-instruct:free',
+    'deepseek/deepseek-chat-v3.1:free',
+    'google/gemini-2.0-flash-exp:free',
+  ],
+  'custom-openai': [],
+};
 
 const Section: React.FC<{ label: string; children: React.ReactNode }> = ({ label, children }) => (
   <section className="mt-14">
@@ -93,6 +134,8 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   campaign,
   model,
   onChangeModel,
+  provider,
+  onChangeProvider,
   fontSize,
   onChangeFontSize,
   autoGenerateImages,
@@ -113,6 +156,20 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
   onSummarizeMemory,
 }) => {
   const [showKey, setShowKey] = useState(false);
+  const [showProviderKey, setShowProviderKey] = useState(false);
+
+  const isGemini = provider.id === 'gemini';
+  const providerSuggestions = PROVIDER_MODEL_SUGGESTIONS[provider.id] ?? [];
+
+  const handleProviderChange = (id: ProviderId) => {
+    const suggestions = PROVIDER_MODEL_SUGGESTIONS[id] ?? [];
+    onChangeProvider({
+      id,
+      model: suggestions[0] ?? '',
+      apiKey: provider.apiKey ?? '',
+      baseUrl: provider.baseUrl ?? '',
+    });
+  };
 
   return (
     <div className="editorial-page max-w-[980px]">
@@ -121,49 +178,158 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
 
       <Section label="Mestre de IA">
         <Row
-          title="Chave de API do Google Gemini"
-          description="Guardada apenas neste navegador. Gere uma chave gratuita no Google AI Studio."
-        >
-          <div className="flex items-center gap-3">
-            <div className="relative w-[260px] max-w-[70vw]">
-              <Key className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6f6659]" />
-              <input
-                type={showKey ? 'text' : 'password'}
-                value={customApiKey}
-                onChange={(event) => onChangeCustomApiKey(event.target.value)}
-                placeholder="AIza..."
-                className="editorial-input pl-6"
-                aria-label="Chave de API do Google Gemini"
-              />
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowKey((value) => !value)}
-              className="text-[#8f8470] transition-colors hover:text-[#d8bd86]"
-              aria-label={showKey ? 'Ocultar chave' : 'Mostrar chave'}
-            >
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </Row>
-
-        <Row
-          title="Modelo"
-          description="Modelos maiores narram com mais nuance; os menores respondem mais rápido."
+          title="Provedor do Mestre"
+          description={
+            PROVIDER_OPTIONS.find((option) => option.id === provider.id)?.hint ||
+            'Escolha quem narra a crônica.'
+          }
         >
           <select
-            value={model}
-            onChange={(event) => onChangeModel(event.target.value as GeminiModelOption)}
+            value={provider.id}
+            onChange={(event) => handleProviderChange(event.target.value as ProviderId)}
             className="editorial-select w-[260px] max-w-[70vw]"
-            aria-label="Modelo do Mestre"
+            aria-label="Provedor de IA do Mestre"
           >
-            {MODEL_OPTIONS.map((option) => (
+            {PROVIDER_OPTIONS.map((option) => (
               <option key={option.id} value={option.id}>
                 {option.label}
               </option>
             ))}
           </select>
         </Row>
+
+        {!isGemini && (
+          <>
+            <Row
+              title="Chave do provedor"
+              description="Guardada apenas neste navegador e enviada apenas no momento do turno. O servidor nunca a persiste."
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative w-[260px] max-w-[70vw]">
+                  <Key className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6f6659]" />
+                  <input
+                    type={showProviderKey ? 'text' : 'password'}
+                    value={provider.apiKey ?? ''}
+                    onChange={(event) =>
+                      onChangeProvider({ ...provider, apiKey: event.target.value })
+                    }
+                    placeholder="sk-..."
+                    className="editorial-input pl-6"
+                    aria-label="Chave de API do provedor escolhido"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowProviderKey((value) => !value)}
+                  className="text-[#8f8470] transition-colors hover:text-[#d8bd86]"
+                  aria-label={showProviderKey ? 'Ocultar chave' : 'Mostrar chave'}
+                >
+                  {showProviderKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </Row>
+
+            {provider.id === 'custom-openai' && (
+              <Row
+                title="Endpoint (base URL)"
+                description="Endereço base do seu servidor OpenAI-compatível. Ex.: http://localhost:11434/v1"
+              >
+                <input
+                  type="url"
+                  value={provider.baseUrl ?? ''}
+                  onChange={(event) =>
+                    onChangeProvider({ ...provider, baseUrl: event.target.value })
+                  }
+                  placeholder="http://localhost:11434/v1"
+                  className="editorial-input w-[260px] max-w-[70vw]"
+                  aria-label="Base URL do provedor personalizado"
+                />
+              </Row>
+            )}
+
+            <Row
+              title="Modelo do provedor"
+              description="Identificador exato do modelo no serviço escolhido."
+            >
+              <div className="flex w-[260px] max-w-[70vw] flex-col gap-2">
+                <input
+                  type="text"
+                  value={provider.model}
+                  onChange={(event) =>
+                    onChangeProvider({ ...provider, model: event.target.value })
+                  }
+                  placeholder="meta/llama-3.3-70b-instruct"
+                  className="editorial-input"
+                  aria-label="Modelo do provedor escolhido"
+                  list="provider-model-suggestions"
+                />
+                <datalist id="provider-model-suggestions">
+                  {providerSuggestions.map((suggestion) => (
+                    <option key={suggestion} value={suggestion} />
+                  ))}
+                </datalist>
+              </div>
+            </Row>
+
+            <Row
+              title="Geração de imagens"
+              description="A ilustração da cena continua sendo gerada pelo Gemini (Nano Banana). NIM, OpenRouter e provedores personalizados narram — mas não desenham."
+            >
+              <span className="editorial-muted font-sans text-[10px] uppercase tracking-[0.12em]">
+                Somente Gemini
+              </span>
+            </Row>
+          </>
+        )}
+
+        {isGemini && (
+          <Row
+            title="Chave de API do Google Gemini"
+            description="Guardada apenas neste navegador. Gere uma chave gratuita no Google AI Studio."
+          >
+            <div className="flex items-center gap-3">
+              <div className="relative w-[260px] max-w-[70vw]">
+                <Key className="pointer-events-none absolute left-0 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#6f6659]" />
+                <input
+                  type={showKey ? 'text' : 'password'}
+                  value={customApiKey}
+                  onChange={(event) => onChangeCustomApiKey(event.target.value)}
+                  placeholder="AIza..."
+                  className="editorial-input pl-6"
+                  aria-label="Chave de API do Google Gemini"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowKey((value) => !value)}
+                className="text-[#8f8470] transition-colors hover:text-[#d8bd86]"
+                aria-label={showKey ? 'Ocultar chave' : 'Mostrar chave'}
+              >
+                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </Row>
+        )}
+
+        {isGemini && (
+          <Row
+            title="Modelo"
+            description="Modelos maiores narram com mais nuance; os menores respondem mais rápido."
+          >
+            <select
+              value={model}
+              onChange={(event) => onChangeModel(event.target.value as GeminiModelOption)}
+              className="editorial-select w-[260px] max-w-[70vw]"
+              aria-label="Modelo do Mestre"
+            >
+              {MODEL_OPTIONS.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </Row>
+        )}
 
         <Row
           title="Tamanho da leitura"
