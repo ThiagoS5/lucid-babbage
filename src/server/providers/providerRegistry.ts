@@ -1,4 +1,4 @@
-import type { ProviderInfo, ProviderSpec } from '../../types/provider.ts';
+import type { ProviderInfo, ProviderSpec } from '@/shared/types/provider';
 import type { GmProvider } from './types.ts';
 import { createOpenAiCompatProvider } from './openAiCompatProvider.ts';
 

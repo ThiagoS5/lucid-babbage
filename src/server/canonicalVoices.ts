@@ -1,5 +1,5 @@
-import type { CharacterVoiceGuide } from '../data/characterVoices.ts';
-import { findVoiceGuideForNpc } from '../utils/characterVoiceResolver.ts';
+import type { CharacterVoiceGuide } from '@/entities/character/data/characterVoices';
+import { findVoiceGuideForNpc } from '@/shared/lib/characterVoiceResolver';
 
 /**
  * Converte um guia de voz no texto consumido pelo Mestre. Cada campo existe

@@ -1,6 +1,6 @@
 import fs from 'fs';
-import { selectActiveStoryCardsForTurn } from '../src/utils/jjkEngine';
-import type { StoryCard } from '../src/types/jjk';
+import { selectActiveStoryCardsForTurn } from '../src/shared/lib/jjkEngine';
+import type { StoryCard } from '../src/shared/types/jjk';
 
 const raw = JSON.parse(
   fs.readFileSync('json/adventure-UhtU4tSbk-kc-story-cards-284.json', 'utf-8')

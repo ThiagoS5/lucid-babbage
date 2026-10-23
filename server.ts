@@ -8,7 +8,7 @@ import {
   inferStoryCardEra,
   isStoryCardAllowedForEra,
   storyCardEraTag,
-} from './src/utils/storyCardEra';
+} from '@/shared/lib/storyCardEra';
 import {
   SYSTEM_INSTRUCTION_GM,
   JJK_RESPONSE_JSON_SCHEMA,
@@ -24,7 +24,7 @@ import {
   type ProviderEnv,
 } from './src/server/providers/providerRegistry';
 import { parseGmTurnJson, runExternalTurn } from './src/server/providers/gmTurnRunner';
-import type { ProviderId, ProviderSpec } from './src/types/provider';
+import type { ProviderId, ProviderSpec } from '@/shared/types/provider';
 
 dotenv.config();
 
@@ -59,8 +59,8 @@ import { loadLore, type ServerStoryCard } from './src/server/codexLoader';
 import {
   CODEX_CATEGORIES,
   CODEX_CATEGORY_LABELS,
-} from './src/utils/codexCategories';
-import type { CodexCategory, StoryEra } from './src/types/jjk';
+} from '@/shared/lib/codexCategories';
+import type { CodexCategory, StoryEra } from '@/shared/types/jjk';
 
 /**
  * Orçamento de caracteres do corpo por card no payload de RAG

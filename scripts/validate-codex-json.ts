@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { CODEX_CATEGORIES, CODEX_CATEGORY_FILES } from '../src/utils/codexCategories.ts';
+import { CODEX_CATEGORIES, CODEX_CATEGORY_FILES } from '../src/shared/lib/codexCategories.ts';
 
 const ROOT = process.cwd();
 const CODEX_DIR = path.join(ROOT, 'json', 'codex');

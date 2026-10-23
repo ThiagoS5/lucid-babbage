@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import type { CodexCategory, StoryCard, StoryEra } from '../types/jjk';
-import { CODEX_CATEGORIES, RAW_STORY_TYPE_MAP } from '../utils/codexCategories';
-import { inferEraByStructure } from '../utils/storyCardEra';
+import type { CodexCategory, StoryCard, StoryEra } from '@/shared/types/jjk';
+import { CODEX_CATEGORIES, RAW_STORY_TYPE_MAP } from '@/shared/lib/codexCategories';
+import { inferEraByStructure } from '@/shared/lib/storyCardEra';
 
 /**
  * Carregador do acervo do servidor.

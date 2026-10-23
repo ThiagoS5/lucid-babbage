@@ -1,4 +1,4 @@
-import { STARTING_ARCS } from '../src/data/startingArcs';
+import { STARTING_ARCS } from '../src/shared/data/startingArcs';
 
 const mode = process.argv[2] || 'opening';
 const arc = STARTING_ARCS[0];
