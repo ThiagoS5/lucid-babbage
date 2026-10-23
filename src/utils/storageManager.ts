@@ -67,6 +67,7 @@ export function migrateCampaignToNarrative(raw: unknown): CampaignState | null {
     ...campaign,
     character: cleanCharacter(campaign.character) as CampaignState['character'],
     world: cleanWorld(campaign.world) as CampaignState['world'],
+    memories: Array.isArray(campaign.memories) ? campaign.memories : [],
     turns: campaign.turns.map((turn) => ({
       ...turn,
       playerAction: turn.playerAction

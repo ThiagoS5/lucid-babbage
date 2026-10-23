@@ -31,6 +31,10 @@ import {
   saveCampaignStateSafe,
   saveCustomCodexSafe,
 } from './utils/storageManager';
+import {
+  formatMemoryContext,
+  appendMemory,
+} from './utils/campaignMemory';
 import { HomePage } from './components/HomePage';
 import { CodexPage } from './components/CodexPage';
 import { SettingsPage } from './components/SettingsPage';
@@ -680,9 +684,7 @@ export default function App() {
       .map((c) => `### ${c.title}\n${c.value}`)
       .join('\n\n');
 
-    const memoryContext = campaign.memories
-      .map((m) => `[${m.turnRange}]: ${m.summary}`)
-      .join('\n');
+    const memoryContext = formatMemoryContext(campaign.memories);
 
     // Item #1: Send the last 12 full turns for deeper narrative and combat continuity
     const recentHistory = campaign.turns
@@ -977,15 +979,10 @@ export default function App() {
           if (!prev) return prev;
           return {
             ...prev,
-            memories: [
-              ...prev.memories,
-              {
-                id: `mem-${Date.now()}`,
-                turnRange,
-                summary: consolidatedSummary,
-                timestamp: new Date().toISOString(),
-              },
-            ],
+            memories: appendMemory(prev.memories, {
+              turnRange,
+              summary: consolidatedSummary,
+            }),
           };
         });
       }

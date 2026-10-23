@@ -13,7 +13,7 @@
     "verify:chat": "node scripts/verify-chat-overlap.mjs",
     "lint": "tsc --noEmit",
     "pretest": "npm run codex:lint",
-    "test": "tsx --test src/utils/jjkEngine.test.ts src/services/geminiService.stream.test.ts src/server/providers/jsonRepair.test.ts src/server/providers/openAiCompatProvider.test.ts src/server/providers/providerRegistry.test.ts src/server/providers/gmTurnRunner.test.ts src/utils/characterVoiceResolver.test.ts src/server/canonicalVoices.test.ts src/server/promptBuilder.test.ts src/utils/codexCompiler.test.ts src/utils/storyCardEra.test.ts",
+    "test": "tsx --test src/utils/jjkEngine.test.ts src/services/geminiService.stream.test.ts src/server/providers/jsonRepair.test.ts src/server/providers/openAiCompatProvider.test.ts src/server/providers/providerRegistry.test.ts src/server/providers/gmTurnRunner.test.ts src/utils/characterVoiceResolver.test.ts src/server/canonicalVoices.test.ts src/server/promptBuilder.test.ts src/utils/codexCompiler.test.ts src/utils/storyCardEra.test.ts src/utils/campaignMemory.test.ts src/server/promptsMemory.test.ts",
     "codex:lint": "tsx scripts/validate-codex-json.ts"
   },
   "dependencies": {

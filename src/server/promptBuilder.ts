@@ -98,6 +98,17 @@ export function firstSceneLine(text: string, maxLen = 420): string {
   return stop > 120 ? cut.slice(0, stop + 1) : `${cut.trimEnd()}…`;
 }
 
+export const MAX_PROMPT_MEMORY_LENGTH = 10000;
+
+export function sanitizeMemoryContext(memoryContext?: string): string {
+  const trimmed = String(memoryContext || '').trim();
+  if (!trimmed) return 'Início da campanha.';
+  if (trimmed.length > MAX_PROMPT_MEMORY_LENGTH) {
+    return `${trimmed.slice(0, MAX_PROMPT_MEMORY_LENGTH)}... [truncado por limite de contexto]`;
+  }
+  return trimmed;
+}
+
 export function buildTurnPrompt(p: TurnPromptParams): string {
   const {
     character,
@@ -127,6 +138,7 @@ export function buildTurnPrompt(p: TurnPromptParams): string {
     .map((npc) => String(npc?.name || '').trim())
     .filter(Boolean);
   const canonicalVoicesBlock = renderCanonicalVoices(npcNames);
+  const safeMemory = sanitizeMemoryContext(memoryContext);
 
   return isOpening
     ? `
@@ -138,7 +150,7 @@ Estado Inicial do Mundo e NPCs: ${JSON.stringify(worldForPrompt, null, 2)}
 ${renderArcContract(world, startingArcTitle, customOpeningPrompt, true)}
 
 ${canonicalVoicesBlock}
-=== STORY CARDS E ENCICLOPÉDIA CANÔNICA ATIVADOS (RAG) ===
+${safeMemory !== 'Início da campanha.' ? `=== MEMÓRIA CONSOLIDADA DA CAMPANHA ===\n${safeMemory}\n\n` : ''}=== STORY CARDS E ENCICLOPÉDIA CANÔNICA ATIVADOS (RAG) ===
 ${ragEraNote}
 ${combinedRagContext || 'Conhecimento canônico geral de Jujutsu Kaisen.'}
 
@@ -166,7 +178,7 @@ ${JSON.stringify(worldForPrompt, null, 2)}
 
 ${canonicalVoicesBlock}
 === MEMÓRIA CONSOLIDADA DA CAMPANHA ===
-${memoryContext || 'Início da campanha.'}
+${safeMemory}
 
 === HISTÓRICO RECENTE DE TURNOS ===
 ${recentHistory || 'Primeiro turno da sessão.'}
