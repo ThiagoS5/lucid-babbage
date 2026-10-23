@@ -3,6 +3,7 @@ import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import helmet from 'helmet';
 import { GoogleGenAI } from '@google/genai';
 import {
   inferStoryCardEra,
@@ -321,6 +322,30 @@ async function startServer() {
   // Cloud Run injeta PORT (normalmente 8080); localmente continua 3000.
   const PORT = Number(process.env.PORT) || 3000;
 
+  // Security headers via Helmet — applied early before other middleware
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // Vite HMR needs inline in dev
+        styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind/daisyUI inject styles
+        imgSrc: ["'self'", "data:", "blob:"],
+        connectSrc: ["'self'", "ws:", "wss:"], // HMR websocket
+        fontSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // allows loading images from other origins
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
+    noSniff: true,
+    xssFilter: true,
+    frameguard: { action: 'deny' },
+  }));
+
   app.use(express.json({ limit: '15mb' }));
 
   // ---------------------------------------------------------------------------
@@ -596,8 +621,8 @@ async function startServer() {
   });
 
   /**
-   * Returns all 283 PT-BR encyclopedic entries (json/codex) + 283 canonical Story Cards
-   * so the frontend Códice RAG is populated out-of-the-box without requiring manual file upload.
+   * Returns codex and story cards so the frontend Códice RAG is populated
+   * out-of-the-box without requiring manual file upload.
    */
   app.get('/api/codex/default', (_req, res) => {
     res.json({
@@ -617,8 +642,7 @@ async function startServer() {
 
   /**
    * Códice por categoria: /api/codex/personagens | habilidades | locais | outros.
-   * Corpo INTEGRAL (sem truncamento) — a UI do Códice carrega só a aba que
-   * está vendo, em vez dos 283 verbetes de uma vez.
+   * Corpo INTEGRAL (sem truncamento) — a UI carrega só a aba que está vendo.
    */
   app.get('/api/codex/categoria/:categoria', (req, res) => {
     const categoria = req.params.categoria as CodexCategory;
@@ -1022,7 +1046,7 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
     const headerKey = req.headers['x-custom-api-key'] as string | undefined;
     const ai = getGeminiClient(customApiKey || headerKey);
 
-    // Enrich with Server-Side Deep RAG from the 283 Story Cards + 1.1MB Encyclopedic Codex
+    // Enrich with Server-Side Deep RAG from codex and story cards
     const searchContextForServerRag = [
       actionText,
       startingArcTitle,

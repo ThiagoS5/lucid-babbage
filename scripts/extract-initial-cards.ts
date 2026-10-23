@@ -13,9 +13,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { INITIAL_STORY_CARDS } from '../src/shared/data/initialCodex.ts';
-import { categoryForType } from '../src/shared/lib/codexCategories.ts';
-import type { StoryCard } from '../src/shared/types/jjk.ts';
+import { INITIAL_STORY_CARDS } from '@/shared/data/initialCodex.ts';
+import { categoryForType } from '@/shared/lib/codexCategories.ts';
+import type { StoryCard } from '@/shared/types/jjk.ts';
 
 const out = path.join(process.cwd(), 'json', 'inicial.json');
 

@@ -101,7 +101,7 @@ export function appendMemory(
   }
 
   const entry: MemoryEntry = {
-    id: newEntry.id || `mem-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+    id: newEntry.id || `mem-${Date.now()}-${crypto.randomUUID().slice(0, 7)}`,
     turnRange: turnRange || 'Turnos Recentes',
     summary,
     timestamp: newEntry.timestamp || new Date().toISOString(),
