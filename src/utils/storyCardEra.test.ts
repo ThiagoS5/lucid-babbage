@@ -8,7 +8,7 @@ import {
   isStoryCardAllowedForEra,
 } from './storyCardEra.ts';
 
-function _unused_loadAllCodexEntries(): Array<{ title: string; era: string }> {
+function loadAllCodexEntries(): Array<{ title: string; era: string }> {
   const all: Array<{ title: string; era: string }> = [];
   for (const file of fs.readdirSync(path.join(process.cwd(), 'json/codex'))) {
     const parsed = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'json/codex', file), 'utf-8')) as { entries: Array<{ title: string; era: string }> };
@@ -16,7 +16,6 @@ function _unused_loadAllCodexEntries(): Array<{ title: string; era: string }> {
   }
   return all;
 }
-void _unused_loadAllCodexEntries;
 
 test('era estrutural: eventos canônicos são bloqueados em campanha de seguimento', () => {
   const canon = inferEraByStructure({ title: 'O Incidente de Shibuya (Shibuya Jihen)', tag: 'Evento' });
