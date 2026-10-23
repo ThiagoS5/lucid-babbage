@@ -171,6 +171,24 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     });
   };
 
+  const handleApiKeyChange = (value: string) => {
+    // Valida e sanitiza a API key (máximo 256 caracteres, remove caracteres de controle)
+    const sanitized = value.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').slice(0, 256);
+    onChangeProvider({ ...provider, apiKey: sanitized });
+  };
+
+  const handleBaseUrlChange = (value: string) => {
+    // Valida e sanitiza base URL (máximo 2048 caracteres)
+    const sanitized = value.trim().slice(0, 2048);
+    onChangeProvider({ ...provider, baseUrl: sanitized });
+  };
+
+  const handleCustomApiKeyChange = (value: string) => {
+    // Valida e sanitiza a chave do Gemini
+    const sanitized = value.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').slice(0, 256);
+    onChangeCustomApiKey(sanitized);
+  };
+
   return (
     <div className="editorial-page max-w-[980px]">
       <div className="editorial-eyebrow">Preferências</div>
@@ -210,10 +228,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                   <input
                     type={showProviderKey ? 'text' : 'password'}
                     value={provider.apiKey ?? ''}
-                    onChange={(event) =>
-                      onChangeProvider({ ...provider, apiKey: event.target.value })
-                    }
+                    onChange={(event) => handleApiKeyChange(event.target.value)}
                     placeholder="sk-..."
+                    maxLength={256}
                     className="editorial-input pl-6"
                     aria-label="Chave de API do provedor escolhido"
                   />
@@ -237,10 +254,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <input
                   type="url"
                   value={provider.baseUrl ?? ''}
-                  onChange={(event) =>
-                    onChangeProvider({ ...provider, baseUrl: event.target.value })
-                  }
+                  onChange={(event) => handleBaseUrlChange(event.target.value)}
                   placeholder="http://localhost:11434/v1"
+                  maxLength={2048}
                   className="editorial-input w-[260px] max-w-[70vw]"
                   aria-label="Base URL do provedor personalizado"
                 />
@@ -293,8 +309,9 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
                 <input
                   type={showKey ? 'text' : 'password'}
                   value={customApiKey}
-                  onChange={(event) => onChangeCustomApiKey(event.target.value)}
+                  onChange={(event) => handleCustomApiKeyChange(event.target.value)}
                   placeholder="AIza..."
+                  maxLength={256}
                   className="editorial-input pl-6"
                   aria-label="Chave de API do Google Gemini"
                 />

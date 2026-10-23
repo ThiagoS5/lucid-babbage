@@ -26,6 +26,7 @@ import {
 } from './src/server/providers/providerRegistry';
 import { parseGmTurnJson, runExternalTurn } from './src/server/providers/gmTurnRunner';
 import type { ProviderId, ProviderSpec } from '@/shared/types/provider';
+import { sanitizeInput } from './src/shared/lib/validateInput';
 
 dotenv.config();
 
@@ -328,10 +329,10 @@ async function startServer() {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'", "'unsafe-inline'"], // Vite HMR needs inline in dev
-        styleSrc: ["'self'", "'unsafe-inline'"], // Tailwind/daisyUI inject styles
-        imgSrc: ["'self'", "data:", "blob:"],
-        connectSrc: ["'self'", "ws:", "wss:"], // HMR websocket
-        fontSrc: ["'self'", "data:"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"], // Tailwind + Google Fonts
+        imgSrc: ["'self'", "data:", "blob:", "https:"], // Local, generated SVG and CDN assets
+        connectSrc: ["'self'", "ws:", "wss:", "https://*.googleapis.com"], // HMR websocket + Google AI
+        fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"], // Google Fonts assets
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
         baseUri: ["'self'"],
@@ -342,7 +343,6 @@ async function startServer() {
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
     hsts: { maxAge: 31536000, includeSubDomains: true, preload: true },
     noSniff: true,
-    xssFilter: true,
     frameguard: { action: 'deny' },
   }));
 
@@ -1043,14 +1043,19 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       customApiKey = '',
     } = req.body;
 
+    // Sanitização e limites de tamanho defensivos
+    const cleanActionText = sanitizeInput(typeof actionText === 'string' ? actionText : '').slice(0, 2000);
+    const cleanStartingArcTitle = sanitizeInput(typeof startingArcTitle === 'string' ? startingArcTitle : '').slice(0, 256);
+    const cleanCustomOpeningPrompt = sanitizeInput(typeof customOpeningPrompt === 'string' ? customOpeningPrompt : '').slice(0, 4000);
+
     const headerKey = req.headers['x-custom-api-key'] as string | undefined;
     const ai = getGeminiClient(customApiKey || headerKey);
 
     // Enrich with Server-Side Deep RAG from codex and story cards
     const searchContextForServerRag = [
-      actionText,
-      startingArcTitle,
-      customOpeningPrompt,
+      cleanActionText,
+      cleanStartingArcTitle,
+      cleanCustomOpeningPrompt,
       world?.location,
       world?.arc,
       character?.technique?.name,
@@ -1066,7 +1071,7 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       world?.era
     );
 
-    const combinedRagContext = [ragContext, extraRagText].filter(Boolean).join('\n\n---\n\n');
+    const combinedRagContext = [sanitizeInput(ragContext || '').slice(0, 65536), extraRagText].filter(Boolean).join('\n\n---\n\n');
 
     // Fallback generator if no API key is configured or all models are exhausted
     const buildDynamicFallback = (reason: string) => {
@@ -1078,10 +1083,10 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
       const contractWorld = (world || {}) as ArcContractWorld;
       const premise = (contractWorld.campaignPremise || '').trim();
       const objective = (contractWorld.missionObjective || '').trim();
-      const openingScene = (contractWorld.openingScene || customOpeningPrompt || '').trim();
+      const openingScene = (contractWorld.openingScene || cleanCustomOpeningPrompt || '').trim();
       const beats = contractWorld.mustEstablish || [];
-      const lowerAction = (actionText || '').toLowerCase();
-      const actionForNarration = (actionText || '').trim().replace(/[.!?]+$/, '');
+      const lowerAction = (cleanActionText || '').toLowerCase();
+      const actionForNarration = (cleanActionText || '').trim().replace(/[.!?]+$/, '');
 
       const isRct =
         lowerAction.includes('reversa') ||

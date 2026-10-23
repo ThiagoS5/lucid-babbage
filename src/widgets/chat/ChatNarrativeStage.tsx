@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from 'react';
+import { sanitizeInput } from '@/shared/lib/validateInput';
 import {
   ActionMode,
   CampaignTurn,
@@ -407,7 +408,8 @@ export const ChatNarrativeStage: React.FC<ChatNarrativeStageProps> = ({
   };
 
   const submitAction = () => {
-    const text = actionText.trim();
+    // Sanitiza e valida o tamanho máximo da ação de entrada (2000 caracteres)
+    const text = sanitizeInput(actionText).slice(0, 2000);
     if (!text || submitting) return;
     stickToBottom.current = true;
     turnsAtSubmit.current = turns.length;
