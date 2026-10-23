@@ -24,10 +24,9 @@ const baseParams = {
   recentHistory: '',
 };
 
-test('buildTurnPrompt injects default "Início da campanha." when memoryContext is empty', () => {
+test('buildTurnPrompt omits memory block when memoryContext is empty (continuity turn)', () => {
   const prompt = buildTurnPrompt(baseParams);
-  assert.ok(prompt.includes('=== MEMÓRIA CONSOLIDADA DA CAMPANHA ==='));
-  assert.ok(prompt.includes('Início da campanha.'));
+  assert.ok(!prompt.includes('=== MEMÓRIA CONSOLIDADA DA CAMPANHA ==='));
 });
 
 test('buildTurnPrompt injects memoryContext in continuity turn', () => {
@@ -69,11 +68,33 @@ test('buildTurnPrompt omits memory block in opening turn when memoryContext is e
 
 test('sanitizeMemoryContext caps string exceeding MAX_PROMPT_MEMORY_LENGTH with notice', () => {
   const giantMemory = 'M'.repeat(12000);
-  const sanitized = sanitizeMemoryContext(giantMemory);
+  const result = sanitizeMemoryContext(giantMemory);
 
-  assert.ok(sanitized.length <= MAX_PROMPT_MEMORY_LENGTH + 50);
-  assert.ok(sanitized.endsWith('... [truncado por limite de contexto]'));
-  assert.equal(sanitized.slice(0, 100), 'M'.repeat(100));
+  assert.equal(result.isEmpty, false);
+  assert.ok(result.safeText.length <= MAX_PROMPT_MEMORY_LENGTH + 50);
+  assert.ok(result.safeText.endsWith('... [truncado por limite de contexto]'));
+  assert.equal(result.safeText.slice(0, 100), 'M'.repeat(100));
+});
+
+test('sanitizeMemoryContext handles empty input with isEmpty flag', () => {
+  const r1 = sanitizeMemoryContext('');
+  assert.equal(r1.isEmpty, true);
+  assert.equal(r1.safeText, 'Início da campanha.');
+
+  const r2 = sanitizeMemoryContext(undefined);
+  assert.equal(r2.isEmpty, true);
+
+  const r3 = sanitizeMemoryContext(null as unknown as string);
+  assert.equal(r3.isEmpty, true);
+
+  const r4 = sanitizeMemoryContext('   ');
+  assert.equal(r4.isEmpty, true);
+});
+
+test('sanitizeMemoryContext trims and flags real content', () => {
+  const result = sanitizeMemoryContext('  texto válido  ');
+  assert.equal(result.isEmpty, false);
+  assert.equal(result.safeText, 'texto válido');
 });
 
 test('memoryContext survives and accumulates cleanly across turn sequence', () => {
