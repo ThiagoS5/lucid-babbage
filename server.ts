@@ -1847,8 +1847,14 @@ REGRAS OBRIGATÓRIAS DO MESTRE NA SESSÃO ZERO:
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (_req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
+    // SPA sem roteamento por URL (navegação por estado em AppView): qualquer
+    // path fora dos arquivos estáticos é 404 real — serve a página do Yuji.
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api/')) {
+        res.status(404).json({ ok: false, error: 'Rota de API não encontrada' });
+        return;
+      }
+      res.status(404).sendFile(path.join(distPath, '404.html'));
     });
   }
 

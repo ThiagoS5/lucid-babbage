@@ -766,7 +766,7 @@ export default function App() {
             failed.message ||
             'O servidor não devolveu um turno. Verifique o status da IA e tente novamente.'
         );
-        return;
+        throw new Error(failed.errorMessage || failed.message || 'Falha no servidor');
       }
 
       const gmData = result.data;
@@ -1145,7 +1145,7 @@ export default function App() {
           onImportJsonFile={handleImportJsonFile}
           onNewCharacter={handleNewCharacter}
           onDeleteCampaign={handleDeleteCampaign}
-          onOpenChronicle={() => setAppView('chronicle')}
+          onOpenChronicle={() => setAppView('chronicle') }
           memoriesCount={campaign?.memories.length || 0}
           isSummarizingMemory={isSummarizingMemory}
           onSummarizeMemory={handleSummarizeMemory}

@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>404 — Página não encontrada</title>
+  <meta name="description" content="Esta página foi consumida por uma maldição. Yuji seguiu o seu cursor procurando o caminho — mas o domínio não existe." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500&family=Noto+Sans+Mono:wght@700&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Yuji Itadori (grid 3x3, 9 poses direcionais) -->
+  <link rel="preload" as="image" href="/404-yuji.webp" fetchpriority="high" />
+
+  <style>
+    :root {
+      /* design do app (JJK Maldições Cronicais) */
+      --bg0: #0a0806;
+      --panel: #1a1613;
+      --panel2: #251f1b;
+      --gold: #c9a227;
+      --gold-soft: #e8d69a;
+      --ink: #ece4d4;
+      --body: #a89e8f;
+      --line: #3a332c;
+      --whisper: #7d7468;
+      --danger: #b23a2a;
+
+      --yuji: url("/404-yuji.webp");
+      --cell: clamp(190px, 24vw, 320px);
+      --frame: 512px; /* cada frame no sprite 3x3 */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { -webkit-text-size-adjust: 100%; height: 100%; }
+    body {
+      background:
+        radial-gradient(120% 90% at 18% 12%, #1a120c 0%, transparent 55%),
+        radial-gradient(120% 120% at 85% 100%, #120d16 0%, transparent 60%),
+        var(--bg0);
+      color: var(--ink);
+      font-family: "Noto Sans", system-ui, sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      overflow-y: auto;
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 0;
+    }
+
+    .hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: clamp(24px, 3vh, 48px);
+      padding: clamp(24px, 4vh, 56px) clamp(20px, 4vw, 40px);
+      overflow: hidden;
+      perspective: 1200px;
+      position: relative;
+      width: 100%;
+      max-width: clamp(600px, 90vw, 900px);
+      margin: 0 auto;
+      box-sizing: border-box;
+    }
+
+    .mascot {
+      display: block;
+      width: var(--cell);
+      aspect-ratio: 1;
+      border: 0;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      position: relative;
+      background: var(--yuji);
+      /* 3x3: cada célula ocupa exatamente o viewport do botão */
+      background-size: 300% 300%;
+      background-position: 50% 50%;
+      background-repeat: no-repeat;
+      border-radius: 14px;
+    }
+
+    .mascot::before {
+      content: "";
+      position: absolute;
+      inset: -12% -8% -4% -8%;
+      background: radial-gradient(60% 55% at 50% 42%, rgba(201, 162, 39, 0.20), transparent 70%);
+      filter: blur(6px);
+      z-index: -1;
+    }
+
+    .mascot.is-poked {
+      animation: poke 420ms cubic-bezier(.3, 1.6, .5, 1);
+    }
+
+    .mascot:focus-visible {
+      outline: 2px solid var(--gold);
+      outline-offset: 6px;
+      border-radius: 14px;
+    }
+
+    @keyframes poke {
+      0%   { transform: scale(1); }
+      30%  { transform: scale(1.07, .93); }
+      60%  { transform: scale(.97, 1.04); }
+      100% { transform: scale(1); }
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Noto Sans Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-weight: 700;
+      font-size: clamp(64px, 10vw, 132px);
+      line-height: 0.95;
+      letter-spacing: -0.03em;
+      color: var(--gold);
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+      white-space: nowrap;
+    }
+
+    .subtitle {
+      margin-top: clamp(6px, 1vw, 12px);
+      font-family: "Noto Sans Mono", ui-monospace, monospace;
+      font-weight: 700;
+      font-size: clamp(13px, 1.3vw, 16px);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--danger);
+    }
+
+    .lede {
+      margin-top: clamp(14px, 1.4vw, 20px);
+      max-width: 30em;
+      font-size: clamp(16px, 1.5vw, 23px);
+      line-height: 1.55;
+      color: var(--body);
+    }
+    .lede strong { color: var(--gold-soft); font-weight: 500; }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: clamp(8px, 0.9vw, 14px);
+      margin-top: clamp(22px, 2.3vw, 38px);
+      justify-content: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5em;
+      min-height: 44px;
+      padding: clamp(11px, 1.15vw, 19px) clamp(15px, 1.3vw, 22px);
+      border: 1px solid var(--line);
+      border-radius: clamp(11px, 1.05vw, 18px);
+      background: var(--panel2);
+      color: var(--ink);
+      font: 500 clamp(14px, 1.08vw, 18px)/1 "Noto Sans", system-ui, sans-serif;
+      text-decoration: none;
+      white-space: nowrap;
+      cursor: pointer;
+      transition: background-color .15s, border-color .15s, transform .15s, box-shadow .15s;
+    }
+    .btn:hover {
+      background: #2f2720;
+      border-color: var(--gold);
+      box-shadow: 0 6px 18px rgba(201, 162, 39, 0.14);
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .btn svg { width: 1em; height: 1em; flex: none; }
+    .btn--primary {
+      background: var(--gold);
+      border-color: var(--gold);
+      color: #1a1206;
+      font-weight: 600;
+    }
+    .btn--primary:hover {
+      background: var(--gold-soft);
+      border-color: var(--gold-soft);
+      box-shadow: 0 8px 22px rgba(201, 162, 39, 0.28);
+    }
+
+    .note {
+      margin-top: clamp(16px, 1.6vw, 26px);
+      font-size: clamp(12px, 0.8vw, 13.5px);
+      color: var(--whisper);
+    }
+
+    @media (max-width: 480px) {
+      .hero { padding-top: clamp(30px, 8vh, 72px); }
+      .mascot { --cell: 64vw; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .mascot { animation: none; }
+      .btn { transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="hero">
+    <button class="mascot" id="mascot" type="button" aria-label="Poke o Yuji — ele segue o seu cursor">
+      <span class="sr-only" aria-hidden="true"></span>
+    </button>
+
+    <h1>404</h1>
+    <p class="subtitle">Maldição não encontrada</p>
+
+    <p class="lede">
+      Yuji seguiu o seu cursor procurando o caminho — mas este
+      <strong>domínio não existe</strong>. A página que você procurou foi
+      consumida por uma maldição, ou nunca foi invocada.
+    </p>
+
+    <div class="actions">
+      <a class="btn btn--primary" href="/" target="_top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 11 12 3l9 8M5 10v10h5v-6h4v6h5V10" />
+        </svg>
+        Voltar ao início
+      </a>
+      <button class="btn" id="copy" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="9" y="9" width="11" height="11" rx="2" />
+          <path d="M5 15V5a2 2 0 0 1 2-2h10" />
+        </svg>
+        <span id="copy-label">Copiar o endereço</span>
+      </button>
+    </div>
+
+    <p class="note">Se a maldição persiste, volte à porta principal e reabra a crônica.</p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+      const mascot = document.getElementById("mascot");
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      /* --- Eye tracking: sprite grid 3x3 (Yuji Itadori) ---
+         Yuji é um grid 3x3 de 9 poses direcionais (1536x1536 / 3 = 512x512 por frame).
+         A posição do cursor dentro do botão define qual frame exibir via background-position.
+      */
+      const FRAME = 512;
+      // background-position: 0% = esquerda/top, 50% = centro, 100% = direita/bottom
+      const POS = {
+        0: "0%",
+        1: "50%",
+        2: "100%"
+      };
+
+      let current = { col: 1, row: 1 }; // começa olhando para frente
+
+      // mapeia direção (dx, dy) -> coluna/linha (0, 1, 2)
+      function calcDirection(dx, dy) {
+        // usar tan(22.5°) ≈ 0.414 como threshold para os 8 setores
+        const t = 0.414;
+        const absX = Math.abs(dx);
+        const absY = Math.abs(dy);
+        let col = (dx > t * absY) ? 2 : (dx < -t * absY) ? 0 : 1;
+        let row = (dy > t * absX) ? 2 : (dy < -t * absX) ? 0 : 1;
+        return { col, row };
+      }
+
+      function updateFrame(col, row) {
+        if (current.col === col && current.row === row) return;
+        current = { col, row };
+        mascot.style.backgroundPosition = `${POS[col]} ${POS[row]}`;
+      }
+
+      function aim(x, y) {
+        if (reduce) return;
+        const rect = mascot.getBoundingClientRect();
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        const dx = x - cx;
+        const dy = y - cy;
+        // se estiver muito perto do centro, olha para frente
+        const dist = Math.hypot(dx, dy);
+        const radius = rect.width * 0.22;
+        let col = 1, row = 1;
+        if (dist > radius) {
+          const dir = calcDirection(dx, dy);
+          col = dir.col;
+          row = dir.row;
+        }
+        updateFrame(col, row);
+      }
+
+      function reset() {
+        if (!reduce && (current.col !== 1 || current.row !== 1)) {
+          updateFrame(1, 1);
+        }
+      }
+
+      /* --- Poke / reação (mesmo squash do molde) --- */
+      let reactTimer = null;
+      function react() {
+        mascot.classList.remove("is-poked");
+        void mascot.offsetWidth;
+        mascot.classList.add("is-poked");
+        clearTimeout(reactTimer);
+        reactTimer = setTimeout(() => {
+          reactTimer = null;
+          mascot.classList.remove("is-poked");
+        }, 420);
+      }
+
+      addEventListener("pointermove", (e) => aim(e.clientX, e.clientY), { passive: true });
+      addEventListener("pointerdown", (e) => aim(e.clientX, e.clientY), { passive: true });
+      document.documentElement.addEventListener("pointerleave", reset);
+      mascot.addEventListener("click", react);
+
+      /* --- Copiar endereço --- */
+      const copyBtn = document.getElementById("copy");
+      const copyLabel = document.getElementById("copy-label");
+      copyBtn.addEventListener("click", async () => {
+        try {
+          await navigator.clipboard.writeText(location.href);
+          copyLabel.textContent = "Copiado!";
+        } catch {
+          copyLabel.textContent = "Não deu pra copiar";
+        }
+        setTimeout(() => (copyLabel.textContent = "Copiar o endereço"), 1600);
+      });
+    })();
+  </script>
+</body>
+</html>
